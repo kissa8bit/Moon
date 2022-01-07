@@ -1,0 +1,3 @@
+# Graphics Manager
+
+This modul host all graphics instances inherited from `graphicsInterface`, that throw results of render by linkers (inherited from `linkable`) in common `graphicsLinker` container, each graphics can set own linking shader that makes render in common window, which determines whether the image will overlap the others, will be mixed (also depends on the settings of the linker pipeline) or will be discarded. The order in which graphics instances enter the manager is important; the first instance submitted to the manager will be drawn first (priorities are planned to be implemented in the future). 

@@ -1,0 +1,3 @@
+# ImGui Graphics
+
+This modul is a wrapper around [ImGui](https://github.com/ocornut/imgui) UI library, that can be easily integrated as a graphics instance and cane be passed in graphics manager by `imguiLink`. From test `imguiGraphics` should be added as a Graphics in `graphicsManager` and created by `createGraphics()` function, and it's ready for work. All draw elements are called from global context from test body.
