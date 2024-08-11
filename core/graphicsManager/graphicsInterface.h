@@ -10,10 +10,9 @@
 #include "linkable.h"
 #include "swapChain.h"
 
-namespace moon::graphicsManager {
+#include "linkable.h"
 
-class GraphicsManager;
-class Linkable;
+namespace moon::graphicsManager {
 
 class GraphicsInterface{
 protected:
@@ -50,8 +49,12 @@ public:
 
     virtual void reset() = 0;
 
-    virtual void setPositionInWindow(const math::Vector<float,2>& offset, const math::Vector<float,2>& size) {
-        if(link) link->setPositionInWindow({ offset , size });
+    virtual void setPositionInWindow(const PositionInWindow& position) {
+        if(link.get()) link->positionInWindow() = position;
+    }
+
+    virtual PositionInWindow getPositionInWindow() const {
+        return link.get() ? link->positionInWindow() : PositionInWindow{};
     }
 };
 

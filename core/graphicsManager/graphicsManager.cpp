@@ -184,7 +184,7 @@ uint32_t        GraphicsManager::getImageIndex()    const {return imageIndex;}
 uint32_t        GraphicsManager::getImageCount()    const {return imageCount;}
 
 std::vector<uint32_t> GraphicsManager::makeScreenshot() const {
-    return swapChainKHR.makeScreenshot(imageIndex);
+    return swapChainKHR.makeScreenshot(resourceIndex);
 }
 
 }

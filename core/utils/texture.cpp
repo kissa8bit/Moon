@@ -52,12 +52,12 @@ void TextureImage::makeCache(
 }
 
 VkResult TextureImage::create(
-        VkPhysicalDevice    physicalDevice,
-        VkDevice            device,
-        VkCommandBuffer     commandBuffer,
-        VkImageCreateFlags  flags,
-        const uint32_t&     imageCount,
-        const TextureSampler& textureSampler)
+        VkPhysicalDevice        physicalDevice,
+        VkDevice                device,
+        VkCommandBuffer         commandBuffer,
+        VkImageCreateFlags      flags,
+        const uint32_t&         imageCount,
+        const TextureSampler&   textureSampler)
 {
     mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
     image = utils::vkDefault::Image(physicalDevice,
@@ -75,6 +75,8 @@ VkResult TextureImage::create(
 
     texture::transitionLayout(commandBuffer, image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels, 0, imageCount);
     texture::copy(commandBuffer, cache, image, {static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1}, imageCount);
+
+    mipLevels = 1;
     if(mipLevels == 1){
         texture::transitionLayout(commandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mipLevels, 0, imageCount);
     } else {

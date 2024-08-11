@@ -26,7 +26,7 @@ private:
 
 public:
     DeferredLink() = default;
-    DeferredLink(VkDevice device, const std::filesystem::path& shadersPath, const utils::ImageInfo& info, VkRenderPass renderPass, const utils::Attachments* attachment);
+    DeferredLink(VkDevice device, const std::filesystem::path& shadersPath, const utils::ImageInfo& info, VkRenderPass renderPass, const graphicsManager::PositionInWindow& position, const utils::Attachments* attachment);
     void draw(VkCommandBuffer commandBuffer, uint32_t imageNumber) const override;
 };
 

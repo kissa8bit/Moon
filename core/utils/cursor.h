@@ -24,12 +24,14 @@ struct CursorBuffer {
 
 class Cursor {
 private:
-    moon::utils::Buffer buffer;
+    utils::Buffer buffer;
+    CursorBuffer cursorBuffer;
 
 public:
     void create(VkPhysicalDevice physicalDevice, VkDevice device);
     void update(const float& x, const float& y);
-    CursorInfo read();
+    const CursorBuffer& read();
+    operator const CursorBuffer&() const;
 
     VkDescriptorBufferInfo descriptorBufferInfo() const;
 };

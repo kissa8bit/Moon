@@ -20,10 +20,13 @@ void Cursor::update(const float& x, const float& y) {
     buffer.copy(&cursorBuffer);
 }
 
-CursorInfo Cursor::read() {
-    CursorBuffer cursorBuffer{};
+const CursorBuffer& Cursor::read() {
     std::memcpy((void*)&cursorBuffer, (void*)buffer.map(), sizeof(CursorBuffer));
-    return cursorBuffer.info;
+    return cursorBuffer;
+}
+
+Cursor::operator const CursorBuffer& () const {
+    return cursorBuffer;
 }
 
 VkDescriptorBufferInfo Cursor::descriptorBufferInfo() const

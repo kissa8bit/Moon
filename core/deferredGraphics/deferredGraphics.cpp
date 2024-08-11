@@ -208,7 +208,7 @@ void DeferredGraphics::createGraphicsPasses(){
     }
 
     utils::ImageInfo linkInfo{resourceCount, swapChainKHR->info().Format, swapChainKHR->info().Extent, params.MSAASamples};
-    link = std::make_unique<DeferredLink>(device->device(), params.shadersPath, linkInfo, link->renderPass(), aDatabase.get(postProcessingParams.out.postProcessing));
+    link = std::make_unique<DeferredLink>(device->device(), params.shadersPath, linkInfo, link->renderPass(), link->positionInWindow(), aDatabase.get(postProcessingParams.out.postProcessing));
 }
 
 void DeferredGraphics::createStages(){

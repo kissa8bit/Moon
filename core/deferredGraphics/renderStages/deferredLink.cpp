@@ -4,8 +4,8 @@
 
 namespace moon::deferredGraphics {
 
-DeferredLink::DeferredLink(VkDevice device, const std::filesystem::path& shadersPath, const utils::ImageInfo& info, VkRenderPass renderPass, const utils::Attachments* attachment)
-    : Linkable(renderPass) {
+DeferredLink::DeferredLink(VkDevice device, const std::filesystem::path& shadersPath, const utils::ImageInfo& info, VkRenderPass renderPass, const graphicsManager::PositionInWindow& position, const utils::Attachments* attachment)
+    : Linkable(renderPass, position) {
     createPipeline(device, shadersPath, info);
     createDescriptors(device, info, attachment);
 }
@@ -86,7 +86,7 @@ void DeferredLink::createDescriptors(VkDevice device, const utils::ImageInfo& in
 }
 
 void DeferredLink::draw(VkCommandBuffer commandBuffer, uint32_t imageNumber) const {
-    vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(positionInWindow), &positionInWindow);
+    vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(position), &position);
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[imageNumber], 0, nullptr);
     vkCmdDraw(commandBuffer, 6, 1, 0, 0);

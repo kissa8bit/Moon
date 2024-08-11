@@ -102,7 +102,7 @@ void RayTracingLink::createDescriptors(VkDevice device, const moon::utils::Attac
 
 void RayTracingLink::draw(VkCommandBuffer commandBuffer, uint32_t imageNumber) const
 {
-    vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(positionInWindow), &positionInWindow);
+    vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(position), &position);
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[imageNumber], 0, nullptr);
     vkCmdDraw(commandBuffer, 6, 1, 0, 0);

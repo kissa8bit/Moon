@@ -18,11 +18,14 @@ set(SOURCES
     testScene.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/controller.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/main.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/gui.cpp
 )
 set(INCLUDES
     testScene.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/controledObject.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/scene.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/controller.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/gui.h
 )
 
 add_executable(testScene ${INCLUDES} ${SOURCES})

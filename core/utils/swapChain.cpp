@@ -67,12 +67,7 @@ std::vector<uint32_t> SwapChain::makeScreenshot(uint32_t i) const {
     texture::transitionLayout(commandBuffer, attachments[i].image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_REMAINING_MIP_LEVELS, 0, 1);
     singleCommandBuffer::submit(device->device(),device->device()(0,0),commandPool,&commandBuffer);
 
-    void* map = nullptr;
-    VkResult result = vkMapMemory(device->device(), cache, 0, sizeof(uint32_t) * buffer.size(), 0, &map);
-    debug::checkResult(result, std::string("in file ") + std::string(__FILE__) + std::string(" in line ") + std::to_string(__LINE__));
-
-    std::memcpy(buffer.data(), map, sizeof(uint32_t) * buffer.size());
-    vkUnmapMemory(device->device(), cache);
+    std::memcpy(buffer.data(), cache.map(), cache.size());
 
     return buffer;
 }

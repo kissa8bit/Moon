@@ -14,14 +14,14 @@ struct PositionInWindow {
 class Linkable{
 protected:
     VkRenderPass pRenderPass{ VK_NULL_HANDLE };
-    PositionInWindow positionInWindow;
+    PositionInWindow position;
 
 public:
     Linkable() = default;
-    Linkable(VkRenderPass renderPass) : pRenderPass(renderPass) {}
+    Linkable(VkRenderPass renderPass, const PositionInWindow& position = PositionInWindow{}) : pRenderPass(renderPass), position(position){}
     virtual ~Linkable(){};
     virtual void draw(VkCommandBuffer commandBuffer, uint32_t imageNumber) const = 0;
-    virtual void setPositionInWindow(const PositionInWindow& position){ positionInWindow = position; }
+    virtual PositionInWindow& positionInWindow() { return position; }
     virtual VkRenderPass& renderPass() { return pRenderPass; }
 };
 

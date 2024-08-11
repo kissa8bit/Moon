@@ -142,7 +142,7 @@ void main()
     uint Metallic = uint(255.0f * metallic);
     uint number = uint(material.number);
     float params = uintBitsToFloat((PerceptualRoughness << 0) | (Metallic << 8) | (number << 16));
-    
+
     float ao = material.occlusionTextureSet > -1 ? texture(occlusionTexture,UV0).r : 1.0f;
     vec4 bloomColor = vec4(local.bloomFactor.xyz, 1.0f) * texture(emissiveTexture,  UV0) + local.bloomColor;
     float emissiveAndAO = codeToFloat(bloomColor.xyz, ao);

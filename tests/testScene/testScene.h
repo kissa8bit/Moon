@@ -11,8 +11,9 @@
 #include "scene.h"
 #include "vector.h"
 #include "controller.h"
+#include "controledObject.h"
 
-//#define SECOND_VIEW_WINDOW
+#define SECOND_VIEW_WINDOW
 #define IMGUI_GRAPHICS
 
 namespace moon::interfaces { class Model;}
@@ -31,20 +32,10 @@ private:
     moon::math::Vector<uint32_t,2> extent{0};
     moon::math::Vector<double,2> mousePos{0.0};
     float globalTime{0.0f};
-    bool enableScatteringRefraction{true};
     int ufoCounter{0};
 
-    float                   blitFactor = 1.5f;
-    float                   farBlurDepth = 1.0f;
-    float                   minAmbientFactor{0.05f};
-    float                   animationSpeed{1.0f};
-    float                   frameTime{0.0f};
-    uint32_t                primitiveNumber = std::numeric_limits<uint32_t>::max();
-
-#ifdef SECOND_VIEW_WINDOW
-    moon::math::Vector<float,2> viewOffset{0.5f,0.5f};
-    moon::math::Vector<float,2> viewExtent{0.33f,0.33f};
-#endif
+    float animationSpeed{1.0f};
+    float frameTime{0.0f};
 
     GLFWwindow* window{nullptr};
     moon::graphicsManager::GraphicsManager* app{nullptr};
@@ -69,17 +60,7 @@ private:
     std::unordered_map<std::string, std::shared_ptr<moon::transformational::IsotropicLight>> lightPoints;
     std::vector<std::shared_ptr<moon::transformational::Light>> lightSources;
 
-    struct ControledObject
-    {
-        moon::transformational::Object* ptr{ nullptr };
-        std::string name{ "none" };
-        struct Outlighting {
-            bool enable{ true };
-            moon::math::Vector<float, 4> color{ 1.0f, 1.0f, 1.0f, 1.0f };
-        } outlighting;
-        operator moon::transformational::Object*(){return ptr;}
-        moon::transformational::Object* operator->(){ return ptr; }
-    } controledObject;
+    moon::tests::ControledObject controledObject;
 
     void mouseEvent();
     void keyboardEvent();
