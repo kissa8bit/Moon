@@ -6,10 +6,9 @@
 #include <string>
 #include <unordered_map>
 #include <memory>
-#include <glfw3.h>
 
 #include "scene.h"
-#include "vector.h"
+#include "window.h"
 #include "controller.h"
 #include "controledObject.h"
 
@@ -29,22 +28,16 @@ private:
     bool& framebufferResized;
 
     std::filesystem::path ExternalPath;
-    moon::math::Vector<uint32_t,2> extent{0};
     moon::math::Vector<double,2> mousePos{0.0};
-    float globalTime{0.0f};
-    int ufoCounter{0};
 
     float animationSpeed{1.0f};
     float frameTime{0.0f};
 
-    GLFWwindow* window{nullptr};
+    moon::tests::Window window;
     moon::graphicsManager::GraphicsManager* app{nullptr};
     std::shared_ptr<controller> mouse{nullptr};
     std::shared_ptr<controller> board{nullptr};
     std::shared_ptr<moon::utils::Cursor> cursor{ nullptr };
-
-    uint32_t resourceCount{0};
-    uint32_t imageCount{0};
 
     std::unordered_map<std::string, std::shared_ptr<moon::deferredGraphics::DeferredGraphics>> graphics;
 #ifdef IMGUI_GRAPHICS
@@ -70,7 +63,6 @@ private:
     void createLight();
     void createObjects();
     void requestUpdate();
-    void makeScreenshot(const std::string& screenshot);
     void makeGui();
 
 public:

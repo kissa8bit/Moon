@@ -21,29 +21,26 @@
 
 testScene::testScene(moon::graphicsManager::GraphicsManager *app, GLFWwindow* window, uint32_t width, uint32_t height, const std::filesystem::path& ExternalPath, bool& framebufferResized):
     framebufferResized(framebufferResized),
-    extent(width, height),
     ExternalPath(ExternalPath),
-    window(window),
+    window(window, { width, height }),
     app(app),
     mouse(new controller(window, glfwGetMouseButton)),
     board(new controller(window, glfwGetKey)),
-    cursor(new moon::utils::Cursor),
-    resourceCount(app->getResourceCount()),
-    imageCount(app->getImageCount())
+    cursor(new moon::utils::Cursor)
 {
     create();
 }
 
 void testScene::resize(uint32_t width, uint32_t height)
 {
-    extent = { width, height };
+    window.resizes({ width, height });
 
-    cameras["base"]->setProjMatrix(moon::math::perspective(moon::math::radians(45.0f), (float)extent[0] / (float)extent[1], 0.1f));
-    graphics["base"]->parameters().extent = extent;
+    cameras["base"]->setProjMatrix(moon::math::perspective(moon::math::radians(45.0f), window.aspectRatio(), 0.1f));
+    graphics["base"]->parameters().extent = window.sizes();
 
 #ifdef SECOND_VIEW_WINDOW
-    cameras["view"]->setProjMatrix(moon::math::perspective(moon::math::radians(45.0f), (float)extent[0] / (float)extent[1], 0.1f));
-    graphics["view"]->parameters().extent = extent / 3;
+    cameras["view"]->setProjMatrix(moon::math::perspective(moon::math::radians(45.0f), window.aspectRatio(), 0.1f));
+    graphics["view"]->parameters().extent = window.sizes() / 3;
 #endif
 
     for(auto& [_,graph]: graphics){
@@ -53,11 +50,11 @@ void testScene::resize(uint32_t width, uint32_t height)
 
 void testScene::create()
 {
-    cameras["base"] = std::make_shared<moon::transformational::Camera>(45.0f, (float) extent[0] / (float) extent[1], 0.1f);
+    cameras["base"] = std::make_shared<moon::transformational::Camera>(45.0f, window.aspectRatio(), 0.1f);
     moon::deferredGraphics::Parameters deferredGraphicsParameters;
     deferredGraphicsParameters.shadersPath = ExternalPath / "core/deferredGraphics/spv";
     deferredGraphicsParameters.workflowsShadersPath = ExternalPath / "core/workflows/spv";
-    deferredGraphicsParameters.extent = extent;
+    deferredGraphicsParameters.extent = window.sizes();
     graphics["base"] = std::make_shared<moon::deferredGraphics::DeferredGraphics>(deferredGraphicsParameters);
     app->setGraphics(graphics["base"].get());
     graphics["base"]->bind(*cameras["base"].get());
@@ -75,7 +72,7 @@ void testScene::create()
     graphics["base"]->reset();
 
 #ifdef SECOND_VIEW_WINDOW
-    cameras["view"] = std::make_shared<moon::transformational::Camera>(45.0f, (float)extent[0] / (float)extent[1], 0.1f);
+    cameras["view"] = std::make_shared<moon::transformational::Camera>(45.0f, window.aspectRatio(), 0.1f);
     deferredGraphicsParameters.extent /= 3;
     graphics["view"] = std::make_shared<moon::deferredGraphics::DeferredGraphics>(deferredGraphicsParameters);
     graphics["view"]->setPositionInWindow({ { 0.5f, 0.5f }, { 0.33f, 0.33f } });
@@ -260,6 +257,7 @@ void testScene::updateFrame(uint32_t frameNumber, float inFrameTime)
 #endif
 
     float animationTime = animationSpeed * frameTime;
+    static float globalTime = 0.0f;
     globalTime += animationTime;
 
     skyboxObjects["stars"]->rotate(0.1f * animationTime, normalize(moon::math::Vector<float, 3>(1.0f, 1.0f, 1.0f)));
@@ -274,6 +272,7 @@ void testScene::updateFrame(uint32_t frameNumber, float inFrameTime)
 
 void testScene::loadModels()
 {
+    auto resourceCount = app->getResourceCount();
     models["bee"] = std::make_shared<moon::models::GltfModel>(ExternalPath / "dependences/model/glb/Bee.glb", 2 * resourceCount);
     models["ufo"] = std::make_shared<moon::models::GltfModel>(ExternalPath / "dependences/model/glb/RetroUFO.glb");
     models["box"] = std::make_shared<moon::models::GltfModel>(ExternalPath / "dependences/model/glTF-Sample-Models/2.0/Box/glTF-Binary/Box.glb");
@@ -291,6 +290,7 @@ void testScene::loadModels()
 
 void testScene::createObjects()
 {
+    auto resourceCount = app->getResourceCount();
     staticObjects["sponza"] = std::make_shared<moon::transformational::Object>(models["sponza"].get());
     staticObjects["sponza"]->rotate(moon::math::radians(90.0f),{1.0f,0.0f,0.0f}).scale({3.0f,3.0f,3.0f});
 
@@ -349,6 +349,7 @@ void testScene::createObjects()
     groups["ufo_light_4"]->rotate(moon::math::radians(30.0f), moon::math::Vector<float,3>(-1.0f,0.0f,0.0f)).rotate(moon::math::radians(30.0f), moon::math::Vector<float,3>(0.0f,0.0f,-1.0f)).translate(moon::math::Vector<float,3>(-26.0f, 13.0f, 19.0f));
     groups["ufo_light_4"]->add(objects["ufo_light_4"].get());
 
+    uint32_t ufoCounter = 0;
     for(auto key = "ufo" + std::to_string(ufoCounter); ufoCounter < 4; ufoCounter++, key = "ufo" + std::to_string(ufoCounter)){
         objects[key] = std::make_shared<moon::transformational::Object>(models["ufo"].get());
         objects[key]->rotate(moon::math::radians(90.0f),{1.0f,0.0f,0.0f});
@@ -444,24 +445,22 @@ void testScene::createLight()
 
 void testScene::mouseEvent()
 {
-    float sensitivity = mouse->sensitivity * frameTime;
+    double sensitivity = mouse->sensitivity * frameTime;
 
     const auto& cursorBuffer = cursor->read();
     const auto& cursorInfo = cursorBuffer.info;
     uint32_t primitiveNumber = cursorInfo.number;
 
-    glfwSetScrollCallback(window,[](GLFWwindow*, double, double) {});
+    const auto xy = window.mousePose();
+    if(mouse->pressed(GLFW_MOUSE_BUTTON_LEFT)){
+        const auto delta = mousePos - xy;
+        cameras["base"]->rotateX(sensitivity * delta[1]);
+        cameras["base"]->rotateY(sensitivity * delta[0]);
 
-    if(double x = 0, y = 0; mouse->pressed(GLFW_MOUSE_BUTTON_LEFT)){
-        glfwGetCursorPos(window,&x,&y);
-        cameras["base"]->rotateX(sensitivity * static_cast<float>(mousePos[1] - y));
-        cameras["base"]->rotateY(sensitivity * static_cast<float>(mousePos[0] - x));
-        mousePos = {x,y};
-
-        cursor->update(mousePos[0] / extent[0], mousePos[1] / extent[1]);
-    } else {
-        glfwGetCursorPos(window, &mousePos[0], &mousePos[1]);
+        const auto sizes = window.sizes();
+        cursor->update(xy[0] / sizes[0], xy[1] / sizes[1]);
     }
+    mousePos = xy;
 
     if(mouse->released(GLFW_MOUSE_BUTTON_LEFT)){
         for(auto& [key, object]: objects){
@@ -537,11 +536,13 @@ void testScene::keyboardEvent()
     if(board->pressed(GLFW_KEY_KP_ADD))         translateControled(sensitivity * moon::math::Vector<float,3>( 0.0f, 0.0f, 1.0f));
     if(board->pressed(GLFW_KEY_KP_SUBTRACT))    translateControled(sensitivity * moon::math::Vector<float,3>( 0.0f, 0.0f,-1.0f));
 
-    if(board->released(GLFW_KEY_ESCAPE)) glfwSetWindowShouldClose(window,GLFW_TRUE);
+    if(board->released(GLFW_KEY_ESCAPE)) window.close();
 
     if(board->released(GLFW_KEY_T)) {
         objects["bee0"]->changeAnimation(objects["bee0"]->getAnimationIndex() == 0 ? 1 : 0, 0.5f);
     }
+
+    static uint32_t ufoCounter = 0;
 
     if(board->released(GLFW_KEY_N)) {
         std::random_device device;
@@ -551,28 +552,28 @@ void testScene::keyboardEvent()
         lightSources.push_back(std::make_shared<moon::transformational::Light>(newColor, moon::math::perspective(moon::math::radians(90.0f), 1.0f, 0.1f, 20.0f), true, true));
         lightSources.back()->setDrop(0.2f);
 
-        objects["ufo" + std::to_string(ufoCounter)] = std::make_shared<moon::transformational::Object>(models["ufo"].get());
-        objects["ufo" + std::to_string(ufoCounter)]->rotate(moon::math::radians(90.0f),{1.0f,0.0f,0.0f});
+        objects["new_ufo" + std::to_string(ufoCounter)] = std::make_shared<moon::transformational::Object>(models["ufo"].get());
+        objects["new_ufo" + std::to_string(ufoCounter)]->rotate(moon::math::radians(90.0f),{1.0f,0.0f,0.0f});
 
-        groups["ufo0" + std::to_string(ufoCounter)] = std::make_shared<moon::transformational::Group>();
-        groups["ufo0" + std::to_string(ufoCounter)]->translate(cameras["base"]->translation().im());
-        groups["ufo0" + std::to_string(ufoCounter)]->add(lightSources.back().get());
-        groups["ufo0" + std::to_string(ufoCounter)]->add(objects["ufo" + std::to_string(ufoCounter)].get());
+        groups["ufo_gr" + std::to_string(ufoCounter)] = std::make_shared<moon::transformational::Group>();
+        groups["ufo_gr" + std::to_string(ufoCounter)]->translate(cameras["base"]->translation().im());
+        groups["ufo_gr" + std::to_string(ufoCounter)]->add(lightSources.back().get());
+        groups["ufo_gr" + std::to_string(ufoCounter)]->add(objects["new_ufo" + std::to_string(ufoCounter)].get());
 
         for(auto& [_,graph]: graphics){
             graph->bind(*lightSources.back().get());
-            graph->bind(*objects["ufo" + std::to_string(ufoCounter++)].get());
+            graph->bind(*objects["new_ufo" + std::to_string(ufoCounter++)].get());
         }
     }
 
     if(board->released(GLFW_KEY_B)) {
-        if(ufoCounter > 4 && app->deviceWaitIdle() == VK_SUCCESS) {
+        if(ufoCounter > 0 && app->deviceWaitIdle() == VK_SUCCESS) {
             for(auto& [_,graph]: graphics){
-                graph->remove(*objects["ufo" + std::to_string(ufoCounter - 1)].get());
+                graph->remove(*objects["new_ufo" + std::to_string(ufoCounter - 1)].get());
                 graph->remove(*lightSources.back().get());
             }
             lightSources.pop_back();
-            objects.erase("ufo" + std::to_string(ufoCounter--));
+            objects.erase("new_ufo" + std::to_string(ufoCounter--));
         }
     }
 }

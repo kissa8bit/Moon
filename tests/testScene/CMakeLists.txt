@@ -19,6 +19,7 @@ set(SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/controller.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/main.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/gui.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/window.cpp
 )
 set(INCLUDES
     testScene.h
@@ -26,6 +27,7 @@ set(INCLUDES
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/scene.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/controller.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/gui.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/window.h
 )
 
 add_executable(testScene ${INCLUDES} ${SOURCES})
