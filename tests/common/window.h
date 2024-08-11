@@ -1,11 +1,14 @@
 #ifndef MOON_TEST_WINDOW_H
 #define MOON_TEST_WINDOW_H
 
+#include <filesystem>
 #include <glfw3.h>
 
 #include "vector.h"
 
 namespace moon::tests {
+
+static bool resizeFlag = false;
 
 class Window
 {
@@ -15,15 +18,18 @@ private:
 
 public:
     Window() = default;
-    Window(GLFWwindow* window, const math::Vector<uint32_t, 2>& extent);
+    Window(const math::Vector<uint32_t, 2>& extent, const std::filesystem::path& iconName = "");
+    ~Window();
 
     operator GLFWwindow*() const;
     math::Vector<uint32_t, 2> sizes() const;
-    void resizes(const math::Vector<uint32_t, 2>& size);
-    float aspectRatio() const;
-
-    void close();
     math::Vector<double, 2> mousePose() const;
+    float aspectRatio() const;
+    bool isClosed() const;
+
+    void resize();
+    void close();
+    bool& windowResized();
 };
 
 }

@@ -3,21 +3,14 @@
 #include <utility>
 #include <filesystem>
 
-#include <stb_image.h>
-
-#include <glfw3.h>
-
-#include <graphicsManager.h>
+#include "graphicsManager.h"
+#include "window.h"
 
 #if defined(TESTCUDA)
     #include "testCuda.h"
 #else
     #include "testScene.h"
 #endif
-
-bool framebufferResized = false;
-uint32_t resCount = 2;
-uint32_t imageCount = 3;
 
 VkPhysicalDeviceFeatures physicalDeviceFeatures(){
     VkPhysicalDeviceFeatures deviceFeatures{};
@@ -30,11 +23,16 @@ VkPhysicalDeviceFeatures physicalDeviceFeatures(){
     return deviceFeatures;
 }
 
-GLFWwindow* initializeWindow(uint32_t WIDTH, uint32_t HEIGHT, std::filesystem::path iconName = "");
-std::pair<uint32_t,uint32_t> resize(GLFWwindow* window, moon::graphicsManager::GraphicsManager* app, scene* testScene);
+std::pair<uint32_t, uint32_t> resize(moon::tests::Window& window, moon::graphicsManager::GraphicsManager& app, scene& testScene) {
+    window.resize();
+    app.reset(window);
+    testScene.resize();
+    return { window.sizes()[0], window.sizes()[1] };
+}
 
 using clk = std::chrono::high_resolution_clock;
-template<typename type> type period(clk::time_point time){
+template<typename type>
+type period(clk::time_point time){
     return std::chrono::duration<type, std::chrono::seconds::period>(clk::now() - time).count();
 }
 
@@ -42,26 +40,29 @@ int main()
 {
     uint32_t WIDTH = 1024;
     uint32_t HEIGHT = 720;
+    uint32_t resCount = 2;
+    uint32_t imageCount = 3;
+
     const std::filesystem::path ExternalPath = std::filesystem::absolute(std::filesystem::path(__FILE__).replace_filename("../../"));
 
-    GLFWwindow* window = initializeWindow(WIDTH, HEIGHT, ExternalPath / "dependences/texture/icon.PNG");
+    moon::tests::Window window({WIDTH, HEIGHT}, ExternalPath / "dependences/texture/icon.PNG");
 
     moon::graphicsManager::GraphicsManager app(window, imageCount, resCount, physicalDeviceFeatures());
 
 #if defined(TESTCUDA)
     testCuda testScene(&app, window, WIDTH, HEIGHT, ExternalPath, framebufferResized);
 #else
-    testScene testScene(&app, window, WIDTH, HEIGHT, ExternalPath, framebufferResized);
+    testScene testScene(app, window, ExternalPath);
 #endif
 
     // moon::utils::Memory::instance().status();
 
-    for(float time = 1.0f; !glfwWindowShouldClose(window);){
+    for(float time = 1.0f; !window.isClosed();){
         if(auto start = clk::now(); app.checkNextFrame() != VK_ERROR_OUT_OF_DATE_KHR) {
             testScene.updateFrame(app.getResourceIndex(), time);
 
-            if (VkResult result = app.drawFrame(); result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized){
-                std::tie(WIDTH, HEIGHT) = resize(window,&app,&testScene);
+            if (VkResult result = app.drawFrame(); result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || window.windowResized()){
+                std::tie(WIDTH, HEIGHT) = resize(window, app, testScene);
             } else if(result) {
                 throw std::runtime_error("failed to with " + std::to_string(result));
             }
@@ -71,47 +72,5 @@ int main()
 
     moon::utils::debug::checkResult(app.deviceWaitIdle(), "in file " + std::string(__FILE__) + ", line " + std::to_string(__LINE__));
 
-    glfwDestroyWindow(window);
-    glfwTerminate();
-
     return 0;
-}
-
-std::pair<uint32_t,uint32_t> resize(GLFWwindow* window, moon::graphicsManager::GraphicsManager* app, scene* testScene)
-{
-    int width = 0, height = 0;
-    glfwGetFramebufferSize(window, &width, &height);
-    while (width * height == 0)
-    {
-        glfwGetFramebufferSize(window, &width, &height);
-        glfwWaitEvents();
-    }
-
-    app->reset(window);
-    testScene->resize(width, height);
-
-    // moon::utils::Memory::instance().status();
-
-    framebufferResized = false;
-
-    return std::pair(width, height);
-}
-
-GLFWwindow* initializeWindow(uint32_t WIDTH, uint32_t HEIGHT, std::filesystem::path iconName)
-{
-    glfwInit();
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-
-    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan render", nullptr, nullptr);
-    glfwSetWindowUserPointer(window, nullptr);
-    glfwSetFramebufferSizeCallback(window, [](GLFWwindow*, int, int){ framebufferResized = true;});
-
-    if(iconName.string().size() > 0){
-        int width, height, comp;
-        stbi_uc* img = stbi_load(iconName.string().c_str(), &width, &height, &comp, 0);
-        GLFWimage images{width,height,img};
-        glfwSetWindowIcon(window,1,&images);
-    }
-
-    return window;
 }

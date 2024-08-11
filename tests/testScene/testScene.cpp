@@ -19,22 +19,17 @@
 #include <algorithm>
 #include <execution>
 
-testScene::testScene(moon::graphicsManager::GraphicsManager *app, GLFWwindow* window, uint32_t width, uint32_t height, const std::filesystem::path& ExternalPath, bool& framebufferResized):
-    framebufferResized(framebufferResized),
+testScene::testScene(moon::graphicsManager::GraphicsManager& app, moon::tests::Window& window, const std::filesystem::path& ExternalPath):
     ExternalPath(ExternalPath),
-    window(window, { width, height }),
+    window(window),
     app(app),
-    mouse(new controller(window, glfwGetMouseButton)),
-    board(new controller(window, glfwGetKey)),
-    cursor(new moon::utils::Cursor)
+    mouse(window),
+    board(new controller(window, glfwGetKey))
 {
     create();
 }
 
-void testScene::resize(uint32_t width, uint32_t height)
-{
-    window.resizes({ width, height });
-
+void testScene::resize() {
     cameras["base"]->setProjMatrix(moon::math::perspective(moon::math::radians(45.0f), window.aspectRatio(), 0.1f));
     graphics["base"]->parameters().extent = window.sizes();
 
@@ -56,9 +51,9 @@ void testScene::create()
     deferredGraphicsParameters.workflowsShadersPath = ExternalPath / "core/workflows/spv";
     deferredGraphicsParameters.extent = window.sizes();
     graphics["base"] = std::make_shared<moon::deferredGraphics::DeferredGraphics>(deferredGraphicsParameters);
-    app->setGraphics(graphics["base"].get());
+    app.setGraphics(graphics["base"].get());
     graphics["base"]->bind(*cameras["base"].get());
-    graphics["base"]->bind(cursor.get());
+    graphics["base"]->bind(mouse);
     graphics["base"]->
         setEnable("TransparentLayer", true).
         setEnable("Skybox", true).
@@ -76,7 +71,7 @@ void testScene::create()
     deferredGraphicsParameters.extent /= 3;
     graphics["view"] = std::make_shared<moon::deferredGraphics::DeferredGraphics>(deferredGraphicsParameters);
     graphics["view"]->setPositionInWindow({ { 0.5f, 0.5f }, { 0.33f, 0.33f } });
-    app->setGraphics(graphics["view"].get());
+    app.setGraphics(graphics["view"].get());
     graphics["view"]->bind(*cameras["view"].get());
     graphics["view"]->
         setEnable("TransparentLayer", true).
@@ -91,12 +86,12 @@ void testScene::create()
 #endif
 
 #ifdef IMGUI_GRAPHICS
-    gui = std::make_shared<moon::imguiGraphics::ImguiGraphics>(window, app->getInstance(), app->getImageCount());
-    app->setGraphics(gui.get());
+    gui = std::make_shared<moon::imguiGraphics::ImguiGraphics>(window, app.getInstance(), app.getImageCount());
+    app.setGraphics(gui.get());
     gui->reset();
 #endif
 
-    loadModels();
+    createModels();
     createObjects();
     createLight();
 
@@ -121,7 +116,7 @@ void testScene::requestUpdate() {
 void testScene::makeGui() {
     if (ImGui::TreeNodeEx("General", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen)) {
         if (ImGui::Button("Update")) {
-            framebufferResized = true;
+            window.windowResized() = true;
         }
         ImGui::TreePop();
     }
@@ -133,7 +128,7 @@ void testScene::makeGui() {
     }
 
     if(ImGui::TreeNodeEx("Screenshot", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen)) {
-        moon::tests::gui::makeScreenshot("Make screenshot", *app);
+        moon::tests::gui::makeScreenshot("Make screenshot", app);
         ImGui::TreePop();
     }
 
@@ -159,7 +154,7 @@ void testScene::makeGui() {
             }
 
             ImGui::SetNextItemWidth(150.0f);
-            const moon::utils::CursorBuffer& cursorBuffer = *cursor;
+            const moon::utils::CursorBuffer& cursorBuffer = mouse.cursor->read();
             float farBlurDepth = cursorBuffer.info.depth;
             ImGui::SliderFloat("far blur depth", &farBlurDepth, 0.0f, 1.0f);
             graphics["base"]->parameters().blurDepth() = graphics["base"]->getEnable("Blur") ? 1.02f * farBlurDepth : 1.0f;
@@ -174,7 +169,7 @@ void testScene::makeGui() {
         moon::tests::gui::setPoseInWindow(graphics["base"]);
 
         ImGui::Text("pipelines : "); ImGui::SameLine(); ImGui::Separator();
-        framebufferResized |= moon::tests::gui::switchers(graphics["base"]);
+        window.windowResized() |= moon::tests::gui::switchers(graphics["base"]);
 
         ImGui::TreePop();
     }
@@ -186,7 +181,7 @@ void testScene::makeGui() {
         moon::tests::gui::setPoseInWindow(graphics["view"]);
 
         ImGui::Text("pipelines : "); ImGui::SameLine(); ImGui::Separator();
-        framebufferResized |= moon::tests::gui::switchers(graphics["view"]);
+        window.windowResized() |= moon::tests::gui::switchers(graphics["view"]);
 
         ImGui::TreePop();
     }
@@ -270,9 +265,9 @@ void testScene::updateFrame(uint32_t frameNumber, float inFrameTime)
     });
 }
 
-void testScene::loadModels()
+void testScene::createModels()
 {
-    auto resourceCount = app->getResourceCount();
+    auto resourceCount = app.getResourceCount();
     models["bee"] = std::make_shared<moon::models::GltfModel>(ExternalPath / "dependences/model/glb/Bee.glb", 2 * resourceCount);
     models["ufo"] = std::make_shared<moon::models::GltfModel>(ExternalPath / "dependences/model/glb/RetroUFO.glb");
     models["box"] = std::make_shared<moon::models::GltfModel>(ExternalPath / "dependences/model/glTF-Sample-Models/2.0/Box/glTF-Binary/Box.glb");
@@ -290,7 +285,7 @@ void testScene::loadModels()
 
 void testScene::createObjects()
 {
-    auto resourceCount = app->getResourceCount();
+    auto resourceCount = app.getResourceCount();
     staticObjects["sponza"] = std::make_shared<moon::transformational::Object>(models["sponza"].get());
     staticObjects["sponza"]->rotate(moon::math::radians(90.0f),{1.0f,0.0f,0.0f}).scale({3.0f,3.0f,3.0f});
 
@@ -445,24 +440,24 @@ void testScene::createLight()
 
 void testScene::mouseEvent()
 {
-    double sensitivity = mouse->sensitivity * frameTime;
+    double sensitivity = mouse.control->sensitivity * frameTime;
 
-    const auto& cursorBuffer = cursor->read();
+    const auto& cursorBuffer = mouse.cursor->read();
     const auto& cursorInfo = cursorBuffer.info;
     uint32_t primitiveNumber = cursorInfo.number;
 
     const auto xy = window.mousePose();
-    if(mouse->pressed(GLFW_MOUSE_BUTTON_LEFT)){
-        const auto delta = mousePos - xy;
+    if(mouse.control->pressed(GLFW_MOUSE_BUTTON_LEFT)){
+        const auto delta = mouse.pose - xy;
         cameras["base"]->rotateX(sensitivity * delta[1]);
         cameras["base"]->rotateY(sensitivity * delta[0]);
 
         const auto sizes = window.sizes();
-        cursor->update(xy[0] / sizes[0], xy[1] / sizes[1]);
+        mouse.cursor->update(xy[0] / sizes[0], xy[1] / sizes[1]);
     }
-    mousePos = xy;
+    mouse.pose = xy;
 
-    if(mouse->released(GLFW_MOUSE_BUTTON_LEFT)){
+    if(mouse.control->released(GLFW_MOUSE_BUTTON_LEFT)){
         for(auto& [key, object]: objects){
             if(moon::interfaces::Object* pObject = *object.get(); pObject->comparePrimitive(primitiveNumber)){
                 if(controledObject){
@@ -477,7 +472,7 @@ void testScene::mouseEvent()
     }
 
 #ifdef SECOND_VIEW_WINDOW
-    if(mouse->released(GLFW_MOUSE_BUTTON_RIGHT)) {
+    if(mouse.control->released(GLFW_MOUSE_BUTTON_RIGHT)) {
         if(cameras.count("view") > 0) {
             cameras["view"]->translation() = cameras["base"]->translation();
             cameras["view"]->rotation() = cameras["base"]->rotation();
@@ -567,7 +562,7 @@ void testScene::keyboardEvent()
     }
 
     if(board->released(GLFW_KEY_B)) {
-        if(ufoCounter > 0 && app->deviceWaitIdle() == VK_SUCCESS) {
+        if(ufoCounter > 0 && app.deviceWaitIdle() == VK_SUCCESS) {
             for(auto& [_,graph]: graphics){
                 graph->remove(*objects["new_ufo" + std::to_string(ufoCounter - 1)].get());
                 graph->remove(*lightSources.back().get());
