@@ -13,11 +13,15 @@ set(SOURCES
     testCuda.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/main.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/controller.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/window.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/mouse.cpp
 )
 set(INCLUDES
     testCuda.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/scene.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/controller.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/window.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/mouse.h
 )
 
 include_directories(

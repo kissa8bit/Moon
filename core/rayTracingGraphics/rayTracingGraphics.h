@@ -70,7 +70,6 @@ public:
     RayTracingGraphics(const std::filesystem::path& shadersPath, const std::filesystem::path& workflowsShadersPath, VkExtent2D extent);
 
     void reset() override;
-    void setPositionInWindow(const moon::math::Vector<float,2>& offset, const moon::math::Vector<float,2>& size) override;
 
     void setEnableBoundingBox(bool enable);
     void setEnableBloom(bool enable);

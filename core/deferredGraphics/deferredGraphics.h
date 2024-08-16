@@ -77,7 +77,7 @@ struct Parameters {
     UpdateTracked<bool>&     scatteringRefraction() { return workflowsParameters.scatteringRefraction; }
 };
 
-class DeferredGraphics: public graphicsManager::GraphicsInterface{
+class DeferredGraphics: public graphicsManager::GraphicsInterface {
 private:
     Parameters params;
 

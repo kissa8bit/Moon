@@ -138,11 +138,6 @@ void RayTracingGraphics::update(uint32_t imageIndex) {
     bbGraphics.update(imageIndex);
 }
 
-void RayTracingGraphics::setPositionInWindow(const moon::math::Vector<float,2>& offset, const moon::math::Vector<float,2>& size) {
-    this->offset = offset;
-    this->size = size;
-}
-
 void RayTracingGraphics::setEnableBoundingBox(bool enable){
     bbGraphics.setEnable(enable);
 }

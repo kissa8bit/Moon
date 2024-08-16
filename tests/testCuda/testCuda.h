@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "scene.h"
+#include "window.h"
 #include "controller.h"
 #include "vector.h"
 
@@ -15,28 +16,22 @@
 namespace moon::graphicsManager { class GraphicsManager;}
 namespace moon::imguiGraphics { class ImguiGraphics;}
 namespace moon::rayTracingGraphics { class RayTracingGraphics;}
-namespace cuda::rayTracing {
-struct Object;
-struct Camera;
-}
+namespace cuda::rayTracing { struct Object; struct Camera; }
 
 #include "utils/devicep.h"
 
 class testCuda : public scene
 {
 private:
-    bool& framebufferResized;
-
     std::filesystem::path ExternalPath;
-    moon::math::Vector<uint32_t,2> extent{0};
     moon::math::Vector<double,2> mousePos{0.0};
 
-    float                   focus = 0.049f;
-    float                   blitFactor = 1.0f;
-    std::string             screenshot;
+    float focus = 0.049f;
+    float blitFactor = 1.0f;
+    std::string screenshot;
 
-    moon::graphicsManager::GraphicsManager *app{nullptr};
-    GLFWwindow* window{nullptr};
+    moon::graphicsManager::GraphicsManager& app;
+    moon::tests::Window& window;
     std::unique_ptr<cuda::rayTracing::Camera> hostcam;
 
     std::shared_ptr<controller> mouse;
@@ -60,10 +55,10 @@ private:
 
     void create();
 public:
-    testCuda(moon::graphicsManager::GraphicsManager *app, GLFWwindow* window, uint32_t width, uint32_t height, const std::filesystem::path& ExternalPath, bool& framebufferResized);
+    testCuda(moon::graphicsManager::GraphicsManager& app, moon::tests::Window& window, const std::filesystem::path& ExternalPath);
     ~testCuda();
 
-    void resize(uint32_t width, uint32_t height) override;
+    void resize() override;
     void updateFrame(uint32_t frameNumber, float frameTime) override;
 };
 

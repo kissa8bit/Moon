@@ -129,10 +129,8 @@ void createWorld(std::unordered_map<std::string, std::unique_ptr<cuda::rayTracin
     }
 }
 
-testCuda::testCuda(moon::graphicsManager::GraphicsManager *app, GLFWwindow* window, uint32_t width, uint32_t height, const std::filesystem::path& ExternalPath, bool& framebufferResized) :
-    framebufferResized(framebufferResized),
+testCuda::testCuda(moon::graphicsManager::GraphicsManager& app, moon::tests::Window& window, const std::filesystem::path& ExternalPath) :
     ExternalPath(ExternalPath),
-    extent(width, height),
     app(app),
     window(window),
     mouse(new controller(window, glfwGetMouseButton)),
@@ -169,14 +167,14 @@ void testCuda::create()
     graphics = std::make_shared<moon::rayTracingGraphics::RayTracingGraphics>(
         ExternalPath / "core/rayTracingGraphics/spv",
         ExternalPath / "core/workflows/spv",
-        VkExtent2D{extent[0], extent[1]});
+        VkExtent2D{ window.sizes()[0],window.sizes()[1] });
 
-    app->setGraphics(graphics.get());
+    app.setGraphics(graphics.get());
     graphics->reset();
 
 #ifdef IMGUI_GRAPHICS
-    gui = std::make_shared<moon::imguiGraphics::ImguiGraphics>(window, app->getInstance(), app->getImageCount());
-    app->setGraphics(gui.get());
+    gui = std::make_shared<moon::imguiGraphics::ImguiGraphics>(window, app.getInstance(), app.getImageCount());
+    app.setGraphics(gui.get());
     gui->reset();
 #endif
 
@@ -192,7 +190,7 @@ void testCuda::create()
 
     timer.elapsedTime("testCuda::create : build tree");
 
-    hostcam->aspect = float(extent[0]) / float(extent[1]);
+    hostcam->aspect = window.aspectRatio();
     cam = make_devicep<Camera>(*hostcam);
 
     graphics->buildBoundingBoxes(false, true, false);
@@ -201,12 +199,11 @@ void testCuda::create()
     graphics->setEnableBoundingBox(enableBB);
 }
 
-void testCuda::resize(uint32_t width, uint32_t height)
+void testCuda::resize()
 {
-    extent = { width, height };
-    hostcam->aspect = float(extent[0]) / float(extent[1]);
+    hostcam->aspect = window.aspectRatio();
     cam = make_devicep<Camera>(*hostcam);
-    graphics->setExtent({extent[0], extent[1]});
+    graphics->setExtent({window.sizes()[0],window.sizes()[1]});
 
     graphics->setEnableBoundingBox(enableBB);
     graphics->setEnableBloom(enableBloom);
@@ -233,13 +230,13 @@ void testCuda::updateFrame(uint32_t, float frameTime)
     ImGui::Begin("Debug");
 
     if (ImGui::Button("Update")){
-        framebufferResized = true;
+        window.windowResized() = true;
     }
 
     ImGui::SameLine(0.0, 10.0f);
     if(ImGui::Button("Make screenshot")){
-        const auto& imageExtent = app->getImageExtent();
-        auto image = app->makeScreenshot();
+        const auto& imageExtent = app.getImageExtent();
+        auto image = app.makeScreenshot();
 
         std::vector<uint8_t> jpg(3 * imageExtent.height * imageExtent.width, 0);
         for (size_t pixel_index = 0, jpg_index = 0; pixel_index < imageExtent.height * imageExtent.width; pixel_index++) {
@@ -273,7 +270,7 @@ void testCuda::updateFrame(uint32_t, float frameTime)
 
     if(ImGui::RadioButton("bloom", enableBloom)){
         enableBloom = !enableBloom;
-        framebufferResized = true;
+        window.windowResized() = true;
     }
 
     if(ImGui::RadioButton("primitives BB", primitivesBB)){

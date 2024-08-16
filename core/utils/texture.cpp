@@ -76,7 +76,6 @@ VkResult TextureImage::create(
     texture::transitionLayout(commandBuffer, image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels, 0, imageCount);
     texture::copy(commandBuffer, cache, image, {static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1}, imageCount);
 
-    mipLevels = 1;
     if(mipLevels == 1){
         texture::transitionLayout(commandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mipLevels, 0, imageCount);
     } else {
@@ -90,14 +89,14 @@ VkResult TextureImage::create(
     samplerInfo.addressModeU = textureSampler.addressModeU;
     samplerInfo.addressModeV = textureSampler.addressModeV;
     samplerInfo.addressModeW = textureSampler.addressModeW;
-    samplerInfo.anisotropyEnable = VK_FALSE;
+    samplerInfo.anisotropyEnable = VK_TRUE;
     samplerInfo.maxAnisotropy = 1.0f;
     samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
     samplerInfo.unnormalizedCoordinates = VK_FALSE;
     samplerInfo.compareEnable = VK_FALSE;
     samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
     samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    samplerInfo.minLod = static_cast<float>(mipLevel * mipLevels);
+    samplerInfo.minLod = 0.0f;
     samplerInfo.maxLod = static_cast<float>(mipLevels);
     samplerInfo.mipLodBias = 0.0f;
 

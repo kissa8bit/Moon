@@ -21,8 +21,6 @@ protected:
     const utils::SwapChain*         swapChainKHR{ nullptr };
 
     uint32_t                        resourceCount{ 0 };
-    math::Vector<float,2>           offset{0.0f, 0.0f};
-    math::Vector<float,2>           size{1.0f, 1.0f};
     std::unique_ptr<Linkable>       link;
 
 private:
