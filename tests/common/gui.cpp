@@ -7,26 +7,6 @@
 
 namespace moon::tests::gui {
 
-bool setOutlighting(tests::ControledObject& obj, float width) {
-    bool res = false;
-    ImGui::BeginGroup();
-        ImGui::Separator();
-        auto& outlighting = obj.outlighting;
-        auto& enable = outlighting.enable;
-        auto& color = outlighting.color;
-        if (ImGui::RadioButton("outlighting", enable)) {
-            obj->setOutlining(enable = !enable);
-            res = true;
-        }
-        ImGui::SetNextItemWidth(width);
-        if (enable && ImGui::ColorEdit4("color", (float*)&color, ImGuiColorEditFlags_NoDragDrop)) {
-            obj->setOutlining(enable, 0.03f, color);
-            res = true;
-        }
-    ImGui::EndGroup();
-    return res;
-}
-
 void printQuaternion(const moon::math::Quaternion<float>& quaternion) {
     float* rotation = (float*)&quaternion;
     ImGui::BeginGroup();
@@ -35,18 +15,6 @@ void printQuaternion(const moon::math::Quaternion<float>& quaternion) {
         ImGui::Text("rot_y : %s", std::to_string(rotation[2]).c_str());
         ImGui::Text("rot_z : %s", std::to_string(rotation[3]).c_str());
     ImGui::EndGroup();
-}
-
-void rotationmManipulator(transformational::Object& obj, const moon::transformational::Camera* cam, float size) {
-    float* rotation = (float*)&obj.rotation();
-    float* camDir = (float*)&cam->getViewMatrix()[2].dvec();
-    vec3 camdir(-camDir[0], -camDir[1], -camDir[2]);
-    if (quat qu(rotation[0], rotation[1], rotation[2], rotation[3]);
-        ImGui::gizmo3D("", qu, camdir, 100, imguiGizmo::mode3Axes | imguiGizmo::sphereAtOrigin))
-    {
-        obj.rotation() = moon::math::Quaternion<float>(qu.w, qu.x, qu.y, qu.z);
-        obj.update();
-    }
 }
 
 void makeScreenshot(const std::string& screenshot, const std::vector<uint32_t>& data, uint32_t width, uint32_t height) {
@@ -92,96 +60,7 @@ void fpsPlot(float currentFrameFPS, uint32_t points) {
     ImGui::PlotLines(("FPS:\n[" + std::to_string(min) + ",\n" + std::to_string(max) + "]").c_str(), fps.data(), fps.size(), 0, ("average = " + std::to_string(average)).c_str(), min, max, { 250.0f, 100.0f });
 }
 
-#define MOVE_VEC_DEF                                \
-    static float move = 0.0f;                       \
-    moon::math::Vector<float, 3> moveVec(0.0f);     \
-    moveVec[ax] = 1.0f;                             \
-    move = 0.0f;
-
-template<int ax>
-void sliderTransManipulator(
-    transformational::Object& obj,
-    const char* name,
-    float min,
-    float max,
-    float width)
-{
-    MOVE_VEC_DEF
-
-    ImGui::SetNextItemWidth(width);
-    if (ImGui::SliderFloat(name, &move, min, max)) {
-        obj.translate(move * moveVec);
-    }
-    std::string text = " : " + std::to_string(obj.translation().im()[ax]);
-    ImGui::SameLine(0.0, 10.0); ImGui::Text(text.c_str());
-}
-
-
-template<int ax>
-void transManipulator(transformational::Object& obj, const char* name, float width) {
-    sliderTransManipulator<ax>(obj, name, -0.5f, 0.5f, width);
-}
-
-template void transManipulator<0>(transformational::Object& obj, const char* name, float width);
-template void transManipulator<1>(transformational::Object& obj, const char* name, float width);
-template void transManipulator<2>(transformational::Object& obj, const char* name, float width);
-
-
-template<int ax>
-void scaleSliderManipulator(
-    transformational::Object& obj,
-    const char* name,
-    float min,
-    float max,
-    float width)
-{
-    MOVE_VEC_DEF
-
-    ImGui::SetNextItemWidth(width);
-    if (ImGui::SliderFloat(name, &move, min, max)) {
-        obj.scale(obj.scaling() + move * moveVec);
-    }
-
-    std::string text = " : " + std::to_string(obj.scaling()[ax]);
-    ImGui::SameLine(0.0, 10.0); ImGui::Text(text.c_str());
-}
-
-template<int ax>
-void scaleManipulator(transformational::Object& obj, const char* name, float width) {
-    scaleSliderManipulator<ax>(obj, name, -0.5f, 0.5f, width);
-}
-
-template void scaleManipulator<0>(transformational::Object& obj, const char* name, float width);
-template void scaleManipulator<1>(transformational::Object& obj, const char* name, float width);
-template void scaleManipulator<2>(transformational::Object& obj, const char* name, float width);
-
-#undef MOVE_VEC_DEF
-
-bool switcher(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> graphics, const std::string& name) {
-    if (auto val = graphics->getEnable(name); ImGui::RadioButton(name.c_str(), val)) {
-        graphics->setEnable(name, !val);
-        return true;
-    }
-    return false;
-}
-
-bool switchers(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> graphics) {
-    bool framebufferResized = false;
-    ImGui::BeginGroup();
-        framebufferResized |= moon::tests::gui::switcher(graphics, "Bloom");
-        framebufferResized |= moon::tests::gui::switcher(graphics, "Blur");
-        framebufferResized |= moon::tests::gui::switcher(graphics, "Skybox");
-        framebufferResized |= moon::tests::gui::switcher(graphics, "SSLR");
-        framebufferResized |= moon::tests::gui::switcher(graphics, "SSAO");
-        framebufferResized |= moon::tests::gui::switcher(graphics, "Shadow");
-        framebufferResized |= moon::tests::gui::switcher(graphics, "Scattering");
-        framebufferResized |= moon::tests::gui::switcher(graphics, "BoundingBox");
-        framebufferResized |= moon::tests::gui::switcher(graphics, "TransparentLayer");
-    ImGui::EndGroup();
-    return framebufferResized;
-}
-
-void setPoseInWindow(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> graphics) {
+void setPoseInWindow(std::shared_ptr<moon::graphicsManager::GraphicsInterface> graphics) {
     auto position = graphics->getPositionInWindow();
     auto& viewOffset = position.offset;
     auto& viewExtent = position.size;
@@ -200,5 +79,13 @@ void setPoseInWindow(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> g
         graphics->setPositionInWindow({ viewOffset, viewExtent });
     }
 }
+
+bool radioButtonUpdate(const char* name, bool& flag) {
+    if (ImGui::RadioButton(name, flag)) {
+        flag = !flag;
+        return true;
+    }
+    return false;
+};
 
 }

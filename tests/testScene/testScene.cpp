@@ -10,7 +10,7 @@
 #include "cursor.h"
 
 #ifdef IMGUI_GRAPHICS
-#include <gui.h>
+#include "testSceneGui.h"
 #endif
 
 #include <random>

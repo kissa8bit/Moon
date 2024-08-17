@@ -24,7 +24,8 @@ set(SOURCES
 )
 set(INCLUDES
     testScene.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/../common/controledObject.h
+    controledObject.h
+    testSceneGui.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/scene.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/controller.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/gui.h

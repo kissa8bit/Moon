@@ -26,9 +26,7 @@ private:
     std::filesystem::path ExternalPath;
     moon::math::Vector<double,2> mousePos{0.0};
 
-    float focus = 0.049f;
     float blitFactor = 1.0f;
-    std::string screenshot;
 
     moon::graphicsManager::GraphicsManager& app;
     moon::tests::Window& window;
@@ -42,9 +40,6 @@ private:
 #endif
 
     bool enableBB{true};
-    bool primitivesBB{false};
-    bool treeBB{true};
-    bool onlyLeafsBB{false};
     bool enableBloom{true};
 
     cuda::rayTracing::Devicep<cuda::rayTracing::Camera> cam;

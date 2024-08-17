@@ -6,15 +6,7 @@
 #include "sphere.h"
 
 #ifdef IMGUI_GRAPHICS
-#include "imguiGraphics.h"
-#include <imgui.h>
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_vulkan.h>
-#endif
-
-#ifndef STB_IMAGE_WRITE_IMPLEMENTATION
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include <stb_image_write.h>
+#include "gui.h"
 #endif
 
 #include <models/objmodel.h>
@@ -29,10 +21,11 @@
 #include "timer.h"
 
 using namespace cuda::rayTracing;
-float pi = M_PI;
 
 void createWorld(std::unordered_map<std::string, std::unique_ptr<cuda::rayTracing::Object>>& objects, const std::filesystem::path& ExternalPath)
 {
+    float pi = M_PI;
+
     {
         std::unordered_map<std::string, Sphere> spheres = {
             {"glass_sphere_outside",  Sphere(vec4f( 1.5f, 0.0f,  0.51f,  1.0f), 0.50f, vec4f(0.90f, 0.90f, 0.90f, 1.00f), { 1.5f, 0.96f, 0.001f, 0.0f, 0.0f, 0.99f})},
@@ -136,8 +129,6 @@ testCuda::testCuda(moon::graphicsManager::GraphicsManager& app, moon::tests::Win
     mouse(new controller(window, glfwGetMouseButton)),
     board(new controller(window, glfwGetKey))
 {
-    screenshot.resize(100);
-    std::memcpy(screenshot.data(), "screenshot", 10);
     board->sensitivity = 0.1f;
     mouse->sensitivity = 0.02f;
 
@@ -229,63 +220,62 @@ void testCuda::updateFrame(uint32_t, float frameTime)
 
     ImGui::Begin("Debug");
 
-    if (ImGui::Button("Update")){
-        window.windowResized() = true;
-    }
-
-    ImGui::SameLine(0.0, 10.0f);
-    if(ImGui::Button("Make screenshot")){
-        const auto& imageExtent = app.getImageExtent();
-        auto image = app.makeScreenshot();
-
-        std::vector<uint8_t> jpg(3 * imageExtent.height * imageExtent.width, 0);
-        for (size_t pixel_index = 0, jpg_index = 0; pixel_index < imageExtent.height * imageExtent.width; pixel_index++) {
-            jpg[jpg_index++] = static_cast<uint8_t>((image[pixel_index] & 0x00ff0000) >> 16);
-            jpg[jpg_index++] = static_cast<uint8_t>((image[pixel_index] & 0x0000ff00) >> 8);
-            jpg[jpg_index++] = static_cast<uint8_t>((image[pixel_index] & 0x000000ff) >> 0);
+    if (ImGui::TreeNodeEx("General", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImGui::Button("Update")) {
+            window.windowResized() = true;
         }
-        auto filename = std::string("./") + std::string(screenshot.data()) + std::string(".jpg");
-        stbi_write_jpg(filename.c_str(), imageExtent.width, imageExtent.height, 3, jpg.data(), 100);
+        ImGui::TreePop();
     }
 
-    ImGui::SameLine(0.0, 10.0f);
-    ImGui::SetNextItemWidth(100.0f);
-    ImGui::InputText("filename", screenshot.data(), screenshot.size());
-
-    std::string title = "FPS = " + std::to_string(1.0f / frameTime);
-    ImGui::Text("%s", title.c_str());
-
-    if(ImGui::SliderFloat("focus", &focus, 0.03f, 0.1f, "%.5f")){
-        hostcam->focus = focus;
-        graphics->clearFrame();
+    if (ImGui::TreeNodeEx("Screenshot", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen)) {
+        moon::tests::gui::makeScreenshot("Make screenshot", app);
+        ImGui::TreePop();
     }
 
-    if(ImGui::SliderFloat("bloom factor", &blitFactor, 1.0f, 3.0f)){
-        graphics->setBlitFactor(blitFactor);
+    if (ImGui::TreeNodeEx("Performance", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen)) {
+        moon::tests::gui::fpsPlot(1.0f / frameTime);
+        ImGui::TreePop();
     }
 
-    vec4f o = hostcam->viewRay.getOrigin();
-    std::string camPos = std::to_string(o.x()) + " " + std::to_string(o.y()) + " " + std::to_string(o.z());
-    ImGui::Text("%s", camPos.c_str());
+    if (ImGui::TreeNodeEx("Camera", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen)) {
+        static float focus = 0.049f;
+        if (ImGui::SliderFloat("focus", &focus, 0.03f, 0.1f, "%.5f")) {
+            hostcam->focus = focus;
+            graphics->clearFrame();
+        }
 
-    if(ImGui::RadioButton("bloom", enableBloom)){
-        enableBloom = !enableBloom;
-        window.windowResized() = true;
+        vec4f o = hostcam->viewRay.getOrigin();
+        std::string camPos = std::to_string(o.x()) + " " + std::to_string(o.y()) + " " + std::to_string(o.z());
+        ImGui::Text("%s", camPos.c_str());
+
+        ImGui::TreePop();
     }
 
-    if(ImGui::RadioButton("primitives BB", primitivesBB)){
-        primitivesBB = !primitivesBB;
-        graphics->buildBoundingBoxes(primitivesBB, treeBB, onlyLeafsBB);
-    }
 
-    if(ImGui::RadioButton("tree BB", treeBB)){
-        treeBB = !treeBB;
-        graphics->buildBoundingBoxes(primitivesBB, treeBB, onlyLeafsBB);
-    }
+    if (ImGui::TreeNodeEx("Graphics Settings", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::Text("pose in window : "); ImGui::SameLine(); ImGui::Separator();
+        moon::tests::gui::setPoseInWindow(graphics);
 
-    if(ImGui::RadioButton("only leafs BB", onlyLeafsBB)){
-        onlyLeafsBB = !onlyLeafsBB;
-        graphics->buildBoundingBoxes(primitivesBB, treeBB, onlyLeafsBB);
+        if(ImGui::SliderFloat("bloom factor", &blitFactor, 1.0f, 3.0f)){
+            graphics->setBlitFactor(blitFactor);
+        }
+
+        static bool primitivesBB = false;
+        static bool onlyLeafsBB = false;
+        static bool treeBB = true;
+
+        window.windowResized() = moon::tests::gui::radioButtonUpdate("bloom", enableBloom);
+
+        bool updateBB = false;
+        updateBB |= moon::tests::gui::radioButtonUpdate("primitives BB", primitivesBB);
+        updateBB |= moon::tests::gui::radioButtonUpdate("tree BB", treeBB);
+        updateBB |= moon::tests::gui::radioButtonUpdate("only leafs BB", onlyLeafsBB);
+
+        if (updateBB) {
+            graphics->buildBoundingBoxes(primitivesBB, treeBB, onlyLeafsBB);
+        }
+
+        ImGui::TreePop();
     }
 
     ImGui::End();
