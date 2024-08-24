@@ -18,9 +18,9 @@ protected:
     bool enableShadow{false};
     bool enableScattering{false};
 
-    moon::utils::vkDefault::DescriptorSetLayout descriptorSetLayout;
-    moon::utils::vkDefault::DescriptorPool descriptorPool;
-    moon::utils::vkDefault::DescriptorSets descriptorSets;
+    utils::vkDefault::DescriptorSetLayout descriptorSetLayout;
+    utils::vkDefault::DescriptorPool descriptorPool;
+    utils::vkDefault::DescriptorSets descriptorSets;
 
 public:
     enum Type : uint8_t {
@@ -41,15 +41,15 @@ public:
     const VkDescriptorSet& getDescriptorSet(uint32_t i) const;
 
     virtual utils::Buffers& buffers() = 0;
-    virtual void create(const moon::utils::PhysicalDevice& device, VkCommandPool commandPool, uint32_t imageCount) = 0;
+    virtual void create(const utils::PhysicalDevice& device, VkCommandPool commandPool, uint32_t imageCount) = 0;
     virtual void update(uint32_t frameNumber, VkCommandBuffer commandBuffer) = 0;
     virtual void render(uint32_t frameNumber, VkCommandBuffer commandBuffer, const utils::vkDefault::DescriptorSets& descriptorSet, VkPipelineLayout pipelineLayout, VkPipeline pipeline) = 0;
 
-    static moon::utils::vkDefault::DescriptorSetLayout createDescriptorSetLayout(VkDevice device);
+    static utils::vkDefault::DescriptorSetLayout createDescriptorSetLayout(VkDevice device);
 };
 
-using Lights = std::vector<moon::interfaces::Light*>;
-using DepthMaps = std::unordered_map<moon::interfaces::Light*, moon::utils::DepthMap>;
+using Lights = std::vector<interfaces::Light*>;
+using DepthMaps = std::unordered_map<interfaces::Light*, utils::DepthMap>;
 
 }
 #endif // LIGHT_H

@@ -61,8 +61,8 @@ void BoundingBoxGraphics::BoundingBox::create(const workflows::ShaderNames& shad
     const auto fragShader = utils::vkDefault::FragmentShaderModule(device, parameters.shadersPath / shadersNames.at(workflows::ShaderType::Fragment));
     const std::vector<VkPipelineShaderStageCreateInfo> shaderStages = { vertShader, fragShader };
 
-    auto bindingDescription = interfaces::Model::Vertex::getBindingDescription();
-    auto attributeDescriptions = interfaces::Model::Vertex::getAttributeDescriptions();
+    auto bindingDescription = interfaces::Vertex::getBindingDescription();
+    auto attributeDescriptions = interfaces::Vertex::getAttributeDescriptions();
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertexInputInfo.vertexBindingDescriptionCount = 1;
@@ -183,9 +183,9 @@ void BoundingBoxGraphics::BoundingBox::render(uint32_t frameNumber, VkCommandBuf
         if(VkDeviceSize offsets = 0; (interfaces::ObjectType::base & object->pipelineFlagBits()) && object->getEnable()){
             vkCmdBindPipeline(commandBuffers, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
-            vkCmdBindVertexBuffers(commandBuffers, 0, 1, object->model()->getVertices(), &offsets);
-            if (object->model()->getIndices() != VK_NULL_HANDLE){
-                vkCmdBindIndexBuffer(commandBuffers, *object->model()->getIndices(), 0, VK_INDEX_TYPE_UINT32);
+            vkCmdBindVertexBuffers(commandBuffers, 0, 1, object->model()->vertexBuffer(), &offsets);
+            if (object->model()->indexBuffer() != VK_NULL_HANDLE){
+                vkCmdBindIndexBuffer(commandBuffers, *object->model()->indexBuffer(), 0, VK_INDEX_TYPE_UINT32);
             }
 
             utils::vkDefault::DescriptorSets descriptors = {descriptorSets[frameNumber], object->getDescriptorSet(frameNumber)};

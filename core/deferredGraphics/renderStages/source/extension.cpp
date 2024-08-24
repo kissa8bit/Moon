@@ -24,8 +24,8 @@ void Graphics::OutliningExtension::create(const workflows::ShaderNames& shadersN
     const auto fragShader = utils::vkDefault::FragmentShaderModule(device, parent.parameters.shadersPath / shadersNames.at(workflows::ShaderType::Fragment));
     const std::vector<VkPipelineShaderStageCreateInfo> shaderStages = { vertShader, fragShader };
 
-    auto bindingDescription = interfaces::Model::Vertex::getBindingDescription();
-    auto attributeDescriptions = interfaces::Model::Vertex::getAttributeDescriptions();
+    auto bindingDescription = interfaces::Vertex::getBindingDescription();
+    auto attributeDescriptions = interfaces::Vertex::getAttributeDescriptions();
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -98,9 +98,9 @@ void Graphics::OutliningExtension::render(uint32_t frameNumber, VkCommandBuffer 
     for(const auto& object: *parent.objects){
         const auto& outlining = object->outlining();
         if(VkDeviceSize offsets = 0; (interfaces::ObjectType::base & object->pipelineFlagBits()) && object->getEnable() && outlining.enable){
-            vkCmdBindVertexBuffers(commandBuffers, 0, 1, object->model()->getVertices(), &offsets);
-            if (object->model()->getIndices() != VK_NULL_HANDLE){
-                vkCmdBindIndexBuffer(commandBuffers, *object->model()->getIndices(), 0, VK_INDEX_TYPE_UINT32);
+            vkCmdBindVertexBuffers(commandBuffers, 0, 1, object->model()->vertexBuffer(), &offsets);
+            if (object->model()->indexBuffer() != VK_NULL_HANDLE){
+                vkCmdBindIndexBuffer(commandBuffers, *object->model()->indexBuffer(), 0, VK_INDEX_TYPE_UINT32);
             }
 
             utils::vkDefault::DescriptorSets descriptorSets = {parent.descriptorSets[frameNumber], object->getDescriptorSet(frameNumber)};

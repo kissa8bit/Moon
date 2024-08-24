@@ -23,12 +23,12 @@ struct Mesh{
         uint32_t firstIndex{0};
         uint32_t indexCount{0};
         uint32_t vertexCount{0};
-        moon::interfaces::Material* material{nullptr};
-        moon::interfaces::BoundingBox bb;
-        Primitive(uint32_t firstIndex, uint32_t indexCount, uint32_t vertexCount, moon::interfaces::Material* material, moon::interfaces::BoundingBox bb);
+        interfaces::Material* material{nullptr};
+        interfaces::BoundingBox bb;
+        Primitive(uint32_t firstIndex, uint32_t indexCount, uint32_t vertexCount, interfaces::Material* material, interfaces::BoundingBox bb);
     };
 
-    class UniformBuffer : public moon::utils::Buffer {
+    class UniformBuffer : public utils::Buffer {
     public:
         UniformBuffer() = default;
         UniformBuffer& operator=(utils::Buffer&& other) {
@@ -39,14 +39,14 @@ struct Mesh{
     } uniformBuffer;
 
     struct UniformBlock {
-        moon::math::Matrix<float,4,4> matrix;
-        moon::math::Matrix<float,4,4> jointMatrix[MAX_NUM_JOINTS]{};
+        math::Matrix<float,4,4> matrix;
+        math::Matrix<float,4,4> jointMatrix[MAX_NUM_JOINTS]{};
         float jointcount{0};
     } uniformBlock;
 
     std::vector<Primitive*> primitives;
 
-    Mesh(VkPhysicalDevice physicalDevice, VkDevice device, moon::math::Matrix<float,4,4> matrix);
+    Mesh(VkPhysicalDevice physicalDevice, VkDevice device, math::Matrix<float,4,4> matrix);
     void destroy(VkDevice device);
     ~Mesh() = default;
 };
@@ -54,27 +54,25 @@ struct Mesh{
 struct Node;
 
 struct Skin {
-    std::vector<moon::math::Matrix<float,4,4>> inverseBindMatrices;
+    std::vector<math::Matrix<float,4,4>> inverseBindMatrices;
     std::vector<Node*> joints;
 };
 
 struct Node {
-    uint32_t index;
+    VkDevice device{VK_NULL_HANDLE};
     Node* parent{nullptr};
     Mesh* mesh{nullptr};
     Skin* skin{nullptr};
-
     std::vector<Node*> children;
 
-    moon::math::Matrix<float,4,4> matrix;
-    moon::math::Vector<float,3> translation{};
-    moon::math::Vector<float,3> scale{1.0f};
-    moon::math::Quaternion<float> rotation{};
+    math::Matrix<float,4,4> matrix;
+    math::Vector<float,3> translation{};
+    math::Vector<float,3> scale{1.0f};
+    math::Quaternion<float> rotation{};
 
     void update();
-    void destroy(VkDevice device);
     uint32_t meshCount() const;
-    ~Node() = default;
+    ~Node();
 };
 
 struct Animation
@@ -90,7 +88,7 @@ struct Animation
         enum InterpolationType { LINEAR, STEP, CUBICSPLINE };
         InterpolationType interpolation;
         std::vector<float> inputs;
-        std::vector<moon::math::Vector<float,4>> outputsVec4;
+        std::vector<math::Vector<float,4>> outputsVec4;
     };
 
     std::vector<AnimationSampler> samplers;
@@ -99,34 +97,34 @@ struct Animation
     float end = std::numeric_limits<float>::min();
 };
 
-class GltfModel : public moon::interfaces::Model
+class GltfModel : public interfaces::Model
 {
 private:
     std::filesystem::path filename;
     VkDevice device{VK_NULL_HANDLE};
 
-    moon::utils::Buffer vertices, indices;
-    moon::utils::Buffer vertexCache, indexCache;
+    utils::Buffer vertices, indices;
+    utils::Buffer vertexCache, indexCache;
 
-    moon::utils::vkDefault::DescriptorSetLayout nodeDescriptorSetLayout;
-    moon::utils::vkDefault::DescriptorSetLayout materialDescriptorSetLayout;
-    moon::utils::vkDefault::DescriptorPool descriptorPool;
+    utils::vkDefault::DescriptorSetLayout nodeDescriptorSetLayout;
+    utils::vkDefault::DescriptorSetLayout materialDescriptorSetLayout;
+    utils::vkDefault::DescriptorPool descriptorPool;
 
     struct instance{
-        std::vector<Node*>      nodes;
-        std::vector<Skin*>      skins;
-        std::vector<Animation>  animations;
+        std::unordered_map<uint32_t, Node> nodes;
+        std::vector<Skin*> skins;
+        std::vector<Animation> animations;
     };
 
     std::vector<instance> instances;
-    std::vector<moon::utils::Texture> textures;
-    std::vector<moon::interfaces::Material> materials;
+    std::vector<utils::Texture> textures;
+    std::vector<interfaces::Material> materials;
 
-    void loadFromFile(const moon::utils::PhysicalDevice& device, VkCommandBuffer commandBuffer);
+    void loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffer commandBuffer);
     void loadNode(instance* instance, VkPhysicalDevice physicalDevice, VkDevice device, Node* parent, uint32_t nodeIndex, const tinygltf::Model& model, uint32_t& indexStart);
-    void loadVertexBuffer(const tinygltf::Node& node, const tinygltf::Model& model, std::vector<uint32_t>& indexBuffer, std::vector<Vertex>& vertexBuffer);
+    void loadVertexBuffer(const tinygltf::Node& node, const tinygltf::Model& model, std::vector<uint32_t>& indexBuffer, std::vector<interfaces::Vertex>& vertexBuffer);
     void loadSkins(const tinygltf::Model& gltfModel);
-    void loadTextures(const moon::utils::PhysicalDevice& device, VkCommandBuffer commandBuffer, const tinygltf::Model& gltfModel);
+    void loadTextures(const utils::PhysicalDevice& device, VkCommandBuffer commandBuffer, const tinygltf::Model& gltfModel);
     void loadMaterials(const tinygltf::Model& gltfModel);
     void loadAnimations(const tinygltf::Model& gltfModel);
 
@@ -138,11 +136,7 @@ private:
 
 public:
     GltfModel(std::filesystem::path filename, uint32_t instanceCount = 1);
-    ~GltfModel() override;
-
-    const VkBuffer* getVertices() const override;
-    const VkBuffer* getIndices() const override;
-    void create(const moon::utils::PhysicalDevice& device, VkCommandPool commandPool) override;
+    ~GltfModel();
 
     bool hasAnimation(uint32_t frameIndex) const override;
     float animationStart(uint32_t frameIndex, uint32_t index) const override;
@@ -150,6 +144,9 @@ public:
     void updateAnimation(uint32_t frameIndex, uint32_t index, float time) override;
     void changeAnimation(uint32_t frameIndex, uint32_t oldIndex, uint32_t newIndex, float startTime, float time, float changeAnimationTime) override;
 
+    const VkBuffer* vertexBuffer() const override;
+    const VkBuffer* indexBuffer() const override;
+    void create(const utils::PhysicalDevice& device, VkCommandPool commandPool) override;
     void render(uint32_t frameIndex, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint32_t descriptorSetsCount, VkDescriptorSet* descriptorSets, uint32_t& primitiveCount, uint32_t pushConstantSize, uint32_t pushConstantOffset, void* pushConstant) override;
     void renderBB(uint32_t frameIndex, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint32_t descriptorSetsCount, VkDescriptorSet* descriptorSets) override;
 };

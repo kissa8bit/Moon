@@ -37,12 +37,14 @@ void PlyModel::destroyCache() {
     indexCache = utils::Buffer();
 }
 
-const VkBuffer* PlyModel::getVertices() const {
+const VkBuffer* PlyModel::vertexBuffer() const {
     return vertices;
 }
-const VkBuffer* PlyModel::getIndices() const {
+
+const VkBuffer* PlyModel::indexBuffer() const {
     return indices;
 }
+
 const moon::math::Vector<float,3> PlyModel::getMaxSize() const {
     return maxSize;
 }
@@ -62,7 +64,7 @@ void PlyModel::loadFromFile(VkPhysicalDevice physicalDevice, VkDevice device, Vk
 
     indexCount = faces ? 3 * static_cast<uint32_t>(faces->count) : 0;
     std::vector<uint32_t> indexBuffer(indexCount);
-    std::vector<Vertex> vertexBuffer(vertices? vertices->count : 0, Vertex());
+    std::vector<interfaces::Vertex> vertexBuffer(vertices? vertices->count : 0, interfaces::Vertex());
 
     if(vertices){
         for(size_t bufferIndex = 0, vertexIndex = 0; bufferIndex < vertices->buffer.size_bytes(); bufferIndex += 3 * sizeof(float), vertexIndex++){
@@ -116,7 +118,7 @@ void PlyModel::loadFromFile(VkPhysicalDevice physicalDevice, VkDevice device, Vk
         }
     }
 
-    utils::createDeviceBuffer(physicalDevice, device, commandBuffer, vertexBuffer.size() * sizeof(Vertex), vertexBuffer.data(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertexCache, this->vertices);
+    utils::createDeviceBuffer(physicalDevice, device, commandBuffer, vertexBuffer.size() * sizeof(interfaces::Vertex), vertexBuffer.data(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertexCache, this->vertices);
     utils::createDeviceBuffer(physicalDevice, device, commandBuffer, indexBuffer.size() * sizeof(uint32_t), indexBuffer.data(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indexCache, indices);
 
     this->uniformBlock.mat = moon::math::Matrix<float,4,4>(1.0f);

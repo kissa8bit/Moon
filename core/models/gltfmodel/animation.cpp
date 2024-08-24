@@ -108,7 +108,8 @@ void GltfModel::loadAnimations(const tinygltf::Model& gltfModel)
                     continue;
                 }
                 channel.samplerIndex = source.sampler;
-                if (channel.node = nodeFromIndex(source.target_node, instance.nodes); channel.node) {
+                if (auto it = instance.nodes.find(source.target_node); it != instance.nodes.end()) {
+                    channel.node = &it->second;
                     animation.channels.push_back(channel);
                 }
             }
@@ -166,8 +167,8 @@ void GltfModel::updateAnimation(uint32_t frameIndex, uint32_t index, float time)
         }
     }
     if (updated) {
-        for (auto &node : instances[frameIndex].nodes) {
-            node->update();
+        for (auto & [_, node] : instances[frameIndex].nodes) {
+            node.update();
         }
     }
 }
@@ -225,8 +226,8 @@ void GltfModel::changeAnimation(uint32_t frameIndex, uint32_t oldIndex, uint32_t
         }
     }
     if (updated) {
-        for (auto &node : instances[frameIndex].nodes) {
-            node->update();
+        for (auto& [_, node] : instances[frameIndex].nodes) {
+            node.update();
         }
     }
 }

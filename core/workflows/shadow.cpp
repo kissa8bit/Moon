@@ -31,8 +31,8 @@ void ShadowGraphics::Shadow::create(const workflows::ShaderNames& shadersNames, 
     const auto vertShader = utils::vkDefault::VertrxShaderModule(device, parameters.shadersPath / shadersNames.at(workflows::ShaderType::Vertex));
     const std::vector<VkPipelineShaderStageCreateInfo> shaderStages = { vertShader };
 
-    auto bindingDescription = interfaces::Model::Vertex::getBindingDescription();
-    auto attributeDescriptions = interfaces::Model::Vertex::getAttributeDescriptions();
+    auto bindingDescription = interfaces::Vertex::getBindingDescription();
+    auto attributeDescriptions = interfaces::Vertex::getAttributeDescriptions();
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
         vertexInputInfo.vertexBindingDescriptionCount = 1;
@@ -161,9 +161,9 @@ void ShadowGraphics::render(uint32_t frameNumber, VkCommandBuffer commandBuffer,
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shadow.pipeline);
     for(const auto& object: *shadow.objects){
         if(VkDeviceSize offsets = 0; (interfaces::ObjectType::base & object->pipelineFlagBits()) && object->getEnable() && object->getEnableShadow()){
-            vkCmdBindVertexBuffers(commandBuffer, 0, 1, object->model()->getVertices(), &offsets);
-            if (object->model()->getIndices() != VK_NULL_HANDLE){
-                vkCmdBindIndexBuffer(commandBuffer, *object->model()->getIndices(), 0, VK_INDEX_TYPE_UINT32);
+            vkCmdBindVertexBuffers(commandBuffer, 0, 1, object->model()->vertexBuffer(), &offsets);
+            if (object->model()->indexBuffer() != VK_NULL_HANDLE){
+                vkCmdBindIndexBuffer(commandBuffer, *object->model()->indexBuffer(), 0, VK_INDEX_TYPE_UINT32);
             }
 
             utils::vkDefault::DescriptorSets descriptorSets = {lightSource->getDescriptorSet(frameNumber), object->getDescriptorSet(frameNumber)};

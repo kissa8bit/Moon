@@ -11,7 +11,6 @@
 namespace moon::models {
 
 namespace {
-
     VkSamplerAddressMode getVkWrapMode(int32_t wrapMode){
         switch (wrapMode) {
         case 10497:
@@ -38,33 +37,33 @@ namespace {
         return VK_FILTER_LINEAR;
     }
 
-    void calculateNodeTangent(std::vector<moon::interfaces::Model::Vertex>& vertexBuffer, std::vector<uint32_t>& indexBuffer){
+    void calculateNodeTangent(std::vector<moon::interfaces::Vertex>& vertexBuffer, std::vector<uint32_t>& indexBuffer){
         for(uint32_t i = 0; i < indexBuffer.size(); i += 3){
-            moon::math::Vector<float,3> dv1   = vertexBuffer[indexBuffer[i+1]].pos - vertexBuffer[indexBuffer[i+0]].pos;
-            moon::math::Vector<float,3> dv2   = vertexBuffer[indexBuffer[i+2]].pos - vertexBuffer[indexBuffer[i+0]].pos;
+            const auto &v0 = vertexBuffer[indexBuffer[i + 0]], &v1 = vertexBuffer[indexBuffer[i + 1]], &v2 = vertexBuffer[indexBuffer[i + 2]];
 
-            moon::math::Vector<float,2> duv1  = vertexBuffer[indexBuffer[i+1]].uv0 - vertexBuffer[indexBuffer[i+0]].uv0;
-            moon::math::Vector<float,2> duv2  = vertexBuffer[indexBuffer[i+2]].uv0 - vertexBuffer[indexBuffer[i+0]].uv0;
+            const auto dv1 = v1.pos - v0.pos;
+            const auto dv2 = v2.pos - v0.pos;
+            const auto duv1 = v1.uv0 - v0.uv0;
+            const auto duv2 = v2.uv0 - v0.uv0;
 
-            float det = 1.0f/(duv1[0]*duv2[1] - duv1[1]*duv2[0]);
+            const float det = 1.0f / (duv1[0] * duv2[1] - duv1[1] * duv2[0]);
+            const auto bitangent = normalize( det * (duv1[0] * dv2 - duv2[0] * dv1));
+            auto tangent = normalize(det * (duv2[1] * dv1 - duv1[1] * dv2));
 
-            moon::math::Vector<float,3> tangent = normalize( det*(duv2[1]*dv1-duv1[1]*dv2));
-            moon::math::Vector<float,3> bitangent = normalize( det*(duv1[0]*dv2-duv2[0]*dv1));
-
-            if(dot(cross(tangent,bitangent),vertexBuffer[indexBuffer[i+0]].normal)<0.0f){
+            if(dot(cross(tangent, bitangent), v0.normal) < 0.0f){
                 tangent = -1.0f * tangent;
             }
 
-            for(uint32_t index = 0; index < 3; index++){
-                vertexBuffer[indexBuffer[i+index]].tangent      = normalize(tangent - vertexBuffer[indexBuffer[i+index]].normal * dot(vertexBuffer[indexBuffer[i+index]].normal, tangent));
-                vertexBuffer[indexBuffer[i+index]].bitangent    = normalize(cross(vertexBuffer[indexBuffer[i+index]].normal, vertexBuffer[indexBuffer[i+index]].tangent));
+            for(uint32_t j = i; j < i + 3; j++){
+                auto& v = vertexBuffer[indexBuffer[j]];
+                v.tangent = normalize(tangent - v.normal * dot(v.normal, tangent));
+                v.bitangent = normalize(cross(v.normal, v.tangent));
             }
         }
     }
 
-    bool isBinary(const std::filesystem::path& filename){
-        size_t extpos = filename.string().rfind('.', filename.string().length());
-        return (extpos != std::string::npos) && (filename.string().substr(extpos + 1, filename.string().length() - extpos) == "glb");
+    auto getLoadFileMethod(const std::filesystem::path& filename){
+        return filename.extension() == ".glb" ? &tinygltf::TinyGLTF::LoadBinaryFromFile : &tinygltf::TinyGLTF::LoadASCIIFromFile;
     }
 
     void createNodeDescriptorSet(VkDevice device, Node* node, utils::vkDefault::DescriptorPool& descriptorPool, const utils::vkDefault::DescriptorSetLayout& descriptorSetLayout)
@@ -221,10 +220,6 @@ GltfModel::GltfModel(std::filesystem::path filename, uint32_t instanceCount)
 
 GltfModel::~GltfModel() {
     for (auto& instance : instances) {
-        for (auto& node : instance.nodes) {
-            node->destroy(device);
-            delete node;
-        }
         for (auto& skin : instance.skins) {
             delete skin;
         }
@@ -245,11 +240,11 @@ void GltfModel::destroyCache()
     indexCache = utils::Buffer();
 }
 
-const VkBuffer* GltfModel::getVertices() const{
+const VkBuffer* GltfModel::vertexBuffer() const {
     return vertices;
 }
 
-const VkBuffer* GltfModel::getIndices() const{
+const VkBuffer* GltfModel::indexBuffer() const {
     return indices;
 }
 
@@ -259,8 +254,8 @@ void GltfModel::loadSkins(const tinygltf::Model &gltfModel){
             Skin* newSkin = new Skin{};
 
             for (int jointIndex : source.joints) {
-                if (Node* node = nodeFromIndex(jointIndex, instance.nodes); node) {
-                    newSkin->joints.push_back(node);
+                if (auto it = instance.nodes.find(jointIndex); it != instance.nodes.end()) {
+                    newSkin->joints.push_back(&it->second);
                 }
             }
 
@@ -278,7 +273,10 @@ void GltfModel::loadSkins(const tinygltf::Model &gltfModel){
 
             for (const auto& node: gltfModel.nodes) {
                 if(node.skin == &source - &gltfModel.skins[0]){
-                    nodeFromIndex(static_cast<uint32_t>(&node - &gltfModel.nodes[0]), instance.nodes)->skin = newSkin;
+                    uint32_t index = &node - &gltfModel.nodes[0];
+                    if (auto it = instance.nodes.find(index); it != instance.nodes.end()) {
+                        it->second.skin = newSkin;
+                    }
                 }
             }
 
@@ -289,7 +287,7 @@ void GltfModel::loadSkins(const tinygltf::Model &gltfModel){
 
 void GltfModel::loadTextures(const moon::utils::PhysicalDevice& device, VkCommandBuffer commandBuffer, const tinygltf::Model& gltfModel)
 {
-    for(const tinygltf::Texture &tex : gltfModel.textures){
+    for(const tinygltf::Texture& tex : gltfModel.textures){
         const tinygltf::Image& gltfimage = gltfModel.images[tex.source];
 
         const uint32_t downsampleWidth = 1;
@@ -300,14 +298,15 @@ void GltfModel::loadTextures(const moon::utils::PhysicalDevice& device, VkComman
 
         std::vector<uint8_t> buffer(4 * width * height);
 
-        uint32_t offset = 0;
-        for (uint32_t i = 0; i < height; ++i) {
+        for (uint32_t i = 0, offset = 0; i < height; ++i) {
             for (uint32_t j = 0; j < width; ++j) {
                 uint32_t line = gltfimage.component * (gltfimage.width * downsampleHeight * i + downsampleHeight * j);
+
                 buffer[offset + 3] = 255;
                 for (uint32_t k = 0; k < gltfimage.component; ++k) {
-                    buffer[offset++] = gltfimage.image[line + k];
+                    buffer[offset + k] = gltfimage.image[line + k];
                 }
+                offset += 4;
             }
         }
 
@@ -423,41 +422,42 @@ void GltfModel::loadFromFile(const moon::utils::PhysicalDevice& device, VkComman
     tinygltf::Model gltfModel;
     tinygltf::TinyGLTF gltfContext;
 
-    if (std::string error{}, warning{}; isBinary(filename) ?
-        gltfContext.LoadBinaryFromFile(&gltfModel, &error, &warning, filename.string().c_str()) :
-        gltfContext.LoadASCIIFromFile(&gltfModel, &error, &warning, filename.string().c_str()))
-    {
-        loadTextures(device, commandBuffer, gltfModel);
-        loadMaterials(gltfModel);
+    std::string error{}, warning{};
+    const auto loadFileMethod = getLoadFileMethod(filename);
+    const auto loadSuccess = (gltfContext.*loadFileMethod)(&gltfModel, &error, &warning, filename.string(), tinygltf::SectionCheck::REQUIRE_VERSION);
 
-        for(auto& instance: instances){
-            uint32_t indexStart = 0;
-            for (const auto& nodeIndex: gltfModel.scenes[gltfModel.defaultScene > -1 ? gltfModel.defaultScene : 0].nodes) {
-                loadNode(&instance, device, device.device(), nullptr, nodeIndex, gltfModel, indexStart);
-            }
-        }
+    if (!loadSuccess) return;
 
-        std::vector<uint32_t> indexBuffer;
-        std::vector<Vertex> vertexBuffer;
+    loadTextures(device, commandBuffer, gltfModel);
+    loadMaterials(gltfModel);
+
+    for(auto& instance: instances){
+        uint32_t indexStart = 0;
         for (const auto& nodeIndex: gltfModel.scenes[gltfModel.defaultScene > -1 ? gltfModel.defaultScene : 0].nodes) {
-            loadVertexBuffer(gltfModel.nodes[nodeIndex], gltfModel, indexBuffer, vertexBuffer);
+            loadNode(&instance, device, device.device(), nullptr, nodeIndex, gltfModel, indexStart);
         }
-        calculateNodeTangent(vertexBuffer, indexBuffer);
-
-        loadSkins(gltfModel);
-        if (gltfModel.animations.size() > 0) {
-            loadAnimations(gltfModel);
-        }
-
-        for(auto& instance : instances){
-            for (auto& node : instance.nodes) {
-                node->update();
-            }
-        }
-
-        utils::createDeviceBuffer(device, device.device(), commandBuffer, vertexBuffer.size() * sizeof(Vertex), vertexBuffer.data(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertexCache, vertices);
-        utils::createDeviceBuffer(device, device.device(), commandBuffer, indexBuffer.size() * sizeof(uint32_t), indexBuffer.data(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indexCache, indices);
     }
+
+    std::vector<uint32_t> indexBuffer;
+    std::vector<interfaces::Vertex> vertexBuffer;
+    for (const auto& nodeIndex: gltfModel.scenes[gltfModel.defaultScene > -1 ? gltfModel.defaultScene : 0].nodes) {
+        loadVertexBuffer(gltfModel.nodes[nodeIndex], gltfModel, indexBuffer, vertexBuffer);
+    }
+    calculateNodeTangent(vertexBuffer, indexBuffer);
+
+    loadSkins(gltfModel);
+    if (gltfModel.animations.size() > 0) {
+        loadAnimations(gltfModel);
+    }
+
+    for(auto& instance : instances){
+        for (auto& [_, node] : instance.nodes) {
+            node.update();
+        }
+    }
+
+    utils::createDeviceBuffer(device, device.device(), commandBuffer, vertexBuffer.size() * sizeof(interfaces::Vertex), vertexBuffer.data(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertexCache, vertices);
+    utils::createDeviceBuffer(device, device.device(), commandBuffer, indexBuffer.size() * sizeof(uint32_t), indexBuffer.data(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indexCache, indices);
 }
 
 void GltfModel::createDescriptorPool() {
@@ -465,8 +465,8 @@ void GltfModel::createDescriptorPool() {
     materialDescriptorSetLayout = moon::interfaces::Model::createMaterialDescriptorSetLayout(device);
 
     uint32_t nodesCount = std::accumulate(instances.begin(), instances.end(), 0, [](const uint32_t& count, const auto& instance) {
-        return count + std::accumulate(instance.nodes.begin(), instance.nodes.end(), 0, [](const uint32_t& count, Node* node) {
-            return count + node->meshCount();
+        return count + std::accumulate(instance.nodes.begin(), instance.nodes.end(), 0, [](const uint32_t& count, const auto& node) {
+            return count + node.second.meshCount();
         });
     });
 
@@ -482,8 +482,8 @@ void GltfModel::createDescriptorPool() {
 void GltfModel::createDescriptorSet()
 {
     for(auto& instance : instances){
-        for (auto& node : instance.nodes){
-            createNodeDescriptorSet(device, node , descriptorPool, nodeDescriptorSetLayout);
+        for (auto& [_, node] : instance.nodes){
+            createNodeDescriptorSet(device, &node , descriptorPool, nodeDescriptorSetLayout);
         }
     }
 
@@ -502,9 +502,9 @@ void GltfModel::create(const moon::utils::PhysicalDevice& device, VkCommandPool 
 
         this->device = device.device();
 
-        VkCommandBuffer commandBuffer = moon::utils::singleCommandBuffer::create(device.device(),commandPool);
+        VkCommandBuffer commandBuffer = moon::utils::singleCommandBuffer::create(device.device(), commandPool);
         loadFromFile(device, commandBuffer);
-        moon::utils::singleCommandBuffer::submit(device.device(), device.device()(0,0), commandPool, &commandBuffer);
+        CHECK(moon::utils::singleCommandBuffer::submit(device.device(), device.device()(0,0), commandPool, &commandBuffer));
         destroyCache();
 
         createDescriptorPool();
@@ -513,14 +513,14 @@ void GltfModel::create(const moon::utils::PhysicalDevice& device, VkCommandPool 
 }
 
 void GltfModel::render(uint32_t frameIndex, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint32_t descriptorSetsCount, VkDescriptorSet* descriptorSets, uint32_t &primitiveCount, uint32_t pushConstantSize, uint32_t pushConstantOffset, void* pushConstant){
-    for (auto node: instances[frameIndex].nodes){
-        renderNode(node, commandBuffer, pipelineLayout, descriptorSetsCount, descriptorSets, primitiveCount, pushConstantSize, pushConstantOffset, pushConstant);
+    for (auto& [_, node] : instances[frameIndex].nodes) {
+        renderNode(&node, commandBuffer, pipelineLayout, descriptorSetsCount, descriptorSets, primitiveCount, pushConstantSize, pushConstantOffset, pushConstant);
     }
 }
 
 void GltfModel::renderBB(uint32_t frameIndex, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint32_t descriptorSetsCount, VkDescriptorSet* descriptorSets){
-    for (auto node: instances[frameIndex].nodes){
-        renderNodeBB(node, commandBuffer, pipelineLayout, descriptorSetsCount, descriptorSets);
+    for (auto& [_, node] : instances[frameIndex].nodes) {
+        renderNodeBB(&node, commandBuffer, pipelineLayout, descriptorSetsCount, descriptorSets);
     }
 }
 

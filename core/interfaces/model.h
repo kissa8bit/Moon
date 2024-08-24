@@ -87,27 +87,24 @@ enum PBRWorkflows{
     PBR_WORKFLOW_SPECULAR_GLOSINESS = 1
 };
 
+struct Vertex {
+    alignas(16) moon::math::Vector<float, 3> pos{ 0.0f };
+    alignas(16) moon::math::Vector<float, 3> normal{ 0.0f };
+    alignas(8)  moon::math::Vector<float, 2> uv0{ 0.0f };
+    alignas(8)  moon::math::Vector<float, 2> uv1{ 0.0f };
+    alignas(16) moon::math::Vector<float, 4> joint0{ 0.0f };
+    alignas(16) moon::math::Vector<float, 4> weight0{ 0.0f };
+    alignas(16) moon::math::Vector<float, 3> tangent{ 0.0f };
+    alignas(16) moon::math::Vector<float, 3> bitangent{ 0.0f };
+
+    static VkVertexInputBindingDescription getBindingDescription();
+    static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
+};
+
 class Model
 {
 public:
-    struct Vertex{
-        alignas(16) moon::math::Vector<float,3> pos{0.0f};
-        alignas(16) moon::math::Vector<float,3> normal{0.0f};
-        alignas(16) moon::math::Vector<float,2> uv0{0.0f};
-        alignas(16) moon::math::Vector<float,2> uv1{0.0f};
-        alignas(16) moon::math::Vector<float,4> joint0{0.0f};
-        alignas(16) moon::math::Vector<float,4> weight0{0.0f};
-        alignas(16) moon::math::Vector<float,3> tangent{0.0f};
-        alignas(16) moon::math::Vector<float,3> bitangent{0.0f};
-
-        static VkVertexInputBindingDescription getBindingDescription();
-        static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
-    };
-
     virtual ~Model(){};
-
-    virtual const VkBuffer* getVertices() const = 0;
-    virtual const VkBuffer* getIndices() const = 0;
 
     virtual bool hasAnimation(uint32_t frameIndex) const = 0;
     virtual float animationStart(uint32_t frameIndex, uint32_t index) const = 0;
@@ -115,8 +112,9 @@ public:
     virtual void updateAnimation(uint32_t frameIndex, uint32_t index, float time) = 0;
     virtual void changeAnimation(uint32_t frameIndex, uint32_t oldIndex, uint32_t newIndex, float startTime, float time, float changeAnimationTime) = 0;
 
+    virtual const VkBuffer* vertexBuffer() const = 0;
+    virtual const VkBuffer* indexBuffer() const = 0;
     virtual void create(const moon::utils::PhysicalDevice& device, VkCommandPool commandPool) = 0;
-
     virtual void render(uint32_t frameIndex, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint32_t descriptorSetsCount, VkDescriptorSet* descriptorSets, uint32_t& primitiveCount, uint32_t pushConstantSize, uint32_t pushConstantOffset, void* pushConstant) = 0;
     virtual void renderBB(uint32_t frameIndex, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint32_t descriptorSetsCount, VkDescriptorSet* descriptorSets) = 0;
 
