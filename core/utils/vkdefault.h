@@ -262,6 +262,7 @@ public:
 	DescriptorPool(const VkDevice& device, const std::vector<const vkDefault::DescriptorSetLayout*>& descriptorSetLayouts, const uint32_t descriptorsCount);
 	DescriptorPool(const VkDevice& device, const VkDescriptorPoolCreateInfo& poolInfo);
 	DescriptorSets allocateDescriptorSets(const vkDefault::DescriptorSetLayout& descriptorSetLayout, const uint32_t& descriptorSetCount);
+	VkDescriptorSet allocateDescriptorSet(const vkDefault::DescriptorSetLayout& descriptorSetLayout);
 };
 
 class ImageView {

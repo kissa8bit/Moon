@@ -46,52 +46,29 @@ namespace {
     }
 }
 
-Node::~Node() {
-    if (mesh) {mesh->destroy(device); delete mesh;}
-}
-
-Mesh::Primitive::Primitive(uint32_t firstIndex, uint32_t indexCount, uint32_t vertexCount, moon::interfaces::Material* material, moon::interfaces::BoundingBox bb)
+Primitive::Primitive(uint32_t firstIndex, uint32_t indexCount, uint32_t vertexCount, moon::interfaces::Material* material, moon::interfaces::BoundingBox bb)
     : firstIndex(firstIndex), indexCount(indexCount), vertexCount(vertexCount), material(material), bb(bb)
 {}
 
-Mesh::Mesh(VkPhysicalDevice physicalDevice, VkDevice device, moon::math::Matrix<float,4,4> matrix)
-{
-    this->uniformBlock.matrix = matrix;
+Mesh::Mesh(VkPhysicalDevice physicalDevice, VkDevice device, moon::math::Matrix<float,4,4> matrix) {
+    uniformBlock.matrix = matrix;
     uniformBuffer = utils::vkDefault::Buffer(physicalDevice, device, sizeof(uniformBlock), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     moon::utils::Memory::instance().nameMemory(uniformBuffer, std::string(__FILE__) + " in line " + std::to_string(__LINE__) + ", Mesh::Mesh, uniformBuffer");
 };
 
-void Mesh::destroy(VkDevice device){
-    for (Primitive* p : primitives){
-        delete p;
-    }
-}
-
 void Node::update() {
-    if (size_t numJoints = skin ? std::min((uint32_t)skin->joints.size(), MAX_NUM_JOINTS) : 0; mesh){
-        mesh->uniformBlock.matrix = transpose(getMatrix(this));
+    size_t numJoints = skin ? std::min((uint32_t)skin->joints.size(), MAX_NUM_JOINTS) : 0;
+    mesh.uniformBlock.matrix = transpose(getMatrix(this));
 
-        for (size_t i = 0; i < numJoints; i++) {
-            mesh->uniformBlock.jointMatrix[i] = transpose(inverse(getMatrix(this)) * getMatrix(skin->joints[i]) * skin->inverseBindMatrices[i]);
-        }
-        mesh->uniformBlock.jointcount = static_cast<float>(numJoints);
-        mesh->uniformBuffer.copy(&mesh->uniformBlock);
+    for (size_t i = 0; i < numJoints; i++) {
+        mesh.uniformBlock.jointMatrix[i] = transpose(inverse(getMatrix(this)) * getMatrix(skin->joints[i]) * skin->inverseBindMatrices[i]);
     }
-    for (auto& child : children){
-        child->update();
-    }
+    mesh.uniformBlock.jointcount = static_cast<float>(numJoints);
+    mesh.uniformBuffer.copy(&mesh.uniformBlock);
 }
 
-uint32_t Node::meshCount() const {
-    return std::accumulate(children.begin(), children.end(), mesh ? 1 : 0, [](const uint32_t& count, Node* node){
-        return count + node->meshCount();
-    });
-}
-
-void GltfModel::loadNode(instance* instance, VkPhysicalDevice physicalDevice, VkDevice device, Node* parent, uint32_t nodeIndex, const tinygltf::Model &model, uint32_t& indexStart)
-{
+void GltfModel::loadNode(Instance* instance, VkPhysicalDevice physicalDevice, VkDevice device, Node* parent, uint32_t nodeIndex, const tinygltf::Model &model, uint32_t& indexStart) {
     Node& newNode = instance->nodes[nodeIndex];
-    newNode.device = device;
     newNode.parent = parent;
     newNode.matrix = moon::math::Matrix<float,4,4>(1.0f);
 
@@ -131,16 +108,15 @@ void GltfModel::loadNode(instance* instance, VkPhysicalDevice physicalDevice, Vk
     }
 
     if (model.nodes[nodeIndex].mesh > -1) {
-        newNode.mesh = new Mesh(physicalDevice, device, newNode.matrix);
-        for (const tinygltf::Primitive &primitive: model.meshes[model.nodes[nodeIndex].mesh].primitives)
-        {
+        newNode.mesh = Mesh(physicalDevice, device, newNode.matrix);
+        for (const tinygltf::Primitive &primitive: model.meshes[model.nodes[nodeIndex].mesh].primitives) {
             const tinygltf::Accessor& posAccessor = model.accessors[primitive.attributes.find("POSITION")->second];
 
-            uint32_t indexCount = primitive.indices > -1 ? static_cast<uint32_t>(model.accessors[primitive.indices > -1 ? primitive.indices : 0].count) : 0;
-            uint32_t vertexCount = static_cast<uint32_t>(posAccessor.count);
+            uint32_t indexCount = primitive.indices > -1 ? model.accessors[primitive.indices > -1 ? primitive.indices : 0].count : 0;
+            uint32_t vertexCount = posAccessor.count;
 
-            newNode.mesh->primitives.push_back(
-                new Mesh::Primitive(indexStart, indexCount, vertexCount, primitive.material > -1 ? &materials[primitive.material] : &materials.back(),
+            newNode.mesh.primitives.emplace_back(
+                Primitive(indexStart, indexCount, vertexCount, primitive.material > -1 ? &materials[primitive.material] : &materials.back(),
                     moon::interfaces::BoundingBox(
                         moon::math::Vector<float,3>(static_cast<float>(posAccessor.minValues[0]), static_cast<float>(posAccessor.minValues[1]), static_cast<float>(posAccessor.minValues[2])),
                         moon::math::Vector<float,3>(static_cast<float>(posAccessor.maxValues[0]), static_cast<float>(posAccessor.maxValues[1]), static_cast<float>(posAccessor.maxValues[2]))

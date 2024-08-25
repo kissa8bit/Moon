@@ -519,6 +519,17 @@ vkDefault::DescriptorSets vkDefault::DescriptorPool::allocateDescriptorSets(cons
     return descriptorSets;
 }
 
+VkDescriptorSet vkDefault::DescriptorPool::allocateDescriptorSet(const vkDefault::DescriptorSetLayout& descriptorSetLayout) {
+    VkDescriptorSet descriptorSet;
+    VkDescriptorSetAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        allocInfo.descriptorPool = descriptor;
+        allocInfo.descriptorSetCount = 1;
+        allocInfo.pSetLayouts = descriptorSetLayout;
+    CHECK(vkAllocateDescriptorSets(device, &allocInfo, &descriptorSet));
+    return descriptorSet;
+}
+
 vkDefault::DescriptorPool::~DescriptorPool() {
     if (descriptor) vkDestroyDescriptorPool(device, release(descriptor), nullptr);
 }

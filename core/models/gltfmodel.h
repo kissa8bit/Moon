@@ -18,37 +18,31 @@
 
 namespace moon::models {
 
+struct Primitive {
+    uint32_t firstIndex{ 0 };
+    uint32_t indexCount{ 0 };
+    uint32_t vertexCount{ 0 };
+    interfaces::Material* material{ nullptr };
+    interfaces::BoundingBox bb;
+
+    Primitive() = default;
+    Primitive(uint32_t firstIndex, uint32_t indexCount, uint32_t vertexCount, interfaces::Material* material, interfaces::BoundingBox bb);
+};
+
 struct Mesh{
-    struct Primitive{
-        uint32_t firstIndex{0};
-        uint32_t indexCount{0};
-        uint32_t vertexCount{0};
-        interfaces::Material* material{nullptr};
-        interfaces::BoundingBox bb;
-        Primitive(uint32_t firstIndex, uint32_t indexCount, uint32_t vertexCount, interfaces::Material* material, interfaces::BoundingBox bb);
-    };
-
-    class UniformBuffer : public utils::Buffer {
-    public:
-        UniformBuffer() = default;
-        UniformBuffer& operator=(utils::Buffer&& other) {
-            swap(other);
-            return *this;
-        }
-        VkDescriptorSet descriptorSet{VK_NULL_HANDLE};
-    } uniformBuffer;
-
+    utils::Buffer uniformBuffer;
     struct UniformBlock {
         math::Matrix<float,4,4> matrix;
         math::Matrix<float,4,4> jointMatrix[MAX_NUM_JOINTS]{};
         float jointcount{0};
     } uniformBlock;
 
-    std::vector<Primitive*> primitives;
+    std::vector<Primitive> primitives;
+    VkDescriptorSet descriptorSet{ VK_NULL_HANDLE };
 
+    Mesh() = default;
     Mesh(VkPhysicalDevice physicalDevice, VkDevice device, math::Matrix<float,4,4> matrix);
-    void destroy(VkDevice device);
-    ~Mesh() = default;
+    bool empty() const { return VkBuffer(uniformBuffer) == VK_NULL_HANDLE; }
 };
 
 struct Node;
@@ -59,9 +53,9 @@ struct Skin {
 };
 
 struct Node {
-    VkDevice device{VK_NULL_HANDLE};
+    Mesh mesh;
+
     Node* parent{nullptr};
-    Mesh* mesh{nullptr};
     Skin* skin{nullptr};
     std::vector<Node*> children;
 
@@ -71,8 +65,6 @@ struct Node {
     math::Quaternion<float> rotation{};
 
     void update();
-    uint32_t meshCount() const;
-    ~Node();
 };
 
 struct Animation
@@ -110,29 +102,40 @@ private:
     utils::vkDefault::DescriptorSetLayout materialDescriptorSetLayout;
     utils::vkDefault::DescriptorPool descriptorPool;
 
-    struct instance{
+    struct Instance{
         std::unordered_map<uint32_t, Node> nodes;
         std::vector<Skin*> skins;
         std::vector<Animation> animations;
+
+        Instance() = default;
+        Instance(Instance&& other) {
+            std::swap(nodes, other.nodes);
+            std::swap(skins, other.skins);
+            std::swap(animations, other.animations);
+        }
+        Instance& operator=(Instance&& other) {
+            std::swap(nodes, other.nodes);
+            std::swap(skins, other.skins);
+            std::swap(animations, other.animations);
+            return *this;
+        }
     };
 
-    std::vector<instance> instances;
+    std::vector<Instance> instances;
     std::vector<utils::Texture> textures;
     std::vector<interfaces::Material> materials;
 
     void loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffer commandBuffer);
-    void loadNode(instance* instance, VkPhysicalDevice physicalDevice, VkDevice device, Node* parent, uint32_t nodeIndex, const tinygltf::Model& model, uint32_t& indexStart);
+    void loadNode(Instance* instance, VkPhysicalDevice physicalDevice, VkDevice device, Node* parent, uint32_t nodeIndex, const tinygltf::Model& model, uint32_t& indexStart);
     void loadVertexBuffer(const tinygltf::Node& node, const tinygltf::Model& model, std::vector<uint32_t>& indexBuffer, std::vector<interfaces::Vertex>& vertexBuffer);
     void loadSkins(const tinygltf::Model& gltfModel);
     void loadTextures(const utils::PhysicalDevice& device, VkCommandBuffer commandBuffer, const tinygltf::Model& gltfModel);
     void loadMaterials(const tinygltf::Model& gltfModel);
     void loadAnimations(const tinygltf::Model& gltfModel);
 
-    Node* nodeFromIndex(uint32_t index, const std::vector<Node*>& nodes);
     void destroyCache();
 
-    void createDescriptorPool();
-    void createDescriptorSet();
+    void createDescriptors();
 
 public:
     GltfModel(std::filesystem::path filename, uint32_t instanceCount = 1);
