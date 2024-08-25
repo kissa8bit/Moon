@@ -57,13 +57,13 @@ Mesh::Mesh(VkPhysicalDevice physicalDevice, VkDevice device, moon::math::Matrix<
 };
 
 void Node::update() {
-    size_t numJoints = skin ? std::min((uint32_t)skin->joints.size(), MAX_NUM_JOINTS) : 0;
-    mesh.uniformBlock.matrix = transpose(getMatrix(this));
+    const auto matrix = getMatrix(this);
+    mesh.uniformBlock.jointcount = skin ? std::min((uint32_t)skin->joints.size(), MAX_NUM_JOINTS) : 0;
+    mesh.uniformBlock.matrix = transpose(matrix);
 
-    for (size_t i = 0; i < numJoints; i++) {
-        mesh.uniformBlock.jointMatrix[i] = transpose(inverse(getMatrix(this)) * getMatrix(skin->joints[i]) * skin->inverseBindMatrices[i]);
+    for (size_t i = 0; i < mesh.uniformBlock.jointcount; i++) {
+        mesh.uniformBlock.jointMatrix[i] = transpose(inverse(matrix) * getMatrix(skin->joints[i]) * skin->inverseBindMatrices[i]);
     }
-    mesh.uniformBlock.jointcount = static_cast<float>(numJoints);
     mesh.uniformBuffer.copy(&mesh.uniformBlock);
 }
 

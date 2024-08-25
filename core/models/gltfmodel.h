@@ -67,8 +67,7 @@ struct Node {
     void update();
 };
 
-struct Animation
-{
+struct Animation {
     struct AnimationChannel{
         enum PathType { TRANSLATION, ROTATION, SCALE };
         PathType path;
@@ -89,11 +88,9 @@ struct Animation
     float end = std::numeric_limits<float>::min();
 };
 
-class GltfModel : public interfaces::Model
-{
+class GltfModel : public interfaces::Model {
 private:
     std::filesystem::path filename;
-    VkDevice device{VK_NULL_HANDLE};
 
     utils::Buffer vertices, indices;
     utils::Buffer vertexCache, indexCache;
@@ -104,20 +101,21 @@ private:
 
     struct Instance{
         std::unordered_map<uint32_t, Node> nodes;
-        std::vector<Skin*> skins;
+        std::vector<Skin> skins;
         std::vector<Animation> animations;
 
         Instance() = default;
-        Instance(Instance&& other) {
-            std::swap(nodes, other.nodes);
-            std::swap(skins, other.skins);
-            std::swap(animations, other.animations);
+        Instance(Instance&& other) noexcept {
+            swap(other);
         }
-        Instance& operator=(Instance&& other) {
+        Instance& operator=(Instance&& other) noexcept {
+            swap(other);
+            return *this;
+        }
+        void swap(Instance& other) noexcept {
             std::swap(nodes, other.nodes);
             std::swap(skins, other.skins);
             std::swap(animations, other.animations);
-            return *this;
         }
     };
 
@@ -132,14 +130,11 @@ private:
     void loadTextures(const utils::PhysicalDevice& device, VkCommandBuffer commandBuffer, const tinygltf::Model& gltfModel);
     void loadMaterials(const tinygltf::Model& gltfModel);
     void loadAnimations(const tinygltf::Model& gltfModel);
-
+    void createDescriptors(VkDevice device);
     void destroyCache();
-
-    void createDescriptors();
 
 public:
     GltfModel(std::filesystem::path filename, uint32_t instanceCount = 1);
-    ~GltfModel();
 
     bool hasAnimation(uint32_t frameIndex) const override;
     float animationStart(uint32_t frameIndex, uint32_t index) const override;

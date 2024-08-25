@@ -171,8 +171,7 @@ namespace {
 
             if (primitive.indexCount > 0) {
                 vkCmdDrawIndexed(commandBuffer, primitive.indexCount, 1, primitive.firstIndex, 0, 0);
-            }
-            else {
+            } else {
                 vkCmdDraw(commandBuffer, primitive.vertexCount, 1, 0, 0);
             }
         }
@@ -192,16 +191,8 @@ namespace {
     }
 }
 
-GltfModel::GltfModel(std::filesystem::path filename, uint32_t instanceCount) : filename(filename){
+GltfModel::GltfModel(std::filesystem::path filename, uint32_t instanceCount) : filename(filename) {
     instances.resize(instanceCount);
-}
-
-GltfModel::~GltfModel() {
-    for (auto& instance : instances) {
-        for (auto& skin : instance.skins) {
-            delete skin;
-        }
-    }
 }
 
 void GltfModel::destroyCache()
@@ -221,37 +212,34 @@ const VkBuffer* GltfModel::indexBuffer() const {
 
 void GltfModel::loadSkins(const tinygltf::Model &gltfModel){
     for(auto& instance : instances){
+        instance.skins.reserve(gltfModel.skins.size());
         for (const tinygltf::Skin& source: gltfModel.skins) {
-            Skin* newSkin = new Skin{};
+            auto& skin = instance.skins.emplace_back();
 
-            for (int jointIndex : source.joints) {
+            for (const auto& jointIndex : source.joints) {
                 if (auto it = instance.nodes.find(jointIndex); it != instance.nodes.end()) {
-                    newSkin->joints.push_back(&it->second);
+                    skin.joints.push_back(&it->second);
                 }
             }
 
-            if (source.inverseBindMatrices > -1) {
-                const tinygltf::Accessor& accessor = gltfModel.accessors[source.inverseBindMatrices];
+            if (const auto accessorsIndex = source.inverseBindMatrices; accessorsIndex > -1) {
+                const tinygltf::Accessor& accessor = gltfModel.accessors[accessorsIndex];
                 const tinygltf::BufferView& bufferView = gltfModel.bufferViews[accessor.bufferView];
                 const tinygltf::Buffer& buffer = gltfModel.buffers[bufferView.buffer];
 
-                newSkin->inverseBindMatrices.resize(accessor.count);
-                std::memcpy((void*)newSkin->inverseBindMatrices.data(), (void*)&buffer.data[accessor.byteOffset + bufferView.byteOffset], accessor.count * sizeof(moon::math::Matrix<float,4,4>));
-                for(auto& matrix: newSkin->inverseBindMatrices){
-                    matrix = transpose(matrix);
-                }
+                auto& matrices = skin.inverseBindMatrices;
+                matrices.resize(accessor.count);
+                std::memcpy((void*)matrices.data(), (void*)&buffer.data[accessor.byteOffset + bufferView.byteOffset], accessor.count * sizeof(moon::math::Matrix<float,4,4>));
+                std::transform(matrices.begin(), matrices.end(), matrices.begin(), [](const auto& matrix){ return transpose(matrix); });
             }
+        }
 
-            for (const auto& node: gltfModel.nodes) {
-                if(node.skin == &source - &gltfModel.skins[0]){
-                    uint32_t index = &node - &gltfModel.nodes[0];
-                    if (auto it = instance.nodes.find(index); it != instance.nodes.end()) {
-                        it->second.skin = newSkin;
-                    }
-                }
+        for (const auto& node : gltfModel.nodes) {
+            if(node.skin == -1) continue;
+            const uint32_t index = &node - &gltfModel.nodes.front();
+            if (auto it = instance.nodes.find(index); it != instance.nodes.end()) {
+                it->second.skin = &instance.skins[node.skin];
             }
-
-            instance.skins.push_back(newSkin);
         }
     }
 }
@@ -431,7 +419,7 @@ void GltfModel::loadFromFile(const moon::utils::PhysicalDevice& device, VkComman
     utils::createDeviceBuffer(device, device.device(), commandBuffer, indexBuffer.size() * sizeof(uint32_t), indexBuffer.data(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indexCache, indices);
 }
 
-void GltfModel::createDescriptorPool() {
+void GltfModel::createDescriptors(VkDevice device) {
     nodeDescriptorSetLayout = moon::interfaces::Model::createNodeDescriptorSetLayout(device);
     materialDescriptorSetLayout = moon::interfaces::Model::createMaterialDescriptorSetLayout(device);
 
@@ -448,38 +436,29 @@ void GltfModel::createDescriptorPool() {
     descriptorSetLayouts.insert(descriptorSetLayouts.end(), nodeDescriptorSetLayouts.begin(), nodeDescriptorSetLayouts.end());
 
     descriptorPool = utils::vkDefault::DescriptorPool(device, descriptorSetLayouts, 1);
-}
 
-void GltfModel::createDescriptorSet() {
-    for(auto& instance : instances){
-        for (auto& [_, node] : instance.nodes){
-            createNodeDescriptorSet(device, &node , descriptorPool, nodeDescriptorSetLayout);
+    for (auto& instance : instances) {
+        for (auto& [_, node] : instance.nodes) {
+            createNodeDescriptorSet(device, &node, descriptorPool, nodeDescriptorSetLayout);
         }
     }
 
-    for (auto& material : materials){
+    for (auto& material : materials) {
         createMaterialDescriptorSet(device, &material, descriptorPool, materialDescriptorSetLayout);
     }
 }
 
-void GltfModel::create(const moon::utils::PhysicalDevice& device, VkCommandPool commandPool)
-{
-    if(this->device == VK_NULL_HANDLE)
-    {
-        CHECK_M(VkPhysicalDevice(device) == VK_NULL_HANDLE, std::string("[ GltfModel::create ] VkPhysicalDevice is VK_NULL_HANDLE"));
-        CHECK_M(VkDevice(device.device()) == VK_NULL_HANDLE, std::string("[ GltfModel::create ] VkDevice is VK_NULL_HANDLE"));
-        CHECK_M(commandPool == VK_NULL_HANDLE, std::string("[ GltfModel::create ] VkCommandPool is VK_NULL_HANDLE"));
+void GltfModel::create(const moon::utils::PhysicalDevice& device, VkCommandPool commandPool) {
+    CHECK_M(VkPhysicalDevice(device) == VK_NULL_HANDLE, std::string("[ GltfModel::create ] VkPhysicalDevice is VK_NULL_HANDLE"));
+    CHECK_M(VkDevice(device.device()) == VK_NULL_HANDLE, std::string("[ GltfModel::create ] VkDevice is VK_NULL_HANDLE"));
+    CHECK_M(commandPool == VK_NULL_HANDLE, std::string("[ GltfModel::create ] VkCommandPool is VK_NULL_HANDLE"));
 
-        this->device = device.device();
+    VkCommandBuffer commandBuffer = moon::utils::singleCommandBuffer::create(device.device(), commandPool);
+    loadFromFile(device, commandBuffer);
+    CHECK(moon::utils::singleCommandBuffer::submit(device.device(), device.device()(0, 0), commandPool, &commandBuffer));
+    destroyCache();
 
-        VkCommandBuffer commandBuffer = moon::utils::singleCommandBuffer::create(device.device(), commandPool);
-        loadFromFile(device, commandBuffer);
-        CHECK(moon::utils::singleCommandBuffer::submit(device.device(), device.device()(0,0), commandPool, &commandBuffer));
-        destroyCache();
-
-        createDescriptorPool();
-        createDescriptorSet();
-    }
+    createDescriptors(device.device());
 }
 
 void GltfModel::render(uint32_t frameIndex, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint32_t descriptorSetsCount, VkDescriptorSet* descriptorSets, uint32_t &primitiveCount, uint32_t pushConstantSize, uint32_t pushConstantOffset, void* pushConstant){
