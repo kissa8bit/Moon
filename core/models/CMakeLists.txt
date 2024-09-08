@@ -17,13 +17,23 @@ set(INCLUDE_DIRS
 include_directories(${INCLUDE_DIRS})
 
 set(SOURCES
-    gltfmodel/nodes.cpp
+    gltfmodel/loadSkins.cpp
+    gltfmodel/loadNode.cpp
+    gltfmodel/loadVertexBuffer.cpp
+    gltfmodel/loadAnimations.cpp
+    gltfmodel/loadTextures.cpp
+    gltfmodel/loadMaterials.cpp
     gltfmodel/gltfmodel.cpp
-    gltfmodel/animation.cpp
     plymodel/plymodel.cpp
 )
 
 set(HEADERS
+    gltfmodel/tinyGLTF.h
+    gltfmodel/gltfutils.h
+    gltfmodel/primitive.h
+    gltfmodel/mesh.h
+    gltfmodel/skin.h
+    gltfmodel/node.h
     gltfmodel.h
     plymodel.h
 )

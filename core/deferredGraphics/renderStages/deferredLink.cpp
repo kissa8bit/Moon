@@ -63,7 +63,7 @@ void DeferredLink::createDescriptors(VkDevice device, const utils::ImageInfo& in
     descriptorPool = utils::vkDefault::DescriptorPool(device, {&descriptorSetLayout}, info.Count);
     descriptorSets = descriptorPool.allocateDescriptorSets(descriptorSetLayout, info.Count);
 
-    CHECK_M(attachment == nullptr, std::string("[ Link::createDescriptors ] attachment is nullptr"));
+    CHECK_M(attachment, std::string("[ Link::createDescriptors ] attachment is nullptr"));
     if(!attachment) return;
     for (size_t image = 0; image < info.Count; image++)
     {

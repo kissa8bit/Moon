@@ -598,7 +598,7 @@ vkDefault::Buffer::Buffer(
     VkMemoryPropertyFlags           properties) : memorysize(size), device(device) {
     CHECK(utils::buffer::create(physicalDevice, device, size, usage, properties, &descriptor, &memory));
     if (properties & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT || properties & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
-        CHECK(vkMapMemory(device, memory, 0, size, 0, &memorymap))
+        CHECK(vkMapMemory(device, memory, 0, size, 0, &memorymap));
     }
 }
 

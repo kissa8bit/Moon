@@ -63,7 +63,7 @@ VkResult GraphicsManager::createInstance(){
 }
 
 VkResult GraphicsManager::createDevice(const VkPhysicalDeviceFeatures& deviceFeatures){
-    CHECK_M(instance == VK_NULL_HANDLE, "[ GraphicsManager::createDevice ] instance is VK_NULL_HANDLE");
+    CHECK_M(instance, "[ GraphicsManager::createDevice ] instance is VK_NULL_HANDLE");
 
     VkResult result = VK_SUCCESS;
 
@@ -94,20 +94,20 @@ VkResult GraphicsManager::createDevice(const VkPhysicalDeviceFeatures& deviceFea
 }
 
 VkResult GraphicsManager::createSurface(GLFWwindow* window){
-    CHECK_M(instance == VK_NULL_HANDLE, "[ GraphicsManager::createSurface ] instance is VK_NULL_HANDLE");
-    CHECK_M(devices.empty(), "[ GraphicsManager::createSwapChain ] device is VK_NULL_HANDLE");
-    CHECK_M(window == nullptr, "[ createSurface ] Window is nullptr");
+    CHECK_M(instance, "[ GraphicsManager::createSurface ] instance is VK_NULL_HANDLE");
+    CHECK_M(!devices.empty(), "[ GraphicsManager::createSwapChain ] device is VK_NULL_HANDLE");
+    CHECK_M(window, "[ createSurface ] Window is nullptr");
 
     surface = utils::vkDefault::Surface(instance, window);
-    CHECK_M(!activeDevice->presentSupport(surface), "[ GraphicsManager::createSurface ] device doesn't support present");
+    CHECK_M(activeDevice->presentSupport(surface), "[ GraphicsManager::createSurface ] device doesn't support present");
 
     return VK_SUCCESS;
 }
 
 VkResult GraphicsManager::createSwapChain(GLFWwindow* window, int32_t maxImageCount){
-    CHECK_M(window == nullptr, "[ GraphicsManager::createSwapChain ] Window is nullptr");
-    CHECK_M(surface == VK_NULL_HANDLE, "[ GraphicsManager::createSwapChain ] surface is VK_NULL_HANDLE");
-    CHECK_M(activeDevice == nullptr, "[ GraphicsManager::activeDevice ] device is nullptr");
+    CHECK_M(window, "[ GraphicsManager::createSwapChain ] Window is nullptr");
+    CHECK_M(surface, "[ GraphicsManager::createSwapChain ] surface is VK_NULL_HANDLE");
+    CHECK_M(activeDevice, "[ GraphicsManager::activeDevice ] device is nullptr");
     return swapChainKHR.reset(activeDevice, window, surface, maxImageCount);
 }
 
@@ -127,7 +127,7 @@ void GraphicsManager::setDevice(uint32_t deviceIndex){
 }
 
 VkResult GraphicsManager::createSyncObjects(){
-    CHECK_M(devices.empty(), "[ GraphicsManager::createSyncObjects ] device is VK_NULL_HANDLE");
+    CHECK_M(!devices.empty(), "[ GraphicsManager::createSyncObjects ] there are no created devices");
 
     VkResult result = VK_SUCCESS;
 

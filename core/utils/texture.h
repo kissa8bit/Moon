@@ -98,7 +98,8 @@ public:
     static Texture empty(const PhysicalDevice&, VkCommandBuffer, bool isBlack = true);
 };
 
-using TextureMap = std::unordered_map<std::string, moon::utils::Texture>;
+using Textures= std::vector<Texture>;
+using TextureMap = std::unordered_map<std::string, Texture>;
 
 class CubeTexture: public Texture {
 public:

@@ -13,8 +13,7 @@ PipelineStage::PipelineStage(const std::vector<const vkDefault::CommandBuffers*>
         sizes.insert(fcb->size());
     }
 
-    auto sizeCheck = CHECK_M(sizes.size() != 1, std::string("[PipelineStage::PipelineStage] input commandBuffers must be same size"))
-    if (sizeCheck) return;
+    if (!CHECK_M(sizes.size() == 1, std::string("[PipelineStage::PipelineStage] input commandBuffers must be same size"))) return;
 
     frames.resize(*sizes.begin());
     for (const auto& fcb : commandBuffers) {
@@ -58,7 +57,7 @@ PipelineNode::PipelineNode(VkDevice device, PipelineStages&& instages, PipelineN
 
 vkDefault::VkSemaphores PipelineNode::submit(const uint32_t frameIndex, const vkDefault::VkSemaphores& externalSemaphore){
     if (!externalSemaphore.empty()) {
-        CHECK_M(stages.size() != 1, std::string("[PipelineStage::submit] first PipelineNode must have single PipelineStage"))
+        CHECK_M(stages.size() == 1, std::string("[PipelineStage::submit] first PipelineNode must have single PipelineStage"));
         stages.front().frames.at(frameIndex).wait = externalSemaphore;
     }
 
@@ -73,7 +72,7 @@ vkDefault::VkSemaphores PipelineNode::semaphores(uint32_t frameIndex) {
     vkDefault::VkSemaphores semaphores;
     for (const auto& stage : stages) {
         const auto& signal = stage.frames.at(frameIndex).signal;
-        CHECK_M(signal.size() != 1, std::string("[PipelineStage::semaphores] each final PipelineStage must have single signal semaphore"))
+        CHECK_M(signal.size() == 1, std::string("[PipelineStage::semaphores] each final PipelineStage must have single signal semaphore"));
         semaphores.push_back(signal.front());
     }
     return semaphores;

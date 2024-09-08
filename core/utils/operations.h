@@ -119,8 +119,8 @@ namespace debug {
             std::string     message);
 }
 
-#define CHECK(res) moon::utils::debug::checkResult(res, "in file " + std::string(__FILE__) + ", line " + std::to_string(__LINE__));
-#define CHECK_M(res, message) moon::utils::debug::checkResult(res, "in file " + std::string(__FILE__) + ", line " + std::to_string(__LINE__) + " " + message);
+#define CHECK(res) moon::utils::debug::checkResult(res, "in file " + std::string(__FILE__) + ", line " + std::to_string(__LINE__))
+#define CHECK_M(res, message) moon::utils::debug::checkResult(res, "in file " + std::string(__FILE__) + ", line " + std::to_string(__LINE__) + " " + message)
 
 namespace validationLayer{
 
@@ -329,7 +329,7 @@ namespace singleCommandBuffer {
         ~Scoped();
         Scoped(const Scoped&) = delete;
         Scoped& operator=(const Scoped&) = delete;
-        VkCommandBuffer& get();
+        operator VkCommandBuffer();
     };
 }
 

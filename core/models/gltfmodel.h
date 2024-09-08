@@ -2,7 +2,6 @@
 #define GLTFMODEL_H
 
 #include <vulkan.h>
-#include "tiny_gltf.h"
 
 #include "model.h"
 #include "texture.h"
@@ -11,82 +10,15 @@
 #include "quaternion.h"
 #include "vkdefault.h"
 
+#include "gltfmodel/node.h"
+#include "gltfmodel/skin.h"
+#include "gltfmodel/animation.h"
+#include "gltfmodel/tinyGLTF.h"
+
 #include <filesystem>
 #include <vector>
 
-#define MAX_NUM_JOINTS 128u
-
 namespace moon::models {
-
-struct Primitive {
-    uint32_t firstIndex{ 0 };
-    uint32_t indexCount{ 0 };
-    uint32_t vertexCount{ 0 };
-    interfaces::Material* material{ nullptr };
-    interfaces::BoundingBox bb;
-
-    Primitive() = default;
-    Primitive(uint32_t firstIndex, uint32_t indexCount, uint32_t vertexCount, interfaces::Material* material, interfaces::BoundingBox bb);
-};
-
-struct Mesh{
-    utils::Buffer uniformBuffer;
-    struct UniformBlock {
-        math::Matrix<float,4,4> matrix;
-        math::Matrix<float,4,4> jointMatrix[MAX_NUM_JOINTS]{};
-        float jointcount{0};
-    } uniformBlock;
-
-    std::vector<Primitive> primitives;
-    VkDescriptorSet descriptorSet{ VK_NULL_HANDLE };
-
-    Mesh() = default;
-    Mesh(VkPhysicalDevice physicalDevice, VkDevice device, math::Matrix<float,4,4> matrix);
-    bool empty() const { return VkBuffer(uniformBuffer) == VK_NULL_HANDLE; }
-};
-
-struct Node;
-
-struct Skin {
-    std::vector<math::Matrix<float,4,4>> inverseBindMatrices;
-    std::vector<Node*> joints;
-};
-
-struct Node {
-    Mesh mesh;
-
-    Node* parent{nullptr};
-    Skin* skin{nullptr};
-    std::vector<Node*> children;
-
-    math::Matrix<float,4,4> matrix;
-    math::Vector<float,3> translation{};
-    math::Vector<float,3> scale{1.0f};
-    math::Quaternion<float> rotation{};
-
-    void update();
-};
-
-struct Animation {
-    struct AnimationChannel{
-        enum PathType { TRANSLATION, ROTATION, SCALE };
-        PathType path;
-        Node* node;
-        uint32_t samplerIndex;
-    };
-
-    struct AnimationSampler{
-        enum InterpolationType { LINEAR, STEP, CUBICSPLINE };
-        InterpolationType interpolation;
-        std::vector<float> inputs;
-        std::vector<math::Vector<float,4>> outputsVec4;
-    };
-
-    std::vector<AnimationSampler> samplers;
-    std::vector<AnimationChannel> channels;
-    float start = std::numeric_limits<float>::max();
-    float end = std::numeric_limits<float>::min();
-};
 
 class GltfModel : public interfaces::Model {
 private:
@@ -100,9 +32,9 @@ private:
     utils::vkDefault::DescriptorPool descriptorPool;
 
     struct Instance{
-        std::unordered_map<uint32_t, Node> nodes;
-        std::vector<Skin> skins;
-        std::vector<Animation> animations;
+        NodeMap nodes;
+        Skins skins;
+        Animations animations;
 
         Instance() = default;
         Instance(Instance&& other) noexcept {
@@ -120,16 +52,17 @@ private:
     };
 
     std::vector<Instance> instances;
-    std::vector<utils::Texture> textures;
-    std::vector<interfaces::Material> materials;
+    utils::Textures textures;
+    interfaces::Materials materials;
 
     void loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffer commandBuffer);
-    void loadNode(Instance* instance, VkPhysicalDevice physicalDevice, VkDevice device, Node* parent, uint32_t nodeIndex, const tinygltf::Model& model, uint32_t& indexStart);
-    void loadVertexBuffer(const tinygltf::Node& node, const tinygltf::Model& model, std::vector<uint32_t>& indexBuffer, std::vector<interfaces::Vertex>& vertexBuffer);
+    void loadNode(const tinygltf::Model& gltfModel, const utils::PhysicalDevice& device, NodeMap& instance, Node* parent, uint32_t nodeIndex, uint32_t& indexStart);
+    void loadVertexBuffer(const tinygltf::Model& gltfModel, const tinygltf::Node& node, std::vector<uint32_t>& indexBuffer, std::vector<interfaces::Vertex>& vertexBuffer);
     void loadSkins(const tinygltf::Model& gltfModel);
-    void loadTextures(const utils::PhysicalDevice& device, VkCommandBuffer commandBuffer, const tinygltf::Model& gltfModel);
+    void loadTextures(const tinygltf::Model& gltfModel, const utils::PhysicalDevice& device, VkCommandBuffer commandBuffer);
     void loadMaterials(const tinygltf::Model& gltfModel);
     void loadAnimations(const tinygltf::Model& gltfModel);
+
     void createDescriptors(VkDevice device);
     void destroyCache();
 

@@ -8,6 +8,7 @@
 #include <optional>
 
 #include "vkdefault.h"
+#include "texture.h"
 
 namespace moon::utils {
 
@@ -60,8 +61,6 @@ public:
 };
 
 void createAttachments(VkPhysicalDevice physicalDevice, VkDevice device, const ImageInfo image, uint32_t attachmentsCount, Attachments* pAttachments, VkImageUsageFlags usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VkSamplerCreateInfo samplerInfo = VkSamplerCreateInfo{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO });
-
-class Texture;
 
 struct AttachmentsDatabase {
     struct data{

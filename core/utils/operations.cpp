@@ -30,7 +30,7 @@ VkResult debug::checkResult(VkResult result, std::string message){
 }
 
 bool debug::checkResult(bool result, std::string message){
-    if (result){
+    if (!result){
         debug::displayError(message);
     }
     return result;
@@ -321,7 +321,7 @@ bool physicalDevice::isExtensionsSupport(VkPhysicalDevice device, const std::vec
     CHECK(vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount,nullptr));
 
     std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-    CHECK(vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount,availableExtensions.data()))
+    CHECK(vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount,availableExtensions.data()));
 
     std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
 
@@ -427,7 +427,7 @@ singleCommandBuffer::Scoped::~Scoped(){
     }
 }
 
-VkCommandBuffer& singleCommandBuffer::Scoped::get(){
+singleCommandBuffer::Scoped::operator VkCommandBuffer(){
     return commandBuffer;
 }
 

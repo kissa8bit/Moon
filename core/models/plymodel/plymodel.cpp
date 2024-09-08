@@ -207,9 +207,9 @@ void PlyModel::create(const moon::utils::PhysicalDevice& device, VkCommandPool c
 {
     if(this->device)
     {
-        CHECK_M(VkPhysicalDevice(device) == VK_NULL_HANDLE, std::string("[ PlyModel::create ] VkPhysicalDevice is VK_NULL_HANDLE"));
-        CHECK_M(VkDevice(device.device()) == VK_NULL_HANDLE, std::string("[ PlyModel::create ] VkDevice is VK_NULL_HANDLE"));
-        CHECK_M(commandPool == VK_NULL_HANDLE, std::string("[ PlyModel::create ] VkCommandPool is VK_NULL_HANDLE"));
+        CHECK_M(VkPhysicalDevice(device), std::string("[ PlyModel::create ] VkPhysicalDevice is VK_NULL_HANDLE"));
+        CHECK_M(VkDevice(device.device()), std::string("[ PlyModel::create ] VkDevice is VK_NULL_HANDLE"));
+        CHECK_M(commandPool, std::string("[ PlyModel::create ] VkCommandPool is VK_NULL_HANDLE"));
 
         emptyTexture = utils::Texture::empty(device, commandPool);
         this->device = device.device();

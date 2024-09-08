@@ -46,9 +46,9 @@ void DeferredGraphics::reset()
 }
 
 void DeferredGraphics::createGraphicsPasses(){
-    CHECK_M(!commandPool,                       std::string("[ DeferredGraphics::createGraphicsPasses ] VkCommandPool is VK_NULL_HANDLE"));
-    CHECK_M(device == nullptr,                  std::string("[ DeferredGraphics::createGraphicsPasses ] device is nullptr"));
-    CHECK_M(params.cameraObject == nullptr,     std::string("[ DeferredGraphics::createGraphicsPasses ] camera is nullptr"));
+    CHECK_M(commandPool,            std::string("[ DeferredGraphics::createGraphicsPasses ] VkCommandPool is VK_NULL_HANDLE"));
+    CHECK_M(device,                 std::string("[ DeferredGraphics::createGraphicsPasses ] device is nullptr"));
+    CHECK_M(params.cameraObject,    std::string("[ DeferredGraphics::createGraphicsPasses ] camera is nullptr"));
 
     VkExtent2D extent{ params.extent[0], params.extent[1] };
     utils::ImageInfo info{ resourceCount, swapChainKHR->info().Format, extent, params.MSAASamples };
