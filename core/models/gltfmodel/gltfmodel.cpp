@@ -15,7 +15,7 @@ namespace moon::models {
 
 namespace {
 
-void calculateNodeTangent(std::vector<interfaces::Vertex>& vertexBuffer, std::vector<uint32_t>& indexBuffer){
+void calculateTangent(std::vector<interfaces::Vertex>& vertexBuffer, std::vector<uint32_t>& indexBuffer){
     for(uint32_t i = 0; i < indexBuffer.size(); i += 3){
         const auto &v0 = vertexBuffer[indexBuffer[i + 0]], &v1 = vertexBuffer[indexBuffer[i + 1]], &v2 = vertexBuffer[indexBuffer[i + 2]];
 
@@ -149,7 +149,7 @@ void GltfModel::loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffe
     for (const auto& nodeIndex: gltfModel.scenes[gltfModel.defaultScene > -1 ? gltfModel.defaultScene : 0].nodes) {
         loadVertexBuffer(gltfModel, gltfModel.nodes[nodeIndex], indexBuffer, vertexBuffer);
     }
-    calculateNodeTangent(vertexBuffer, indexBuffer);
+    calculateTangent(vertexBuffer, indexBuffer);
 
     loadSkins(gltfModel);
     if (gltfModel.animations.size() > 0) {
