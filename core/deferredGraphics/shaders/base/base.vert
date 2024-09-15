@@ -15,6 +15,8 @@ layout (set = 1, binding = 0) uniform LocalUniformBuffer
     vec4 colorFactor;
     vec4 bloomColor;
     vec4 bloomFactor;
+    vec4 outliningColor;
+    float width;
 } local;
 
 layout (set = 2, binding = 0) uniform UBONode

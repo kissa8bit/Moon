@@ -183,19 +183,15 @@ void BoundingBoxGraphics::BoundingBox::render(uint32_t frameNumber, VkCommandBuf
         if(VkDeviceSize offsets = 0; (interfaces::ObjectType::base & object->pipelineFlagBits()) && object->getEnable()){
             vkCmdBindPipeline(commandBuffers, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
-            vkCmdBindVertexBuffers(commandBuffers, 0, 1, object->model()->vertexBuffer(), &offsets);
-            if (object->model()->indexBuffer() != VK_NULL_HANDLE){
-                vkCmdBindIndexBuffer(commandBuffers, *object->model()->indexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+            auto model = object->model();
+            vkCmdBindVertexBuffers(commandBuffers, 0, 1, model->vertexBuffer(), &offsets);
+            if (model->indexBuffer() != VK_NULL_HANDLE){
+                vkCmdBindIndexBuffer(commandBuffers, *model->indexBuffer(), 0, VK_INDEX_TYPE_UINT32);
             }
 
             utils::vkDefault::DescriptorSets descriptors = {descriptorSets[frameNumber], object->getDescriptorSet(frameNumber)};
 
-            object->model()->renderBB(
-                object->getInstanceNumber(frameNumber),
-                commandBuffers,
-                pipelineLayout,
-                static_cast<uint32_t>(descriptors.size()),
-                descriptors.data());
+            model->renderBB(object->getInstanceNumber(frameNumber), commandBuffers, pipelineLayout, descriptors);
         }
     }
 }

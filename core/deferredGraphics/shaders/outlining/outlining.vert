@@ -9,6 +9,12 @@ layout(set = 0, binding = 0) uniform GlobalUniformBuffer {
 
 layout(set = 1, binding = 0) uniform LocalUniformBuffer {
     mat4 matrix;
+    vec4 constColor;
+    vec4 colorFactor;
+    vec4 bloomColor;
+    vec4 bloomFactor;
+    vec4 outliningColor;
+    float width;
 } local;
 
 layout(set = 2, binding = 0) uniform UBONode {
@@ -26,16 +32,9 @@ layout(location = 5) in vec4 inWeight0;
 layout(location = 6) in vec3 inTangent;
 layout(location = 7) in vec3 inBitangent;
 
-layout(push_constant) uniform Stencil {
-    vec4 color;
-    float width;
-} stencil;
-
-layout(location = 0) out vec4 outPosition;
+layout(location = 0) out vec4 outColor;
 
 void main() {
-    outPosition = vec4(inPosition.xyz, 1.0);
-
     mat4 skinMat =  node.jointCount > 0.0 ?
                     inWeight0.x * node.jointMatrix[int(inJoint0.x)] +
                     inWeight0.y * node.jointMatrix[int(inJoint0.y)] +
@@ -43,9 +42,10 @@ void main() {
                     inWeight0.w * node.jointMatrix[int(inJoint0.w)] : mat4(1.0f);
     mat4x4 model = local.matrix * node.matrix * skinMat;
 
-    outPosition = model * outPosition;
+    vec4 position = model * vec4(inPosition.xyz, 1.0);
     vec3 Normal = normalize(vec3(inverse(transpose(model)) * vec4(inNormal, 0.0)));
-    outPosition = vec4(outPosition.xyz + Normal * stencil.width, 1.0);
+    position = vec4(position.xyz + Normal * local.width, 1.0);
+    outColor = local.outliningColor;
 
-    gl_Position = global.proj * global.view * outPosition;
+    gl_Position = global.proj * global.view * position;
 }

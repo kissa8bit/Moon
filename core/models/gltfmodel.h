@@ -1,6 +1,9 @@
 #ifndef GLTFMODEL_H
 #define GLTFMODEL_H
 
+#include <filesystem>
+#include <vector>
+
 #include <vulkan.h>
 
 #include "model.h"
@@ -10,13 +13,8 @@
 #include "quaternion.h"
 #include "vkdefault.h"
 
-#include "gltfmodel/node.h"
-#include "gltfmodel/skin.h"
-#include "gltfmodel/animation.h"
+#include "gltfmodel/instance.h"
 #include "gltfmodel/tinyGLTF.h"
-
-#include <filesystem>
-#include <vector>
 
 namespace moon::models {
 
@@ -31,27 +29,7 @@ private:
     utils::vkDefault::DescriptorSetLayout materialDescriptorSetLayout;
     utils::vkDefault::DescriptorPool descriptorPool;
 
-    struct Instance{
-        NodeMap nodes;
-        Skins skins;
-        Animations animations;
-
-        Instance() = default;
-        Instance(Instance&& other) noexcept {
-            swap(other);
-        }
-        Instance& operator=(Instance&& other) noexcept {
-            swap(other);
-            return *this;
-        }
-        void swap(Instance& other) noexcept {
-            std::swap(nodes, other.nodes);
-            std::swap(skins, other.skins);
-            std::swap(animations, other.animations);
-        }
-    };
-
-    std::vector<Instance> instances;
+    Instances instances;
     utils::Textures textures;
     interfaces::Materials materials;
 
@@ -78,8 +56,8 @@ public:
     const VkBuffer* vertexBuffer() const override;
     const VkBuffer* indexBuffer() const override;
     void create(const utils::PhysicalDevice& device, VkCommandPool commandPool) override;
-    void render(uint32_t frameIndex, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint32_t descriptorSetsCount, VkDescriptorSet* descriptorSets, uint32_t& primitiveCount, uint32_t pushConstantSize, uint32_t pushConstantOffset, void* pushConstant) override;
-    void renderBB(uint32_t frameIndex, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint32_t descriptorSetsCount, VkDescriptorSet* descriptorSets) override;
+    void render(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t& primitiveCount) const override;
+    void renderBB(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets) const override;
 };
 
 }

@@ -63,8 +63,7 @@ struct Material {
 
 using Materials = std::vector<Material>;
 
-struct MaterialBlock
-{
+struct MaterialBlock {
     moon::math::Vector<float,4>   baseColorFactor{0.0f};
     moon::math::Vector<float,4>   emissiveFactor{0.0f};
     moon::math::Vector<float,4>   diffuseFactor{0.0f};
@@ -115,8 +114,8 @@ public:
     virtual const VkBuffer* vertexBuffer() const = 0;
     virtual const VkBuffer* indexBuffer() const = 0;
     virtual void create(const moon::utils::PhysicalDevice& device, VkCommandPool commandPool) = 0;
-    virtual void render(uint32_t frameIndex, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint32_t descriptorSetsCount, VkDescriptorSet* descriptorSets, uint32_t& primitiveCount, uint32_t pushConstantSize, uint32_t pushConstantOffset, void* pushConstant) = 0;
-    virtual void renderBB(uint32_t frameIndex, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint32_t descriptorSetsCount, VkDescriptorSet* descriptorSets) = 0;
+    virtual void render(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t& primitiveCount) const = 0;
+    virtual void renderBB(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets) const = 0;
 
     static moon::utils::vkDefault::DescriptorSetLayout createNodeDescriptorSetLayout(VkDevice device);
     static moon::utils::vkDefault::DescriptorSetLayout createMaterialDescriptorSetLayout(VkDevice device);

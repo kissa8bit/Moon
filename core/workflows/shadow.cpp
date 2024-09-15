@@ -144,6 +144,8 @@ void ShadowGraphics::updateCommandBuffer(uint32_t frameNumber) {
 
 void ShadowGraphics::render(uint32_t frameNumber, VkCommandBuffer commandBuffer, interfaces::Light* lightSource, const utils::DepthMap& depthMap, const utils::vkDefault::Framebuffer& framebuffer)
 {
+    if(!shadow.objects) return;
+
     std::vector<VkClearValue> clearValues;
     clearValues.push_back(depthMap.attachments().clearValue());
 
@@ -161,25 +163,16 @@ void ShadowGraphics::render(uint32_t frameNumber, VkCommandBuffer commandBuffer,
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shadow.pipeline);
     for(const auto& object: *shadow.objects){
         if(VkDeviceSize offsets = 0; (interfaces::ObjectType::base & object->pipelineFlagBits()) && object->getEnable() && object->getEnableShadow()){
-            vkCmdBindVertexBuffers(commandBuffer, 0, 1, object->model()->vertexBuffer(), &offsets);
-            if (object->model()->indexBuffer() != VK_NULL_HANDLE){
-                vkCmdBindIndexBuffer(commandBuffer, *object->model()->indexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+            auto model = object->model();
+            vkCmdBindVertexBuffers(commandBuffer, 0, 1, model->vertexBuffer(), &offsets);
+            if (model->indexBuffer() != VK_NULL_HANDLE){
+                vkCmdBindIndexBuffer(commandBuffer, *model->indexBuffer(), 0, VK_INDEX_TYPE_UINT32);
             }
 
             utils::vkDefault::DescriptorSets descriptorSets = {lightSource->getDescriptorSet(frameNumber), object->getDescriptorSet(frameNumber)};
 
-            interfaces::MaterialBlock material{};
-
             uint32_t primitives = 0;
-            object->model()->render(
-                        object->getInstanceNumber(frameNumber),
-                        commandBuffer,
-                        shadow.pipelineLayout,
-                        static_cast<uint32_t>(descriptorSets.size()),
-                        descriptorSets.data(),primitives,
-                        sizeof(interfaces::MaterialBlock),
-                        0,
-                        &material);
+            model->render(object->getInstanceNumber(frameNumber), commandBuffer, shadow.pipelineLayout, descriptorSets, primitives);
         }
     }
 

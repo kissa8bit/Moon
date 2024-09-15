@@ -20,13 +20,20 @@ void Object::setEnableShadow(const bool& inenable) {
     enableShadow = inenable;
 }
 
-Object::Object(uint8_t pipelineBitMask) : pipelineBitMask(pipelineBitMask) {}
+bool Object::outlining() const {
+    return (pipelineBitMask & interfaces::ObjectProperty::outlining);
+}
+
+Object::Object(uint8_t pipelineBitMask)
+    : pipelineBitMask(pipelineBitMask)
+{}
 
 Object::Object(uint8_t pipelineBitMask, Model* model, uint32_t firstInstance, uint32_t instanceCount)
-    : pipelineBitMask(pipelineBitMask), pModel(model), firstInstance(firstInstance), instanceCount(instanceCount) {}
+    : pipelineBitMask(pipelineBitMask), pModel(model), firstInstance(firstInstance), instanceCount(instanceCount)
+{}
 
 Model* Object::model() {
-     return pModel;
+    return pModel;
 }
 
 uint32_t Object::getInstanceNumber(uint32_t imageNumber) const {
@@ -35,10 +42,6 @@ uint32_t Object::getInstanceNumber(uint32_t imageNumber) const {
 
 uint8_t& Object::pipelineFlagBits() {
     return pipelineBitMask;
-}
-
-Outlining& Object::outlining() {
-    return outliningProps;
 }
 
 void Object::setFirstPrimitive(uint32_t infirstPrimitive) {

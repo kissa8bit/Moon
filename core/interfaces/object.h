@@ -22,12 +22,6 @@ enum ObjectProperty : uint8_t {
     outlining = 1<<4
 };
 
-struct Outlining {
-    bool enable{ false };
-    float width{ 0.0f };
-    math::Vector<float, 4> color{ 0.0f };
-};
-
 class Object {
 protected:
     bool enable{true};
@@ -35,8 +29,6 @@ protected:
 
     uint32_t firstPrimitive{0};
     uint32_t primitiveCount{0};
-
-    Outlining outliningProps;
 
     uint8_t pipelineBitMask{ 0 };
     Model* pModel{nullptr};
@@ -58,9 +50,9 @@ public:
     void setEnableShadow(const bool& enable);
     bool getEnable() const;
     bool getEnableShadow() const;
+    bool outlining() const;
 
     uint8_t& pipelineFlagBits();
-    Outlining& outlining();
 
     bool comparePrimitive(uint32_t primitive);
     void setFirstPrimitive(uint32_t firstPrimitive);

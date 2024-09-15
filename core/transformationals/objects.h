@@ -56,9 +56,15 @@ private:
             alignas(16) math::Vector<float, 4> constant{0.0f};
             alignas(16) math::Vector<float, 4> factor{1.0f};
         };
+        struct Outlining {
+            alignas(16) math::Vector<float, 4> color{ 0.0f };
+            alignas(4) float width{ 0.0f };
+        };
+
         alignas(16) math::Matrix<float, 4, 4> modelMatrix;
         ColorLinearProperties base;
         ColorLinearProperties bloom;
+        Outlining outlining;
     } buffer;
 
     DEFAULT_TRANSFORMATIONAL()

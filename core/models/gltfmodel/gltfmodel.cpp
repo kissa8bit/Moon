@@ -40,69 +40,6 @@ void calculateTangent(std::vector<interfaces::Vertex>& vertexBuffer, std::vector
     }
 }
 
-void renderNode(Node *node, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint32_t descriptorSetsCount, VkDescriptorSet* descriptorSets, uint32_t& primitiveCount, uint32_t pushConstantSize, uint32_t pushConstantOffset, void* pushConstant)
-{
-    for (const Primitive& primitive : node->mesh.primitives)
-    {
-        utils::vkDefault::DescriptorSets nodeDescriptorSets(descriptorSetsCount);
-        std::copy(descriptorSets, descriptorSets + descriptorSetsCount, nodeDescriptorSets.data());
-        nodeDescriptorSets.push_back(node->mesh.descriptorSet);
-        nodeDescriptorSets.push_back(primitive.material->descriptorSet);
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, descriptorSetsCount + 2, nodeDescriptorSets.data(), 0, NULL);
-
-        interfaces::MaterialBlock material{};
-        material.primitive = primitiveCount++;
-        material.emissiveFactor = primitive.material->emissiveFactor;
-        material.colorTextureSet = primitive.material->texCoordSets.baseColor;
-        material.normalTextureSet = primitive.material->texCoordSets.normal;
-        material.occlusionTextureSet = primitive.material->texCoordSets.occlusion;
-        material.emissiveTextureSet = primitive.material->texCoordSets.emissive;
-        material.alphaMask = static_cast<float>(primitive.material->alphaMode == interfaces::Material::ALPHAMODE_MASK);
-        material.alphaMaskCutoff = primitive.material->alphaCutoff;
-        if (primitive.material->pbrWorkflows.metallicRoughness) {
-            material.workflow = static_cast<float>(interfaces::PBR_WORKFLOW_METALLIC_ROUGHNESS);
-            material.baseColorFactor = primitive.material->baseColorFactor;
-            material.metallicFactor = primitive.material->metallicFactor;
-            material.roughnessFactor = primitive.material->roughnessFactor;
-            material.PhysicalDescriptorTextureSet = primitive.material->texCoordSets.metallicRoughness;
-            material.colorTextureSet = primitive.material->texCoordSets.baseColor;
-        }
-        if (primitive.material->pbrWorkflows.specularGlossiness) {
-            material.workflow = static_cast<float>(interfaces::PBR_WORKFLOW_SPECULAR_GLOSINESS);
-            material.PhysicalDescriptorTextureSet = primitive.material->texCoordSets.specularGlossiness;
-            material.colorTextureSet = primitive.material->texCoordSets.baseColor;
-            material.diffuseFactor = primitive.material->extension.diffuseFactor;
-            material.specularFactor = math::Vector<float, 4>(
-                primitive.material->extension.specularFactor[0],
-                primitive.material->extension.specularFactor[1],
-                primitive.material->extension.specularFactor[2],
-                1.0f);
-        }
-        std::memcpy(reinterpret_cast<char*>(pushConstant) + pushConstantOffset, &material, sizeof(interfaces::MaterialBlock));
-
-        vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, pushConstantSize, pushConstant);
-
-        if (primitive.indexCount > 0) {
-            vkCmdDrawIndexed(commandBuffer, primitive.indexCount, 1, primitive.firstIndex, 0, 0);
-        } else {
-            vkCmdDraw(commandBuffer, primitive.vertexCount, 1, 0, 0);
-        }
-    }
-}
-
-void renderNodeBB(Node *node, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint32_t descriptorSetsCount, VkDescriptorSet* descriptorSets)
-{
-    for (const Primitive& primitive : node->mesh.primitives) {
-        utils::vkDefault::DescriptorSets nodeDescriptorSets(descriptorSetsCount);
-        std::copy(descriptorSets, descriptorSets + descriptorSetsCount, nodeDescriptorSets.data());
-        nodeDescriptorSets.push_back(node->mesh.descriptorSet);
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, descriptorSetsCount + 1, nodeDescriptorSets.data(), 0, NULL);
-
-        vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(interfaces::BoundingBox), (void*)&primitive.bb);
-        vkCmdDraw(commandBuffer, 24, 1, 0, 0);
-    }
-}
-
 }
 
 GltfModel::GltfModel(std::filesystem::path filename, uint32_t instanceCount) : filename(filename) {
@@ -123,8 +60,7 @@ const VkBuffer* GltfModel::indexBuffer() const {
     return indices;
 }
 
-void GltfModel::loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffer commandBuffer)
-{
+void GltfModel::loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffer commandBuffer) {
     tinygltf::Model gltfModel;
     tinygltf::TinyGLTF gltfContext;
 
@@ -203,15 +139,65 @@ void GltfModel::create(const utils::PhysicalDevice& device, VkCommandPool comman
     destroyCache();
 }
 
-void GltfModel::render(uint32_t frameIndex, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint32_t descriptorSetsCount, VkDescriptorSet* descriptorSets, uint32_t &primitiveCount, uint32_t pushConstantSize, uint32_t pushConstantOffset, void* pushConstant){
-    for (auto& [_, node] : instances[frameIndex].nodes) {
-        renderNode(node.get(), commandBuffer, pipelineLayout, descriptorSetsCount, descriptorSets, primitiveCount, pushConstantSize, pushConstantOffset, pushConstant);
+void GltfModel::render(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t &primitiveCount) const {
+    for (auto& [_, node] : instances.at(instanceNumber).nodes) {
+        for (const Primitive& primitive : node->mesh.primitives) {
+            auto descriptors = descriptorSets;
+            descriptors.push_back(node->mesh.descriptorSet);
+            descriptors.push_back(primitive.material->descriptorSet);
+            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, descriptors.size(), descriptors.data(), 0, NULL);
+
+            interfaces::MaterialBlock material{};
+            material.primitive = primitiveCount++;
+            material.emissiveFactor = primitive.material->emissiveFactor;
+            material.colorTextureSet = primitive.material->texCoordSets.baseColor;
+            material.normalTextureSet = primitive.material->texCoordSets.normal;
+            material.occlusionTextureSet = primitive.material->texCoordSets.occlusion;
+            material.emissiveTextureSet = primitive.material->texCoordSets.emissive;
+            material.alphaMask = static_cast<float>(primitive.material->alphaMode == interfaces::Material::ALPHAMODE_MASK);
+            material.alphaMaskCutoff = primitive.material->alphaCutoff;
+            if (primitive.material->pbrWorkflows.metallicRoughness) {
+                material.workflow = static_cast<float>(interfaces::PBR_WORKFLOW_METALLIC_ROUGHNESS);
+                material.baseColorFactor = primitive.material->baseColorFactor;
+                material.metallicFactor = primitive.material->metallicFactor;
+                material.roughnessFactor = primitive.material->roughnessFactor;
+                material.PhysicalDescriptorTextureSet = primitive.material->texCoordSets.metallicRoughness;
+                material.colorTextureSet = primitive.material->texCoordSets.baseColor;
+            }
+            if (primitive.material->pbrWorkflows.specularGlossiness) {
+                material.workflow = static_cast<float>(interfaces::PBR_WORKFLOW_SPECULAR_GLOSINESS);
+                material.PhysicalDescriptorTextureSet = primitive.material->texCoordSets.specularGlossiness;
+                material.colorTextureSet = primitive.material->texCoordSets.baseColor;
+                material.diffuseFactor = primitive.material->extension.diffuseFactor;
+                material.specularFactor = math::Vector<float, 4>(
+                    primitive.material->extension.specularFactor[0],
+                    primitive.material->extension.specularFactor[1],
+                    primitive.material->extension.specularFactor[2],
+                    1.0f);
+            }
+
+            vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(material), &material);
+
+            if (primitive.indexCount > 0) {
+                vkCmdDrawIndexed(commandBuffer, primitive.indexCount, 1, primitive.firstIndex, 0, 0);
+            }
+            else {
+                vkCmdDraw(commandBuffer, primitive.vertexCount, 1, 0, 0);
+            }
+        }
     }
 }
 
-void GltfModel::renderBB(uint32_t frameIndex, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint32_t descriptorSetsCount, VkDescriptorSet* descriptorSets){
-    for (auto& [_, node] : instances[frameIndex].nodes) {
-        renderNodeBB(node.get(), commandBuffer, pipelineLayout, descriptorSetsCount, descriptorSets);
+void GltfModel::renderBB(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets) const {
+    for (auto& [_, node] : instances.at(instanceNumber).nodes) {
+        for (const Primitive& primitive : node->mesh.primitives) {
+            auto descriptors = descriptorSets;
+            descriptors.push_back(node->mesh.descriptorSet);
+            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, descriptors.size(), descriptors.data(), 0, NULL);
+
+            vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(interfaces::BoundingBox), (void*)&primitive.bb);
+            vkCmdDraw(commandBuffer, 24, 1, 0, 0);
+        }
     }
 }
 

@@ -170,33 +170,30 @@ void Graphics::Base::create(const workflows::ShaderNames& shadersNames, VkDevice
 
 void Graphics::Base::render(uint32_t frameNumber, VkCommandBuffer commandBuffers, uint32_t& primitiveCount) const
 {
+    if (!objects) return;
+
     for(const auto& object: *objects){
-        auto pipelineFlagBits = object->pipelineFlagBits();
-        if(VkDeviceSize offsets = 0; (interfaces::ObjectType::base & pipelineFlagBits) && object->getEnable()){
-            vkCmdBindPipeline(commandBuffers, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineMap.at(pipelineFlagBits));
+        if(!object) continue;
 
-            vkCmdBindVertexBuffers(commandBuffers, 0, 1, object->model()->vertexBuffer(), &offsets);
-            if (object->model()->indexBuffer() != VK_NULL_HANDLE){
-                vkCmdBindIndexBuffer(commandBuffers, *object->model()->indexBuffer(), 0, VK_INDEX_TYPE_UINT32);
-            }
+        const auto pipelineFlagBits = object->pipelineFlagBits();
+        const auto model = object->model();
 
-            utils::vkDefault::DescriptorSets descriptors = {descriptorSets[frameNumber], object->getDescriptorSet(frameNumber)};
+        if(!model) continue;
+        if(!(object->getEnable() && (interfaces::ObjectType::base & pipelineFlagBits))) continue;
 
-            interfaces::MaterialBlock material;
+        vkCmdBindPipeline(commandBuffers, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineMap.at(pipelineFlagBits));
 
-            object->setFirstPrimitive(primitiveCount);
-            object->model()->render(
-                        object->getInstanceNumber(frameNumber),
-                        commandBuffers,
-                        pipelineLayoutMap.at(pipelineFlagBits),
-                        static_cast<uint32_t>(descriptors.size()),
-                        descriptors.data(),
-                        primitiveCount,
-                        sizeof(interfaces::MaterialBlock),
-                        0,
-                        &material);
-            object->setPrimitiveCount(primitiveCount - object->getFirstPrimitive());
+        VkDeviceSize offsets = 0;
+        vkCmdBindVertexBuffers(commandBuffers, 0, 1, model->vertexBuffer(), &offsets);
+        if (model->indexBuffer() != VK_NULL_HANDLE){
+            vkCmdBindIndexBuffer(commandBuffers, *model->indexBuffer(), 0, VK_INDEX_TYPE_UINT32);
         }
+
+        const utils::vkDefault::DescriptorSets descriptors = {descriptorSets[frameNumber], object->getDescriptorSet(frameNumber)};
+
+        object->setFirstPrimitive(primitiveCount);
+        model->render(object->getInstanceNumber(frameNumber), commandBuffers, pipelineLayoutMap.at(pipelineFlagBits), descriptors, primitiveCount);
+        object->setPrimitiveCount(primitiveCount - object->getFirstPrimitive());
     }
 }
 

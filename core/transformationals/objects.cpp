@@ -9,10 +9,13 @@
 
 namespace moon::interfaces {
 
-BaseObject::BaseObject(uint8_t pipelineBitMask, void* hostData, size_t hostDataSize) : Object(pipelineBitMask), uniformBuffer(hostData, hostDataSize) {}
+BaseObject::BaseObject(uint8_t pipelineBitMask, void* hostData, size_t hostDataSize)
+    : Object(pipelineBitMask), uniformBuffer(hostData, hostDataSize)
+{}
 
 BaseObject::BaseObject(uint8_t pipelineBitMask, void* hostData, size_t hostDataSize, interfaces::Model* model, uint32_t firstInstance, uint32_t instanceCount)
-    : Object(pipelineBitMask, model, firstInstance, instanceCount), uniformBuffer(hostData, hostDataSize) {}
+    : Object(pipelineBitMask, model, firstInstance, instanceCount), uniformBuffer(hostData, hostDataSize)
+{}
 
 void BaseObject::update(uint32_t frameNumber, VkCommandBuffer commandBuffer) {
     uniformBuffer.update(frameNumber, commandBuffer);
@@ -144,21 +147,16 @@ Object& Object::setBase(std::optional<math::Vector<float, 4>> constant, std::opt
 }
 
 Object& Object::setBloom(std::optional<math::Vector<float, 4>> constant, std::optional<math::Vector<float, 4>> factor) {
-    if (constant.has_value()) {
-        buffer.bloom.constant = constant.value();
-    }
-    if (factor.has_value()) {
-        buffer.bloom.factor = factor.value();
-    }
+    buffer.bloom.constant = constant.value_or(buffer.bloom.constant);
+    buffer.bloom.factor = factor.value_or(buffer.bloom.factor);
     utils::raiseFlags(pObject->buffers());
     return *this;
 }
 
 Object& Object::setOutlining(const bool& enable, const float& width, const math::Vector<float, 4>& color) {
-    auto& outlining = pObject->outlining();
-    outlining.enable = enable;
-    outlining.width = width > 0.0f ? width : outlining.width;
-    outlining.color = dot(color, color) > 0.0f ? color : outlining.color;
+    buffer.outlining.width = width > 0.0f ? width : buffer.outlining.width;
+    buffer.outlining.color = math::dot(color, color) > 0.0f ? color : buffer.outlining.color;
+    utils::raiseFlags(pObject->buffers());
 
     auto& pipelineFlagBits = pObject->pipelineFlagBits();
     pipelineFlagBits &= ~interfaces::ObjectProperty::outlining;

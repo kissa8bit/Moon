@@ -223,30 +223,25 @@ void PlyModel::create(const moon::utils::PhysicalDevice& device, VkCommandPool c
     }
 }
 
-void PlyModel::render(uint32_t frameIndex, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint32_t descriptorSetsCount, VkDescriptorSet* descriptorSets, uint32_t& primitiveCount, uint32_t pushConstantSize, uint32_t pushConstantOffset, void* pushConstant) {
-    static_cast<void>(frameIndex);
+void PlyModel::render(uint32_t, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t& primitiveCount) const {
+    auto descriptors = descriptorSets;
+    descriptors.push_back(uniformBuffer.descriptorSet);
+    descriptors.push_back(material.descriptorSet);
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, descriptors.size(), descriptors.data(), 0, NULL);
 
-    utils::vkDefault::DescriptorSets nodeDescriptorSets(descriptorSetsCount);
-    std::copy(descriptorSets, descriptorSets + descriptorSetsCount, nodeDescriptorSets.data());
-    nodeDescriptorSets.push_back(uniformBuffer.descriptorSet);
-    nodeDescriptorSets.push_back(material.descriptorSet);
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, descriptorSetsCount+2, nodeDescriptorSets.data(), 0, NULL);
-
-    materialBlock.primitive = primitiveCount++;
-    std::memcpy(reinterpret_cast<char*>(pushConstant) + pushConstantOffset, &materialBlock, sizeof(moon::interfaces::MaterialBlock));
-
-    vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, pushConstantSize, pushConstant);
+    auto pushConstants = materialBlock;
+    pushConstants.primitive = primitiveCount++;
+    vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(pushConstants), &pushConstants);
 
     vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0);
 }
 
-void PlyModel::renderBB(uint32_t, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint32_t descriptorSetsCount, VkDescriptorSet* descriptorSets) {
-    utils::vkDefault::DescriptorSets nodeDescriptorSets(descriptorSetsCount);
-    std::copy(descriptorSets, descriptorSets + descriptorSetsCount, nodeDescriptorSets.data());
-    nodeDescriptorSets.push_back(uniformBuffer.descriptorSet);
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, descriptorSetsCount + 1, nodeDescriptorSets.data(), 0, NULL);
+void PlyModel::renderBB(uint32_t, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets) const {
+    auto descriptors = descriptorSets;
+    descriptors.push_back(uniformBuffer.descriptorSet);
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, descriptors.size(), descriptors.data(), 0, NULL);
 
-    vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(moon::interfaces::BoundingBox), &bb);
+    vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(bb), &bb);
     vkCmdDraw(commandBuffer, 24, 1, 0, 0);
 }
 

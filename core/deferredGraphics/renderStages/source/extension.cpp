@@ -7,16 +7,6 @@
 
 namespace moon::deferredGraphics {
 
-namespace{
-struct OutliningPushConstBlock {
-    struct {
-        alignas(16) math::Vector<float, 4> stencilColor;
-        alignas(4)  float width;
-    } outlining;
-    interfaces::MaterialBlock material;
-};
-}
-
 Graphics::OutliningExtension::OutliningExtension(const Graphics::Base& parent) : parent(parent) {}
 
 void Graphics::OutliningExtension::create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass){
@@ -63,7 +53,7 @@ void Graphics::OutliningExtension::create(const workflows::ShaderNames& shadersN
     pushConstantRange.push_back(VkPushConstantRange{});
         pushConstantRange.back().stageFlags = VK_PIPELINE_STAGE_FLAG_BITS_MAX_ENUM;
         pushConstantRange.back().offset = 0;
-        pushConstantRange.back().size = sizeof(OutliningPushConstBlock);
+        pushConstantRange.back().size = sizeof(interfaces::MaterialBlock);
     std::vector<VkDescriptorSetLayout> descriptorSetLayout = {
         parent.descriptorSetLayout,
         parent.objectDescriptorSetLayout,
@@ -92,35 +82,31 @@ void Graphics::OutliningExtension::create(const workflows::ShaderNames& shadersN
     pipeline = utils::vkDefault::Pipeline(device, pipelineInfo);
 }
 
-void Graphics::OutliningExtension::render(uint32_t frameNumber, VkCommandBuffer commandBuffers) const
+void Graphics::OutliningExtension::render(uint32_t frameNumber, VkCommandBuffer commandBuffer) const
 {
-    vkCmdBindPipeline(commandBuffers, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+    if (!parent.objects) return;
+
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
     for(const auto& object: *parent.objects){
-        const auto& outlining = object->outlining();
-        if(VkDeviceSize offsets = 0; (interfaces::ObjectType::base & object->pipelineFlagBits()) && object->getEnable() && outlining.enable){
-            vkCmdBindVertexBuffers(commandBuffers, 0, 1, object->model()->vertexBuffer(), &offsets);
-            if (object->model()->indexBuffer() != VK_NULL_HANDLE){
-                vkCmdBindIndexBuffer(commandBuffers, *object->model()->indexBuffer(), 0, VK_INDEX_TYPE_UINT32);
-            }
+        if (!object) continue;
+        if (!object->outlining()) continue;
 
-            utils::vkDefault::DescriptorSets descriptorSets = {parent.descriptorSets[frameNumber], object->getDescriptorSet(frameNumber)};
+        const auto pipelineFlagBits = object->pipelineFlagBits();
+        const auto model = object->model();
 
-            OutliningPushConstBlock pushConstBlock;
-            pushConstBlock.outlining.stencilColor = outlining.color;
-            pushConstBlock.outlining.width = outlining.width;
+        if (!model) continue;
+        if (!(object->getEnable() && (interfaces::ObjectType::base & pipelineFlagBits))) continue;
 
-            uint32_t primirives = 0;
-            object->model()->render(
-                        object->getInstanceNumber(frameNumber),
-                        commandBuffers,
-                        pipelineLayout,
-                        static_cast<uint32_t>(descriptorSets.size()),
-                        descriptorSets.data(),
-                        primirives,
-                        sizeof(OutliningPushConstBlock),
-                        offsetof(OutliningPushConstBlock, material),
-                        &pushConstBlock);
+        VkDeviceSize offsets = 0;
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, model->vertexBuffer(), &offsets);
+        if (model->indexBuffer() != VK_NULL_HANDLE) {
+            vkCmdBindIndexBuffer(commandBuffer, *model->indexBuffer(), 0, VK_INDEX_TYPE_UINT32);
         }
+
+        utils::vkDefault::DescriptorSets descriptorSets = { parent.descriptorSets[frameNumber], object->getDescriptorSet(frameNumber) };
+
+        uint32_t primirives = 0;
+        model->render(object->getInstanceNumber(frameNumber), commandBuffer, pipelineLayout, descriptorSets, primirives);
     }
 }
 
