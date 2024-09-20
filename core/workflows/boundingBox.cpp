@@ -55,7 +55,7 @@ void BoundingBoxGraphics::BoundingBox::create(const workflows::ShaderNames& shad
     descriptorSetLayout = utils::vkDefault::DescriptorSetLayout(device, bindings);
 
     objectDescriptorSetLayout = interfaces::Object::createBaseDescriptorSetLayout(device);
-    primitiveDescriptorSetLayout = interfaces::Model::createNodeDescriptorSetLayout(device);
+    primitiveDescriptorSetLayout = interfaces::Model::createMeshDescriptorSetLayout(device);
 
     const auto vertShader = utils::vkDefault::VertrxShaderModule(device, parameters.shadersPath / shadersNames.at(workflows::ShaderType::Vertex));
     const auto fragShader = utils::vkDefault::FragmentShaderModule(device, parameters.shadersPath / shadersNames.at(workflows::ShaderType::Fragment));

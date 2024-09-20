@@ -103,7 +103,7 @@ void GltfModel::loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffe
 }
 
 void GltfModel::createDescriptors(VkDevice device) {
-    nodeDescriptorSetLayout = interfaces::Model::createNodeDescriptorSetLayout(device);
+    nodeDescriptorSetLayout = interfaces::Model::createMeshDescriptorSetLayout(device);
     materialDescriptorSetLayout = interfaces::Model::createMaterialDescriptorSetLayout(device);
 
     std::vector<const utils::vkDefault::DescriptorSetLayout*> layouts(materials.size(), &materialDescriptorSetLayout);
@@ -141,42 +141,46 @@ void GltfModel::create(const utils::PhysicalDevice& device, VkCommandPool comman
 
 void GltfModel::render(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t &primitiveCount) const {
     for (auto& [_, node] : instances.at(instanceNumber).nodes) {
+        if (!CHECK_M(node.get(), std::string("[ GltfModel::render ] node is nullptr"))) continue;
         for (const Primitive& primitive : node->mesh.primitives) {
             auto descriptors = descriptorSets;
             descriptors.push_back(node->mesh.descriptorSet);
             descriptors.push_back(primitive.material->descriptorSet);
             vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, descriptors.size(), descriptors.data(), 0, NULL);
 
-            interfaces::MaterialBlock material{};
-            material.primitive = primitiveCount++;
-            material.emissiveFactor = primitive.material->emissiveFactor;
-            material.colorTextureSet = primitive.material->texCoordSets.baseColor;
-            material.normalTextureSet = primitive.material->texCoordSets.normal;
-            material.occlusionTextureSet = primitive.material->texCoordSets.occlusion;
-            material.emissiveTextureSet = primitive.material->texCoordSets.emissive;
-            material.alphaMask = static_cast<float>(primitive.material->alphaMode == interfaces::Material::ALPHAMODE_MASK);
-            material.alphaMaskCutoff = primitive.material->alphaCutoff;
-            if (primitive.material->pbrWorkflows.metallicRoughness) {
-                material.workflow = static_cast<float>(interfaces::PBR_WORKFLOW_METALLIC_ROUGHNESS);
-                material.baseColorFactor = primitive.material->baseColorFactor;
-                material.metallicFactor = primitive.material->metallicFactor;
-                material.roughnessFactor = primitive.material->roughnessFactor;
-                material.PhysicalDescriptorTextureSet = primitive.material->texCoordSets.metallicRoughness;
-                material.colorTextureSet = primitive.material->texCoordSets.baseColor;
-            }
-            if (primitive.material->pbrWorkflows.specularGlossiness) {
-                material.workflow = static_cast<float>(interfaces::PBR_WORKFLOW_SPECULAR_GLOSINESS);
-                material.PhysicalDescriptorTextureSet = primitive.material->texCoordSets.specularGlossiness;
-                material.colorTextureSet = primitive.material->texCoordSets.baseColor;
-                material.diffuseFactor = primitive.material->extension.diffuseFactor;
-                material.specularFactor = math::Vector<float, 4>(
-                    primitive.material->extension.specularFactor[0],
-                    primitive.material->extension.specularFactor[1],
-                    primitive.material->extension.specularFactor[2],
-                    1.0f);
+            if (!CHECK_M(primitive.material, std::string("[ GltfModel::render ] material is nullptr"))) continue;
+            const auto& material = *primitive.material;
+
+            interfaces::MaterialBlock materialBlock{};
+            materialBlock.primitive = primitiveCount++;
+            materialBlock.emissiveFactor = material.emissive.factor;
+            materialBlock.colorTextureSet = material.baseColor.coordSet;
+            materialBlock.normalTextureSet = material.normal.coordSet;
+            materialBlock.occlusionTextureSet = material.occlusion.coordSet;
+            materialBlock.emissiveTextureSet = material.emissive.coordSet;
+            materialBlock.alphaMask = static_cast<float>(material.alphaMode == interfaces::Material::ALPHAMODE_MASK);
+            materialBlock.alphaMaskCutoff = material.alphaCutoff;
+
+            switch (material.pbrWorkflows)
+            {
+                case interfaces::Material::PbrWorkflow::MERALLIC_ROUGHNESS : {
+                    materialBlock.workflow = static_cast<float>(interfaces::Material::PbrWorkflow::MERALLIC_ROUGHNESS);
+                    materialBlock.baseColorFactor = material.baseColor.factor;
+                    materialBlock.metallicFactor = material.metallicRoughness.factor[0];
+                    materialBlock.roughnessFactor = material.metallicRoughness.factor[1];
+                    materialBlock.physicalDescriptorTextureSet = material.metallicRoughness.coordSet;
+                    break;
+                }
+                case interfaces::Material::PbrWorkflow::SPECULAR_GLOSSINESS: {
+                    materialBlock.workflow = static_cast<float>(interfaces::Material::PbrWorkflow::SPECULAR_GLOSSINESS);
+                    materialBlock.physicalDescriptorTextureSet = material.extensions.specularGlossiness.coordSet;
+                    materialBlock.diffuseFactor = material.extensions.diffuse.factor;
+                    materialBlock.specularFactor = material.extensions.specularGlossiness.factor;
+                    break;
+                }
             }
 
-            vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(material), &material);
+            vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(materialBlock), &materialBlock);
 
             if (primitive.indexCount > 0) {
                 vkCmdDrawIndexed(commandBuffer, primitive.indexCount, 1, primitive.firstIndex, 0, 0);

@@ -24,7 +24,7 @@ std::vector<VkVertexInputAttributeDescription> Vertex::getAttributeDescriptions(
     return attributeDescriptions;
 }
 
-utils::vkDefault::DescriptorSetLayout Model::createNodeDescriptorSetLayout(VkDevice device) {
+utils::vkDefault::DescriptorSetLayout Model::createMeshDescriptorSetLayout(VkDevice device) {
     std::vector<VkDescriptorSetLayoutBinding> binding;
         binding.push_back(utils::vkDefault::bufferVertexLayoutBinding(static_cast<uint32_t>(binding.size()), 1));
     return utils::vkDefault::DescriptorSetLayout(device, binding);
@@ -41,13 +41,13 @@ utils::vkDefault::DescriptorSetLayout Model::createMaterialDescriptorSetLayout(V
 }
 
 Material::Material(const utils::Texture* empty) {
-    baseColorTexture = empty;
-    metallicRoughnessTexture = empty;
-    normalTexture = empty;
-    occlusionTexture = empty;
-    emissiveTexture = empty;
-    extension.specularGlossinessTexture = empty;
-    extension.diffuseTexture = empty;
+    baseColor.texture = empty;
+    metallicRoughness.texture = empty;
+    normal.texture = empty;
+    occlusion.texture = empty;
+    emissive.texture = empty;
+    extensions.specularGlossiness.texture = empty;
+    extensions.diffuse.texture = empty;
 }
 
 void Material::createDescriptorSet(VkDevice device, utils::vkDefault::DescriptorPool& descriptorPool, const utils::vkDefault::DescriptorSetLayout& descriptorSetLayout) {
@@ -62,27 +62,28 @@ void Material::createDescriptorSet(VkDevice device, utils::vkDefault::Descriptor
     };
 
     VkDescriptorImageInfo baseColorTextureInfo{};
-    if (pbrWorkflows.metallicRoughness) {
-        baseColorTextureInfo = getDescriptorImageInfo(baseColorTexture);
-    }
-    if (pbrWorkflows.specularGlossiness) {
-        baseColorTextureInfo = getDescriptorImageInfo(extension.diffuseTexture);
-    }
-
     VkDescriptorImageInfo metallicRoughnessTextureInfo{};
-    if (pbrWorkflows.metallicRoughness) {
-        metallicRoughnessTextureInfo = getDescriptorImageInfo(metallicRoughnessTexture);
-    }
-    if (pbrWorkflows.specularGlossiness) {
-        metallicRoughnessTextureInfo = getDescriptorImageInfo(extension.specularGlossinessTexture);
+
+    switch (pbrWorkflows)
+    {
+        case interfaces::Material::PbrWorkflow::MERALLIC_ROUGHNESS: {
+            baseColorTextureInfo = getDescriptorImageInfo(baseColor.texture);
+            metallicRoughnessTextureInfo = getDescriptorImageInfo(metallicRoughness.texture);
+            break;
+        }
+        case interfaces::Material::PbrWorkflow::SPECULAR_GLOSSINESS: {
+            baseColorTextureInfo = getDescriptorImageInfo(extensions.diffuse.texture);
+            metallicRoughnessTextureInfo = getDescriptorImageInfo(extensions.specularGlossiness.texture);
+            break;
+        }
     }
 
     std::vector<VkDescriptorImageInfo> descriptorImageInfos = {
         baseColorTextureInfo,
         metallicRoughnessTextureInfo,
-        getDescriptorImageInfo(normalTexture),
-        getDescriptorImageInfo(occlusionTexture),
-        getDescriptorImageInfo(emissiveTexture)
+        getDescriptorImageInfo(normal.texture),
+        getDescriptorImageInfo(occlusion.texture),
+        getDescriptorImageInfo(emissive.texture)
     };
 
     std::vector<VkWriteDescriptorSet> descriptorWrites;

@@ -25,7 +25,7 @@ void ShadowGraphics::createRenderPass()
 void ShadowGraphics::Shadow::create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass) {
     lightDescriptorSetLayout = interfaces::Light::createDescriptorSetLayout(device);
     objectDescriptorSetLayout = interfaces::Object::createBaseDescriptorSetLayout(device);
-    primitiveDescriptorSetLayout = interfaces::Model::createNodeDescriptorSetLayout(device);
+    primitiveDescriptorSetLayout = interfaces::Model::createMeshDescriptorSetLayout(device);
     materialDescriptorSetLayout = interfaces::Model::createMaterialDescriptorSetLayout(device);
 
     const auto vertShader = utils::vkDefault::VertrxShaderModule(device, parameters.shadersPath / shadersNames.at(workflows::ShaderType::Vertex));
