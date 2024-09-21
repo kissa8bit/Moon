@@ -1,5 +1,5 @@
 #include "gltfmodel.h"
-#include "gltfmodel/gltfutils.h"
+#include "gltfutils.h"
 
 namespace moon::models {
 
@@ -27,7 +27,7 @@ void GltfModel::loadTextures(const tinygltf::Model& gltfModel, const utils::Phys
         }
 
         utils::TextureSampler textureSampler{};
-        if (tex.sampler > -1) {
+        if (isValid(tex.sampler)) {
             const auto& samplers = gltfModel.samplers.at(tex.sampler);
             textureSampler.minFilter = getVkFilterMode(samplers.minFilter);
             textureSampler.magFilter = getVkFilterMode(samplers.magFilter);

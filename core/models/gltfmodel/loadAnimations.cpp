@@ -1,5 +1,5 @@
 #include "gltfmodel.h"
-#include "gltfmodel/node.h"
+#include "node.h"
 
 namespace moon::models {
 

@@ -1,4 +1,5 @@
 #include "gltfmodel.h"
+#include "gltfutils.h"
 
 namespace moon::models {
 
@@ -18,7 +19,7 @@ public:
     interfaces::Material::TextureParameters operator()(const TextureInfo& textureInfo, const std::vector<FactorType>& factor = {}) const {
         interfaces::Material::TextureParameters textureParameters(emptyTexture);
 
-        if (textureInfo.index != -1) {
+        if (isValid(textureInfo.index)) {
             textureParameters.texture = &textures.at(textureInfo.index);
             textureParameters.coordSet = textureInfo.texCoord;
         }

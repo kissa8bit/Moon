@@ -8,8 +8,8 @@
 #include "device.h"
 
 #include "gltfmodel.h"
-#include "gltfmodel/gltfutils.h"
-#include "gltfmodel/node.h"
+#include "gltfutils.h"
+#include "node.h"
 
 namespace moon::models {
 
@@ -75,14 +75,14 @@ void GltfModel::loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffe
 
     for(auto& instance: instances){
         uint32_t indexStart = 0;
-        for (const auto& nodeIndex: gltfModel.scenes[gltfModel.defaultScene > -1 ? gltfModel.defaultScene : 0].nodes) {
+        for (const auto& nodeIndex: gltfModel.scenes[isValid(gltfModel.defaultScene) ? gltfModel.defaultScene : 0].nodes) {
             loadNode(gltfModel, device, instance.nodes, nullptr, nodeIndex, indexStart);
         }
     }
 
     std::vector<uint32_t> indexBuffer;
     std::vector<interfaces::Vertex> vertexBuffer;
-    for (const auto& nodeIndex: gltfModel.scenes[gltfModel.defaultScene > -1 ? gltfModel.defaultScene : 0].nodes) {
+    for (const auto& nodeIndex: gltfModel.scenes[isValid(gltfModel.defaultScene) ? gltfModel.defaultScene : 0].nodes) {
         loadVertexBuffer(gltfModel, gltfModel.nodes[nodeIndex], indexBuffer, vertexBuffer);
     }
     calculateTangent(vertexBuffer, indexBuffer);

@@ -2,10 +2,13 @@
 #define GLTFMODEL_UTILS_H
 
 #include <vector>
+#include <tuple>
 
 #include "vector.h"
 #include "matrix.h"
 #include "quaternion.h"
+
+#include "tinyGLTF.h"
 
 namespace moon::models {
 
@@ -70,6 +73,27 @@ inline VkFilter getVkFilterMode(int32_t filterMode) {
         return VK_FILTER_LINEAR;
     }
     return VK_FILTER_LINEAR;
+}
+
+/**
+ * @param[in] tinygltf Model
+*  @param[in] accessorsIndex != tinygltf::invalidIndex
+ * @return pointer to data, number of elements, element type
+ */
+inline std::tuple<const void*, size_t, int> extractBuffer(const tinygltf::Model& gltfModel, const int accessorsIndex) {
+    const auto& accessor = gltfModel.accessors.at(accessorsIndex);
+    const auto& bufferView = gltfModel.bufferViews.at(accessor.bufferView);
+    const auto& buffer = gltfModel.buffers.at(bufferView.buffer);
+    const auto data = (const void*)&buffer.data[accessor.byteOffset + bufferView.byteOffset];
+    return { data, accessor.count, accessor.componentType };
+}
+
+inline bool isValid(const int index) {
+    return index != tinygltf::invalidIndex;
+}
+
+inline bool isInvalid(const int index) {
+    return !isValid(index);
 }
 
 }

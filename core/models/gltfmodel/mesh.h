@@ -39,8 +39,8 @@ struct Mesh {
             const auto& [_, poseIndex] = *posAttributes;
             const auto& posAccessor = gltfModel.accessors.at(poseIndex);
 
-            const interfaces::Material* material = primitive.material > -1 ? &materials.at(primitive.material) : nullptr;
-            uint32_t indexCount = primitive.indices > -1 ? gltfModel.accessors.at(primitive.indices).count : 0;
+            const interfaces::Material* material = isValid(primitive.material) ? &materials.at(primitive.material) : nullptr;
+            uint32_t indexCount = isValid(primitive.indices) ? gltfModel.accessors.at(primitive.indices).count : 0;
             uint32_t vertexCount = posAccessor.count;
 
             primitives.emplace_back(

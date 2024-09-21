@@ -1,5 +1,5 @@
 #include "gltfmodel.h"
-#include "gltfmodel/node.h"
+#include "node.h"
 
 namespace moon::models {
 
@@ -18,24 +18,20 @@ void GltfModel::loadSkins(const tinygltf::Model& gltfModel) {
             }
 
             const auto accessorsIndex = source.inverseBindMatrices;
-            if (accessorsIndex == -1) continue;
-
-            const tinygltf::Accessor& accessor = gltfModel.accessors[accessorsIndex];
-            const tinygltf::BufferView& bufferView = gltfModel.bufferViews[accessor.bufferView];
-            const tinygltf::Buffer& buffer = gltfModel.buffers[bufferView.buffer];
-            const void* data = &buffer.data[accessor.byteOffset + bufferView.byteOffset];
+            if (isInvalid(accessorsIndex)) continue;
+            const auto [data, count, _] = extractBuffer(gltfModel, accessorsIndex);
 
             auto& matrices = skin.inverseBindMatrices;
-            matrices.resize(accessor.count);
-            std::memcpy((void*)matrices.data(), data, accessor.count * sizeof(math::Matrix<float, 4, 4>));
+            matrices.resize(count);
+            std::memcpy((void*)matrices.data(), data, count * sizeof(math::Matrix<float, 4, 4>));
             std::transform(matrices.begin(), matrices.end(), matrices.begin(), [](const auto& matrix) {
                 return math::transpose(matrix);
-                });
+            });
         }
 
         for (const auto& [index, node] : instance.nodes) {
             const auto skinIndex = gltfModel.nodes.at(index).skin;
-            if (skinIndex == -1) continue;
+            if (isInvalid(skinIndex)) continue;
 
             node->skin = &instance.skins.at(skinIndex);
         }

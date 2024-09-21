@@ -1,4 +1,5 @@
 #include "gltfmodel.h"
+#include "gltfutils.h"
 #include "operations.h"
 
 namespace moon::models {
@@ -11,14 +12,14 @@ struct LoadBuffer {
     const tinygltf::Accessor* accessor{nullptr};
     int stride{0};
 
-    LoadBuffer(const tinygltf::Primitive& primitive, const tinygltf::Model& model, const std::string& attribute, int TINYGLTF_TYPE) {
+    LoadBuffer(const tinygltf::Primitive& primitive, const tinygltf::Model& gltfModel, const std::string& attribute, int TINYGLTF_TYPE) {
         if (const auto attributeIt = primitive.attributes.find(attribute); attributeIt != primitive.attributes.end()) {
             const auto& [_, attribute] = *attributeIt;
-            accessor = &model.accessors.at(attribute);
-            const auto& view = model.bufferViews.at(accessor->bufferView);
+            accessor = &gltfModel.accessors.at(attribute);
+            const auto& view = gltfModel.bufferViews.at(accessor->bufferView);
             const auto byteStride = accessor->ByteStride(view);
             const auto size = tinygltf::GetComponentSizeInBytes(accessor->componentType);
-            buffer = (const type*)&model.buffers[view.buffer].data[accessor->byteOffset + view.byteOffset];
+            buffer = (const type*)&gltfModel.buffers[view.buffer].data[accessor->byteOffset + view.byteOffset];
             stride = byteStride ? byteStride / size : tinygltf::GetNumComponentsInType(TINYGLTF_TYPE);
         }
     }
@@ -48,21 +49,21 @@ void pushBackIndex(const type* data, size_t count, uint32_t vertexStart, std::ve
 
 }
 
-void GltfModel::loadVertexBuffer(const tinygltf::Model& model, const tinygltf::Node& node, std::vector<uint32_t>& indexBuffer, std::vector<interfaces::Vertex>& vertexBuffer) {
+void GltfModel::loadVertexBuffer(const tinygltf::Model& gltfModel, const tinygltf::Node& node, std::vector<uint32_t>& indexBuffer, std::vector<interfaces::Vertex>& vertexBuffer) {
     for (const auto& children: node.children) {
-        loadVertexBuffer(model, model.nodes[children], indexBuffer, vertexBuffer);
+        loadVertexBuffer(gltfModel, gltfModel.nodes[children], indexBuffer, vertexBuffer);
     }
 
-    if (node.mesh <= -1) return;
+    if (isInvalid(node.mesh)) return;
 
-    const tinygltf::Mesh& mesh = model.meshes.at(node.mesh);
+    const tinygltf::Mesh& mesh = gltfModel.meshes.at(node.mesh);
     for (const tinygltf::Primitive& primitive: mesh.primitives) {
-        const auto pos = LoadBuffer<float>(primitive, model, "POSITION", TINYGLTF_TYPE_VEC3);
-        const auto norm = LoadBuffer<float>(primitive, model, "NORMAL",TINYGLTF_TYPE_VEC3);
-        const auto tex0 = LoadBuffer<float>(primitive, model, "TEXCOORD_0", TINYGLTF_TYPE_VEC2);
-        const auto tex1 = LoadBuffer<float>(primitive, model, "TEXCOORD_1", TINYGLTF_TYPE_VEC2);
-        const auto weight = LoadBuffer<float>(primitive, model, "WEIGHTS_0",  TINYGLTF_TYPE_VEC4);
-        const auto joint = LoadBuffer<void>(primitive, model, "JOINTS_0", TINYGLTF_TYPE_VEC4);
+        const auto pos = LoadBuffer<float>(primitive, gltfModel, "POSITION", TINYGLTF_TYPE_VEC3);
+        const auto norm = LoadBuffer<float>(primitive, gltfModel, "NORMAL",TINYGLTF_TYPE_VEC3);
+        const auto tex0 = LoadBuffer<float>(primitive, gltfModel, "TEXCOORD_0", TINYGLTF_TYPE_VEC2);
+        const auto tex1 = LoadBuffer<float>(primitive, gltfModel, "TEXCOORD_1", TINYGLTF_TYPE_VEC2);
+        const auto weight = LoadBuffer<float>(primitive, gltfModel, "WEIGHTS_0",  TINYGLTF_TYPE_VEC4);
+        const auto joint = LoadBuffer<void>(primitive, gltfModel, "JOINTS_0", TINYGLTF_TYPE_VEC4);
 
         uint32_t vertexStart = static_cast<uint32_t>(vertexBuffer.size());
         uint32_t vertexCount = pos.accessor ? static_cast<uint32_t>(pos.accessor->count) : 0;
@@ -86,26 +87,20 @@ void GltfModel::loadVertexBuffer(const tinygltf::Model& model, const tinygltf::N
             vertexBuffer.push_back(vert);
         }
 
-        if (primitive.indices <= -1) continue;
+        if (isInvalid(primitive.indices)) continue;
+        const auto [indicesData, indicesCount, indicesComponentType] = extractBuffer(gltfModel, primitive.indices);
 
-        const tinygltf::Accessor& accessor = model.accessors.at(primitive.indices);
-        const tinygltf::BufferView& bufferView = model.bufferViews.at(accessor.bufferView);
-        const void* indicesData = &(model.buffers[bufferView.buffer].data[accessor.byteOffset + bufferView.byteOffset]);
+#define GLTFMODEL_LOADVERTEXBUFFER_INDEX_CASE(ComponentType, type)                          \
+    case ComponentType:                                                                     \
+        pushBackIndex((const type*)indicesData, indicesCount, vertexStart, indexBuffer);    \
+        break;
 
-        switch (accessor.componentType) {
-            case TINYGLTF_PARAMETER_TYPE_UNSIGNED_INT: {
-                pushBackIndex((const uint32_t*) indicesData, accessor.count, vertexStart, indexBuffer);
-                break;
-            }
-            case TINYGLTF_PARAMETER_TYPE_UNSIGNED_SHORT: {
-                pushBackIndex((const uint16_t*) indicesData, accessor.count, vertexStart, indexBuffer);
-                break;
-            }
-            case TINYGLTF_PARAMETER_TYPE_UNSIGNED_BYTE: {
-                pushBackIndex((const uint8_t*) indicesData, accessor.count, vertexStart, indexBuffer);
-                break;
-            }
+        switch (indicesComponentType) {
+            GLTFMODEL_LOADVERTEXBUFFER_INDEX_CASE(TINYGLTF_PARAMETER_TYPE_UNSIGNED_INT, uint32_t)
+            GLTFMODEL_LOADVERTEXBUFFER_INDEX_CASE(TINYGLTF_PARAMETER_TYPE_UNSIGNED_SHORT, uint16_t)
+            GLTFMODEL_LOADVERTEXBUFFER_INDEX_CASE(TINYGLTF_PARAMETER_TYPE_UNSIGNED_BYTE, uint8_t)
         }
+#undef GLTFMODEL_LOADVERTEXBUFFER_INDEX_CASE
     }
 }
 

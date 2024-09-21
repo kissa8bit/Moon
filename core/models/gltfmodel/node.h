@@ -38,7 +38,7 @@ struct Node {
         convert(rotation, nodes.rotation);
         convert(scale, nodes.scale);
         convert(matrix, nodes.matrix);
-        if (const auto meshIndex = nodes.mesh; meshIndex > -1) {
+        if (const auto meshIndex = nodes.mesh; isValid(meshIndex)) {
             mesh = Mesh(gltfModel, materials, device, meshIndex, indexStart);
         }
     }
