@@ -3,68 +3,76 @@
 namespace moon::models {
 
 namespace {
-    class Extractor {
-    public:
-        Extractor(const tinygltf::Material& material, const utils::Textures& textures)
-            : material(material), textures(textures)
-        {}
-        template<typename TextureInfo, typename FactorType = double>
-        interfaces::Material::TextureParameters operator()(const TextureInfo& textureInfo, const std::vector<FactorType>& factor = {}) const {
-            const utils::Texture* emptyTexture = &textures.back();
-            interfaces::Material::TextureParameters textureParameters;
-            textureParameters.texture = emptyTexture;
-            if (textureInfo.index != -1) {
-                textureParameters.texture = &textures.at(textureInfo.index);
-                textureParameters.coordSet = textureInfo.texCoord;
-            }
-            if (factor.size() >= 4) {
-                textureParameters.factor = math::Vector<float, 4>(factor[0], factor[1], factor[2], factor[3]);
-            }
-            return textureParameters;
+
+class Extractor {
+public:
+    Extractor(const tinygltf::Material& material, const utils::Textures& textures)
+        : material(material), textures(textures)
+    {
+        if(!textures.empty()){
+            emptyTexture = &textures.back();
+        }
+    }
+
+    template<typename TextureInfo, typename FactorType = double>
+    interfaces::Material::TextureParameters operator()(const TextureInfo& textureInfo, const std::vector<FactorType>& factor = {}) const {
+        interfaces::Material::TextureParameters textureParameters(emptyTexture);
+
+        if (textureInfo.index != -1) {
+            textureParameters.texture = &textures.at(textureInfo.index);
+            textureParameters.coordSet = textureInfo.texCoord;
         }
 
-        interfaces::Material::TextureParameters operator()(const tinygltf::Value& extensions, const std::string& texName, const std::string& factorName = "") const {
-            static const tinygltf::Value null_value;
-
-            const utils::Texture* emptyTexture = &textures.back();
-            interfaces::Material::TextureParameters textureParameters;
-            textureParameters.texture = emptyTexture;
-
-            auto getTexure = [*this, &textureParameters](const tinygltf::Value& texture){
-                const auto& index = texture.Get("index");
-                if (index == null_value) return;
-                textureParameters.texture = &textures[index.Get<int>()];
-                const auto& texCoordSet = texture.Get("texCoord");
-                if (texture == null_value) return;
-                textureParameters.coordSet = texCoordSet.Get<int>();
-            };
-
-            auto getFactor = [*this, &textureParameters](const tinygltf::Value& factor){
-                for (uint32_t i = 0; i < factor.ArrayLen(); i++) {
-                    const auto& val = factor.Get(i);
-                    textureParameters.factor[i] = val.IsNumber() ? (float)val.Get<double>() : (float)val.Get<int>();
-                }
-            };
-
-            if (extensions.Has(texName)) {
-                if (const auto& texture = extensions.Get(texName); !(texture == null_value)){
-                    getTexure(texture);
-                }
-            }
-
-            if (factorName != "" && extensions.Has(factorName)) {
-                if (const auto& factor = extensions.Get(factorName); !(factor == null_value)) {
-                    getFactor(factor);
-                }
-            }
-
-            return textureParameters;
+        if (factor.size() >= 4) {
+            textureParameters.factor = math::Vector<float, 4>(factor[0], factor[1], factor[2], factor[3]);
         }
 
-    private:
-        const tinygltf::Material& material;
-        const utils::Textures& textures;
+        return textureParameters;
+    }
+
+    interfaces::Material::TextureParameters operator()(const tinygltf::Value& extensions, const std::string& texName, const std::string& factorName = "") const {
+        interfaces::Material::TextureParameters textureParameters(emptyTexture);
+
+        if (extensions.Has(texName)) {
+            if (const auto& texture = extensions.Get(texName); !(texture == nullValue)){
+                getTexure(textureParameters, texture);
+            }
+        }
+
+        if (factorName != "" && extensions.Has(factorName)) {
+            if (const auto& factor = extensions.Get(factorName); !(factor == nullValue)) {
+                getFactor(textureParameters, factor);
+            }
+        }
+
+        return textureParameters;
+    }
+
+private:
+    void getTexure(interfaces::Material::TextureParameters& textureParameters, const tinygltf::Value& texture) const {
+        const auto& index = texture.Get("index");
+        if (index == nullValue) return;
+        textureParameters.texture = &textures[index.Get<int>()];
+
+        const auto& texCoordSet = texture.Get("texCoord");
+        if (texture == nullValue) return;
+        textureParameters.coordSet = texCoordSet.Get<int>();
     };
+
+    void getFactor(interfaces::Material::TextureParameters& textureParameters,  const tinygltf::Value& factor) const {
+        for (uint32_t i = 0; i < factor.ArrayLen(); i++) {
+            const auto& val = factor.Get(i);
+            textureParameters.factor[i] = val.IsNumber() ? (float)val.Get<double>() : (float)val.Get<int>();
+        }
+    };
+
+    const tinygltf::Material& material;
+    const utils::Textures& textures;
+    const utils::Texture* emptyTexture{nullptr};
+
+    inline static const tinygltf::Value nullValue{};
+};
+
 }
 
 void GltfModel::loadMaterials(const tinygltf::Model& gltfModel) {
@@ -74,14 +82,12 @@ void GltfModel::loadMaterials(const tinygltf::Model& gltfModel) {
         {"BLEND", interfaces::Material::AlphaMode::ALPHAMODE_BLEND}
     };
 
-    const utils::Texture* emptyTexture = &textures.back();
     for (const tinygltf::Material& mat : gltfModel.materials)
     {
         Extractor extractor(mat, textures);
-
-        auto& material = materials.emplace_back(emptyTexture);
-
         const auto& pbr = mat.pbrMetallicRoughness;
+
+        auto& material = materials.emplace_back();
         material.baseColor = extractor(pbr.baseColorTexture, pbr.baseColorFactor);
         material.metallicRoughness = extractor(pbr.metallicRoughnessTexture, {pbr.metallicFactor, pbr.roughnessFactor});
         material.normal = extractor(mat.normalTexture);

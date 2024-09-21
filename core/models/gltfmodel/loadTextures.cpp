@@ -29,7 +29,8 @@ void GltfModel::loadTextures(const tinygltf::Model& gltfModel, const utils::Phys
         utils::TextureSampler textureSampler{};
         if (tex.sampler > -1) {
             const auto& samplers = gltfModel.samplers.at(tex.sampler);
-            textureSampler.minFilter = textureSampler.magFilter = getVkFilterMode(samplers.minFilter);
+            textureSampler.minFilter = getVkFilterMode(samplers.minFilter);
+            textureSampler.magFilter = getVkFilterMode(samplers.magFilter);
             textureSampler.addressModeV = textureSampler.addressModeW = getVkWrapMode(samplers.wrapT);
             textureSampler.addressModeU = getVkWrapMode(samplers.wrapS);
         }

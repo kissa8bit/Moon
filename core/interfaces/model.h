@@ -27,6 +27,9 @@ struct Material {
         const utils::Texture* texture{ nullptr };
         math::Vector<float, 4> factor{ 1.0f };
         int8_t coordSet{ -1 };
+
+        TextureParameters() = default;
+        TextureParameters(const utils::Texture* texture) : texture(texture) {}
     };
 
     AlphaMode alphaMode = ALPHAMODE_OPAQUE;
@@ -46,8 +49,6 @@ struct Material {
 
     VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
 
-    Material() = default;
-    Material(const utils::Texture* empty);
     void createDescriptorSet(VkDevice device, utils::vkDefault::DescriptorPool& descriptorPool, const utils::vkDefault::DescriptorSetLayout& descriptorSetLayout);
 };
 
@@ -77,7 +78,7 @@ struct Vertex {
     alignas(8)  math::Vector<float, 2> uv0{ 0.0f };
     alignas(8)  math::Vector<float, 2> uv1{ 0.0f };
     alignas(16) math::Vector<float, 4> joint0{ 0.0f };
-    alignas(16) math::Vector<float, 4> weight0{ 0.0f };
+    alignas(16) math::Vector<float, 4> weight0{ 1.0f, 0.0f, 0.0f, 0.0f };
     alignas(16) math::Vector<float, 3> tangent{ 0.0f };
     alignas(16) math::Vector<float, 3> bitangent{ 0.0f };
 

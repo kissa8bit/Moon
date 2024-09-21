@@ -40,16 +40,6 @@ utils::vkDefault::DescriptorSetLayout Model::createMaterialDescriptorSetLayout(V
     return utils::vkDefault::DescriptorSetLayout(device, binding);
 }
 
-Material::Material(const utils::Texture* empty) {
-    baseColor.texture = empty;
-    metallicRoughness.texture = empty;
-    normal.texture = empty;
-    occlusion.texture = empty;
-    emissive.texture = empty;
-    extensions.specularGlossiness.texture = empty;
-    extensions.diffuse.texture = empty;
-}
-
 void Material::createDescriptorSet(VkDevice device, utils::vkDefault::DescriptorPool& descriptorPool, const utils::vkDefault::DescriptorSetLayout& descriptorSetLayout) {
     descriptorSet = descriptorPool.allocateDescriptorSet(descriptorSetLayout);
 
