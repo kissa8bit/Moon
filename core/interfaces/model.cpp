@@ -6,6 +6,35 @@ namespace moon::interfaces {
 
 BoundingBox::BoundingBox(math::Vector<float,3> min, math::Vector<float,3> max) : min(min), max(max) {};
 
+
+MaterialBlock::MaterialBlock(const Material& material, uint32_t primitive) : primitive(primitive) {
+    emissiveFactor = material.emissive.factor;
+    colorTextureSet = material.baseColor.coordSet;
+    normalTextureSet = material.normal.coordSet;
+    occlusionTextureSet = material.occlusion.coordSet;
+    emissiveTextureSet = material.emissive.coordSet;
+    alphaMask = static_cast<float>(material.alphaMode == interfaces::Material::ALPHAMODE_MASK);
+    alphaMaskCutoff = material.alphaCutoff;
+    workflow = static_cast<float>(material.pbrWorkflows);
+
+    switch (material.pbrWorkflows)
+    {
+        case interfaces::Material::PbrWorkflow::METALLIC_ROUGHNESS: {
+            baseColorFactor = material.baseColor.factor;
+            metallicFactor = material.metallicRoughness.factor[Material::metallicIndex];
+            roughnessFactor = material.metallicRoughness.factor[Material::roughnessIndex];
+            physicalDescriptorTextureSet = material.metallicRoughness.coordSet;
+            break;
+        }
+        case interfaces::Material::PbrWorkflow::SPECULAR_GLOSSINESS: {
+            physicalDescriptorTextureSet = material.extensions.specularGlossiness.coordSet;
+            diffuseFactor = material.extensions.diffuse.factor;
+            specularFactor = material.extensions.specularGlossiness.factor;
+            break;
+        }
+    }
+}
+
 VkVertexInputBindingDescription Vertex::getBindingDescription(){
     return VkVertexInputBindingDescription{0, sizeof(Vertex), VK_VERTEX_INPUT_RATE_VERTEX};
 }
@@ -56,7 +85,7 @@ void Material::createDescriptorSet(VkDevice device, utils::vkDefault::Descriptor
 
     switch (pbrWorkflows)
     {
-        case interfaces::Material::PbrWorkflow::MERALLIC_ROUGHNESS: {
+        case interfaces::Material::PbrWorkflow::METALLIC_ROUGHNESS: {
             baseColorTextureInfo = getDescriptorImageInfo(baseColor.texture);
             metallicRoughnessTextureInfo = getDescriptorImageInfo(metallicRoughness.texture);
             break;

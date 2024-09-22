@@ -203,7 +203,7 @@ void testScene::makeGui() {
             }
             ImGui::SameLine(0.0, 10.0);
             if (ImGui::Button("Align by min")) {
-                controledObject->scale({ moon::math::minimun(controledObject->scaling()) });
+                controledObject->scale({ moon::math::minimum(controledObject->scaling()) });
             }
             moon::tests::gui::scaleManipulator<0>(controledObject, "x_sc");
             moon::tests::gui::scaleManipulator<1>(controledObject, "y_sc");
@@ -219,6 +219,44 @@ void testScene::makeGui() {
 
         if(moon::tests::gui::setOutlighting(controledObject)){
             requestUpdate();
+        }
+
+        ImGui::BeginGroup();
+            ImGui::Text("set object extra color : "); ImGui::SameLine(); ImGui::Separator();
+            static moon::math::Vector<float, 4> constColor = {0.0f};
+            static moon::math::Vector<float, 4> colorFactor = { 1.0f };
+            if (ImGui::ColorEdit4("const color", (float*)&constColor, ImGuiColorEditFlags_NoDragDrop)) {}
+            if (ImGui::ColorEdit4("color factor", (float*)&colorFactor, ImGuiColorEditFlags_NoDragDrop)) {}
+            if (ImGui::Button("update")) {
+                controledObject->setBase(constColor, colorFactor);
+            }
+        ImGui::EndGroup();
+
+        auto model = dynamic_cast<moon::models::PlyModel*>(static_cast<moon::interfaces::Object*>(*controledObject.ptr)->model());
+        if(model){
+            ImGui::BeginGroup();
+            ImGui::Text("material : "); ImGui::SameLine(); ImGui::Separator();
+            auto& material = model->material();
+            static bool metallic = material.pbrWorkflows == moon::interfaces::Material::METALLIC_ROUGHNESS;
+            bool update = false;
+            if (ImGui::RadioButton("metallic roughbess", metallic)) {
+                material.pbrWorkflows = moon::interfaces::Material::METALLIC_ROUGHNESS;
+                metallic = true;
+                update |= true;
+            }
+            if (ImGui::RadioButton("specular glossiness", !metallic)) {
+                material.pbrWorkflows = moon::interfaces::Material::SPECULAR_GLOSSINESS;
+                metallic = false;
+                update |= true;
+            }
+            ImGui::SetNextItemWidth(150.0f);
+            update |= ImGui::SliderFloat("metallic", &material.metallicRoughness.factor[moon::interfaces::Material::metallicIndex], 0.0f, 1.0f);
+            ImGui::SetNextItemWidth(150.0f);
+            update |= ImGui::SliderFloat("roughness", &material.metallicRoughness.factor[moon::interfaces::Material::roughnessIndex], 0.0f, 1.0f);
+            if(update){
+                requestUpdate();
+            }
+            ImGui::EndGroup();
         }
 
         ImGui::TreePop();
@@ -282,7 +320,7 @@ void testScene::createModels()
     models["DamagedHelmet"] = std::make_shared<moon::models::GltfModel>(ExternalPath / glTFSamples / "DamagedHelmet/glTF-Binary/DamagedHelmet.glb");
     models["AlphaBlendModeTest"] = std::make_shared<moon::models::GltfModel>(ExternalPath / glTFSamples / "AlphaBlendModeTest/glTF-Binary/AlphaBlendModeTest.glb");
 
-    models["floor"] = std::make_shared<moon::models::PlyModel>(ExternalPath / modelPath / "ply/cube.ply");
+    models["teapot"] = std::make_shared<moon::models::PlyModel>(ExternalPath / modelPath / "ply/teapot.ply");
 
     for(auto& [_,model]: models){
         graphics["base"]->create(model.get());
@@ -322,6 +360,10 @@ void testScene::createObjects()
 
     objects["AlphaBlendModeTest"] = std::make_shared<moon::transformational::Object>(models["AlphaBlendModeTest"].get());
     objects["AlphaBlendModeTest"]->rotate(moon::math::radians(90.0f), { 1.0f,0.0f,0.0f }).rotate(moon::math::radians(-90.0f), { 0.0f,0.0f,1.0f }).translate({-24.0f, 3.25f, 12.2f}).scale({0.3f,0.3f, 0.3f});
+
+    objects["teapot"] = std::make_shared<moon::transformational::Object>(models["teapot"].get());
+    objects["teapot"]->translate({ 21.0f, 3.25f, 12.2f }).scale({ 0.5f });
+    objects["teapot"]->setBase(moon::math::Vector<float, 4>(0.5f,0.5f,0.5f,1.0f));
 
     objects["ufo_light_0"] = std::make_shared<moon::transformational::Object>(models["ufo"].get());
     objects["ufo_light_0"]->rotate(moon::math::radians(90.0f),{1.0f,0.0f,0.0f});

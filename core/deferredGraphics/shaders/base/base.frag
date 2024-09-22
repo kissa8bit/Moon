@@ -135,6 +135,6 @@ void main()
     float emissiveAndAO = codeToFloat(bloomColor.xyz, ao);
 
     outBaseColor = baseColor;
-    outPosition  = vec4(position.xyz, params);
-    outNormal    = vec4(pc.material.normalTextureSet > -1 ? getNormal() : normal, emissiveAndAO);
+    outPosition = vec4(position.xyz, params);
+    outNormal = vec4(pc.material.normalTextureSet > -1 ? getNormal() : normal, emissiveAndAO);;
 }

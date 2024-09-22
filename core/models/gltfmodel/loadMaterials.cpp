@@ -90,7 +90,9 @@ void GltfModel::loadMaterials(const tinygltf::Model& gltfModel) {
 
         auto& material = materials.emplace_back();
         material.baseColor = extractor(pbr.baseColorTexture, pbr.baseColorFactor);
-        material.metallicRoughness = extractor(pbr.metallicRoughnessTexture, {pbr.metallicFactor, pbr.roughnessFactor});
+        material.metallicRoughness = extractor(pbr.metallicRoughnessTexture);
+        material.metallicRoughness.factor[interfaces::Material::metallicIndex] = pbr.metallicFactor;
+        material.metallicRoughness.factor[interfaces::Material::roughnessIndex] = pbr.roughnessFactor;
         material.normal = extractor(mat.normalTexture);
         material.emissive = extractor(mat.emissiveTexture, mat.emissiveFactor);
         material.occlusion = extractor(mat.occlusionTexture);

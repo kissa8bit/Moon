@@ -8,67 +8,48 @@
 #include "vkdefault.h"
 
 #include <filesystem>
+#include <vector>
 
 #define MAX_NUM_JOINTS 128u
 
 namespace moon::models {
 
-class PlyModel : public moon::interfaces::Model{
+class PlyModel : public interfaces::Model{
 private:
     std::filesystem::path filename;
-    bool created{false};
-    moon::utils::Texture emptyTexture;
-    VkDevice device{VK_NULL_HANDLE};
 
-    moon::utils::Buffer vertices, indices;
-    moon::utils::Buffer vertexCache, indexCache;
+    size_t vertexCount{ 0 }, indexCount{ 0 };
+    utils::Buffer vertices, indices;
+    utils::Buffer vertexCache, indexCache;
 
-    uint32_t indexCount{0};
+    std::vector<utils::Texture> textures;
 
-    moon::utils::vkDefault::DescriptorSetLayout nodeDescriptorSetLayout;
-    moon::utils::vkDefault::DescriptorSetLayout materialDescriptorSetLayout;
-    moon::utils::vkDefault::DescriptorPool descriptorPool;
+    utils::vkDefault::DescriptorSetLayout meshDescriptorSetLayout;
+    utils::vkDefault::DescriptorSetLayout materialDescriptorSetLayout;
+    utils::vkDefault::DescriptorPool descriptorPool;
 
-    moon::interfaces::Material material;
-    moon::interfaces::MaterialBlock materialBlock{};
+    interfaces::Material mat{};
+    interfaces::BoundingBox bb;
 
-    class UniformBuffer : public moon::utils::Buffer {
-    public:
-        UniformBuffer() = default;
-        UniformBuffer& operator=(utils::Buffer && other) {
-            swap(other);
-            return *this;
-        }
-        VkDescriptorSet descriptorSet{VK_NULL_HANDLE};
-    } uniformBuffer;
+    utils::Buffer uniformBuffer;
+    interfaces::MeshBlock uniformBlock;
+    VkDescriptorSet descriptorSet{ VK_NULL_HANDLE };
 
-    struct UniformBlock {
-        moon::math::Matrix<float,4,4> mat;
-        moon::math::Matrix<float,4,4> jointMatrix[MAX_NUM_JOINTS]{};
-        float jointcount{0};
-    } uniformBlock;
-
-    moon::interfaces::BoundingBox bb;
-
-    moon::math::Vector<float,3> maxSize{0.0f};
-
-    void loadFromFile(VkPhysicalDevice physicalDevice, VkDevice device, VkCommandBuffer commandBuffer);
+    void loadFromFile(const utils::PhysicalDevice& physicalDevice, VkCommandBuffer commandBuffer);
+    void createDescriptors(VkDevice device);
     void destroyCache();
 
-    void createDescriptorPool();
-    void createDescriptorSet();
-
 public:
-    PlyModel(std::filesystem::path filename,
-             moon::math::Vector<float, 4> baseColorFactor = moon::math::Vector<float, 4>(1.0f,1.0f,1.0f,1.0f),
-             moon::math::Vector<float, 4> diffuseFactor = moon::math::Vector<float, 4>(1.0f),
-             moon::math::Vector<float, 4> specularFactor = moon::math::Vector<float, 4>(1.0f),
-             float metallicFactor = 0.0f,
-             float roughnessFactor = 0.5f,
-             float workflow = 1.0f);
+    PlyModel(const std::filesystem::path& filename,
+             const math::Vector<float, 4>& baseColorFactor = math::Vector<float, 4>(1.0f),
+             const math::Vector<float, 4>& diffuseFactor = math::Vector<float, 4>(1.0f),
+             const math::Vector<float, 4>& specularFactor = math::Vector<float, 4>(1.0f),
+             const float metallicFactor = 0.0f,
+             const float roughnessFactor = 0.0f,
+             const interfaces::Material::PbrWorkflow workflow = interfaces::Material::PbrWorkflow::METALLIC_ROUGHNESS);
 
-    moon::interfaces::MaterialBlock& getMaterialBlock();
-    const moon::math::Vector<float,3> getMaxSize() const;
+    interfaces::Material& material();
+    interfaces::BoundingBox& boundingBox();
 
     bool hasAnimation(uint32_t) const override {return false;}
     float animationStart(uint32_t, uint32_t) const override {return 0.0f;}
@@ -78,7 +59,7 @@ public:
 
     const VkBuffer* vertexBuffer() const override;
     const VkBuffer* indexBuffer() const override;
-    void create(const moon::utils::PhysicalDevice& device, VkCommandPool commandPool) override;
+    void create(const utils::PhysicalDevice& device, VkCommandPool commandPool) override;
     void render(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t& primitiveCount) const override;
     void renderBB(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets) const override;
 };

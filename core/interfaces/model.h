@@ -3,9 +3,10 @@
 
 #include <vulkan.h>
 #include <vector>
-#include <vector.h>
-#include <vkdefault.h>
 
+#include "vector.h"
+#include "matrix.h"
+#include "vkdefault.h"
 #include "texture.h"
 #include "device.h"
 
@@ -21,7 +22,10 @@ struct BoundingBox{
 
 struct Material {
     enum AlphaMode{ ALPHAMODE_OPAQUE, ALPHAMODE_MASK, ALPHAMODE_BLEND };
-    enum PbrWorkflow { MERALLIC_ROUGHNESS, SPECULAR_GLOSSINESS };
+    enum PbrWorkflow { METALLIC_ROUGHNESS, SPECULAR_GLOSSINESS };
+
+    static constexpr uint32_t metallicIndex = 0;
+    static constexpr uint32_t roughnessIndex = 1;
 
     struct TextureParameters {
         const utils::Texture* texture{ nullptr };
@@ -33,7 +37,7 @@ struct Material {
     };
 
     AlphaMode alphaMode = ALPHAMODE_OPAQUE;
-    PbrWorkflow pbrWorkflows = MERALLIC_ROUGHNESS;
+    PbrWorkflow pbrWorkflows = METALLIC_ROUGHNESS;
 
     TextureParameters baseColor;
     TextureParameters metallicRoughness;
@@ -70,6 +74,16 @@ struct MaterialBlock {
     float       alphaMask{0.0f};
     float       alphaMaskCutoff{0.0f};
     uint32_t    primitive;
+
+    MaterialBlock(const Material& material, uint32_t primitive);
+};
+
+#define MAX_NUM_JOINTS 128u
+
+struct MeshBlock {
+    math::Matrix<float, 4, 4> matrix;
+    math::Matrix<float, 4, 4> jointMatrix[MAX_NUM_JOINTS]{};
+    float jointcount{ 0 };
 };
 
 struct Vertex {

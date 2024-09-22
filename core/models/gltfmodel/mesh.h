@@ -10,18 +10,11 @@
 #include "gltfutils.h"
 #include "tinyGLTF.h"
 
-
-#define MAX_NUM_JOINTS 128u
-
 namespace moon::models {
 
 struct Mesh {
     utils::Buffer uniformBuffer;
-    struct UniformBlock {
-        math::Matrix<float, 4, 4> matrix;
-        math::Matrix<float, 4, 4> jointMatrix[MAX_NUM_JOINTS]{};
-        float jointcount{ 0 };
-    } uniformBlock;
+    interfaces::MeshBlock uniformBlock;
 
     std::vector<Primitive> primitives;
     VkDescriptorSet descriptorSet{ VK_NULL_HANDLE };
@@ -59,7 +52,7 @@ struct Mesh {
 
         descriptorSet = descriptorPool.allocateDescriptorSet(descriptorSetLayout);
 
-        VkDescriptorBufferInfo bufferInfo{ uniformBuffer, 0, sizeof(Mesh::UniformBlock) };
+        VkDescriptorBufferInfo bufferInfo{ uniformBuffer, 0, sizeof(interfaces::MeshBlock) };
         VkWriteDescriptorSet writeDescriptorSet{};
             writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;

@@ -99,7 +99,9 @@ void GltfModel::loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffe
     }
 
     utils::createDeviceBuffer(device, device.device(), commandBuffer, vertexBuffer.size() * sizeof(interfaces::Vertex), vertexBuffer.data(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertexCache, vertices);
-    utils::createDeviceBuffer(device, device.device(), commandBuffer, indexBuffer.size() * sizeof(uint32_t), indexBuffer.data(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indexCache, indices);
+    if (!indexBuffer.empty()) {
+        utils::createDeviceBuffer(device, device.device(), commandBuffer, indexBuffer.size() * sizeof(uint32_t), indexBuffer.data(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indexCache, indices);
+    }
 }
 
 void GltfModel::createDescriptors(VkDevice device) {
@@ -151,35 +153,7 @@ void GltfModel::render(uint32_t instanceNumber, VkCommandBuffer commandBuffer, V
             if (!CHECK_M(primitive.material, std::string("[ GltfModel::render ] material is nullptr"))) continue;
             const auto& material = *primitive.material;
 
-            interfaces::MaterialBlock materialBlock{};
-            materialBlock.primitive = primitiveCount++;
-            materialBlock.emissiveFactor = material.emissive.factor;
-            materialBlock.colorTextureSet = material.baseColor.coordSet;
-            materialBlock.normalTextureSet = material.normal.coordSet;
-            materialBlock.occlusionTextureSet = material.occlusion.coordSet;
-            materialBlock.emissiveTextureSet = material.emissive.coordSet;
-            materialBlock.alphaMask = static_cast<float>(material.alphaMode == interfaces::Material::ALPHAMODE_MASK);
-            materialBlock.alphaMaskCutoff = material.alphaCutoff;
-
-            switch (material.pbrWorkflows)
-            {
-                case interfaces::Material::PbrWorkflow::MERALLIC_ROUGHNESS : {
-                    materialBlock.workflow = static_cast<float>(interfaces::Material::PbrWorkflow::MERALLIC_ROUGHNESS);
-                    materialBlock.baseColorFactor = material.baseColor.factor;
-                    materialBlock.metallicFactor = material.metallicRoughness.factor[0];
-                    materialBlock.roughnessFactor = material.metallicRoughness.factor[1];
-                    materialBlock.physicalDescriptorTextureSet = material.metallicRoughness.coordSet;
-                    break;
-                }
-                case interfaces::Material::PbrWorkflow::SPECULAR_GLOSSINESS: {
-                    materialBlock.workflow = static_cast<float>(interfaces::Material::PbrWorkflow::SPECULAR_GLOSSINESS);
-                    materialBlock.physicalDescriptorTextureSet = material.extensions.specularGlossiness.coordSet;
-                    materialBlock.diffuseFactor = material.extensions.diffuse.factor;
-                    materialBlock.specularFactor = material.extensions.specularGlossiness.factor;
-                    break;
-                }
-            }
-
+            interfaces::MaterialBlock materialBlock(material, primitiveCount++);
             vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(materialBlock), &materialBlock);
 
             if (primitive.indexCount > 0) {

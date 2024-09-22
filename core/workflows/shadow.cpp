@@ -165,8 +165,8 @@ void ShadowGraphics::render(uint32_t frameNumber, VkCommandBuffer commandBuffer,
         if(VkDeviceSize offsets = 0; (interfaces::ObjectType::base & object->pipelineFlagBits()) && object->getEnable() && object->getEnableShadow()){
             auto model = object->model();
             vkCmdBindVertexBuffers(commandBuffer, 0, 1, model->vertexBuffer(), &offsets);
-            if (model->indexBuffer() != VK_NULL_HANDLE){
-                vkCmdBindIndexBuffer(commandBuffer, *model->indexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+            if (auto indexBuffer = *model->indexBuffer(); indexBuffer != VK_NULL_HANDLE) {
+                vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
             }
 
             utils::vkDefault::DescriptorSets descriptorSets = {lightSource->getDescriptorSet(frameNumber), object->getDescriptorSet(frameNumber)};

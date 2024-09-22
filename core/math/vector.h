@@ -63,9 +63,11 @@ public:
 
     template<typename T, uint32_t N> friend T maximum(const BaseVector<T,N>& other);
 
-    template<typename T, uint32_t N> friend T minimun(const BaseVector<T, N>& other);
+    template<typename T, uint32_t N> friend T minimum(const BaseVector<T, N>& other);
 
-    template<typename T, uint32_t N> friend BaseVector<T,N> maximum(const BaseVector<T,N>& left, const BaseVector<T,N>& right);
+    template<typename T, uint32_t N> friend BaseVector<T, N> maximum(const BaseVector<T, N>& left, const BaseVector<T, N>& right);
+
+    template<typename T, uint32_t N> friend BaseVector<T, N> minimum(const BaseVector<T, N>& left, const BaseVector<T, N>& right);
 
     template<typename T, uint32_t N> friend T maxAbs(const BaseVector<T,N>& other);
 
@@ -217,12 +219,16 @@ template<typename T, uint32_t N> T maximum(const BaseVector<T,N>& other) {
     return std::max(maximum(other.vec),other.s);
 }
 
-template<typename T, uint32_t N> T minimun(const BaseVector<T, N>& other) {
-    return std::min(minimun(other.vec), other.s);
+template<typename T, uint32_t N> T minimum(const BaseVector<T, N>& other) {
+    return std::min(minimum(other.vec), other.s);
 }
 
 template<typename T, uint32_t N> BaseVector<T,N> maximum(const BaseVector<T,N>& left, const BaseVector<T,N>& right) {
-    return BaseVector<T,N>(maximum(left.vec, right.vec),std::max(left.s,right.s));
+    return BaseVector<T, N>(maximum(left.vec, right.vec), std::max(left.s, right.s));
+}
+
+template<typename T, uint32_t N> BaseVector<T, N> minimum(const BaseVector<T, N>& left, const BaseVector<T, N>& right) {
+    return BaseVector<T, N>(minimum(left.vec, right.vec), std::max(left.s, right.s));
 }
 
 template<typename T, uint32_t N> T maxAbs(const BaseVector<T,N>& other) {
@@ -298,9 +304,11 @@ public:
 
     template<typename T> friend T maximum(const BaseVector<T,2>& other);
 
-    template<typename T> friend T minimun(const BaseVector<T, 2>& other);
+    template<typename T> friend T minimum(const BaseVector<T, 2>& other);
 
-    template<typename T> friend BaseVector<T,2> maximum(const BaseVector<T,2>& left, const BaseVector<T,2>& right);
+    template<typename T> friend BaseVector<T, 2> maximum(const BaseVector<T, 2>& left, const BaseVector<T, 2>& right);
+
+    template<typename T> friend BaseVector<T, 2> minimum(const BaseVector<T, 2>& left, const BaseVector<T, 2>& right);
 
     template<typename T> friend T maxAbs(const BaseVector<T,2>& other);
 
@@ -458,12 +466,16 @@ template<typename T> T maximum(const BaseVector<T,2>& other) {
     return std::max(other.x0, other.x1);
 }
 
-template<typename T> T minimun(const BaseVector<T, 2>& other) {
+template<typename T> T minimum(const BaseVector<T, 2>& other) {
     return std::min(other.x0, other.x1);
 }
 
 template<typename T> BaseVector<T,2> maximum(const BaseVector<T,2>& left, const BaseVector<T,2>& right) {
-    return BaseVector<T,2>(std::max(left.x0, right.x0), std::max(left.x1, right.x1));
+    return BaseVector<T, 2>(std::max(left.x0, right.x0), std::max(left.x1, right.x1));
+}
+
+template<typename T> BaseVector<T, 2> minimum(const BaseVector<T, 2>& left, const BaseVector<T, 2>& right) {
+    return BaseVector<T, 2>(std::min(left.x0, right.x0), std::min(left.x1, right.x1));
 }
 
 template<typename T> T maxAbs(const BaseVector<T,2>& other) {

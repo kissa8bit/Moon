@@ -185,8 +185,8 @@ void Graphics::Base::render(uint32_t frameNumber, VkCommandBuffer commandBuffers
 
         VkDeviceSize offsets = 0;
         vkCmdBindVertexBuffers(commandBuffers, 0, 1, model->vertexBuffer(), &offsets);
-        if (model->indexBuffer() != VK_NULL_HANDLE){
-            vkCmdBindIndexBuffer(commandBuffers, *model->indexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+        if (auto indexBuffer = *model->indexBuffer(); indexBuffer != VK_NULL_HANDLE){
+            vkCmdBindIndexBuffer(commandBuffers, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
         }
 
         const utils::vkDefault::DescriptorSets descriptors = {descriptorSets[frameNumber], object->getDescriptorSet(frameNumber)};
