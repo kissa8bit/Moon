@@ -32,7 +32,6 @@ private:
     interfaces::BoundingBox bb;
 
     utils::Buffer uniformBuffer;
-    interfaces::MeshBlock uniformBlock;
     VkDescriptorSet descriptorSet{ VK_NULL_HANDLE };
 
     void loadFromFile(const utils::PhysicalDevice& physicalDevice, VkCommandBuffer commandBuffer);

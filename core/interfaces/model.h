@@ -81,7 +81,7 @@ struct MaterialBlock {
 #define MAX_NUM_JOINTS 128u
 
 struct MeshBlock {
-    math::Matrix<float, 4, 4> matrix;
+    math::Matrix<float, 4, 4> matrix{ 1.0f };
     math::Matrix<float, 4, 4> jointMatrix[MAX_NUM_JOINTS]{};
     float jointcount{ 0 };
 };

@@ -113,7 +113,7 @@ void PlyModel::loadFromFile(const utils::PhysicalDevice& physicalDevice, VkComma
         utils::createDeviceBuffer(physicalDevice, device, commandBuffer, indexBuffer.size() * sizeof(uint32_t), indexBuffer.data(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indexCache, indices);
     }
 
-    uniformBlock.matrix = math::Matrix<float,4,4>(1.0f);
+    interfaces::MeshBlock uniformBlock{};
     uniformBuffer = utils::vkDefault::Buffer(physicalDevice, device, sizeof(uniformBlock), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     utils::Memory::instance().nameMemory(uniformBuffer, std::string(__FILE__) + " in line " + std::to_string(__LINE__) + ", plyModel::loadFromFile, uniformBuffer");
     uniformBuffer.copy(&uniformBlock);
@@ -125,7 +125,7 @@ void PlyModel::createDescriptors(VkDevice device) {
     descriptorPool = utils::vkDefault::DescriptorPool(device, { &materialDescriptorSetLayout, &meshDescriptorSetLayout }, 1);
 
     descriptorSet = descriptorPool.allocateDescriptorSets(meshDescriptorSetLayout, 1).front();
-    VkDescriptorBufferInfo bufferInfo{ uniformBuffer, 0, sizeof(uniformBlock) };
+    VkDescriptorBufferInfo bufferInfo{ uniformBuffer, 0, sizeof(interfaces::MeshBlock) };
     VkWriteDescriptorSet writeDescriptorSet{};
         writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
