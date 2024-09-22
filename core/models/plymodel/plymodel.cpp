@@ -20,6 +20,7 @@ PlyModel::PlyModel(
     const float roughnessFactor,
     const const interfaces::Material::PbrWorkflow workflow) : filename(filename)
 {
+    auto& mat = materials.emplace_back();
     mat.baseColor.factor = baseColorFactor;
     mat.extensions.diffuse.factor = diffuseFactor;
     mat.extensions.specularGlossiness.factor = specularFactor;
@@ -28,8 +29,10 @@ PlyModel::PlyModel(
     mat.pbrWorkflows = workflow;
 }
 
-interfaces::Material& PlyModel::material() {return mat;}
+interfaces::Material& PlyModel::material() {return materials.back();}
 interfaces::BoundingBox& PlyModel::boundingBox() { return bb; }
+const interfaces::Material& PlyModel::material() const { return materials.back(); }
+const interfaces::BoundingBox& PlyModel::boundingBox() const { return bb; }
 
 void PlyModel::destroyCache() {
     vertexCache = utils::Buffer();
@@ -99,13 +102,13 @@ void PlyModel::loadFromFile(const utils::PhysicalDevice& physicalDevice, VkComma
     }
 
     textures.push_back(utils::Texture::empty(physicalDevice, commandBuffer));
-    mat.baseColor.texture = &textures.back();
-    mat.metallicRoughness.texture = &textures.back();
-    mat.normal.texture = &textures.back();
-    mat.occlusion.texture = &textures.back();
-    mat.emissive.texture = &textures.back();
-    mat.extensions.specularGlossiness.texture = &textures.back();
-    mat.extensions.diffuse.texture = &textures.back();
+    material().baseColor.texture = &textures.back();
+    material().metallicRoughness.texture = &textures.back();
+    material().normal.texture = &textures.back();
+    material().occlusion.texture = &textures.back();
+    material().emissive.texture = &textures.back();
+    material().extensions.specularGlossiness.texture = &textures.back();
+    material().extensions.diffuse.texture = &textures.back();
 
     const auto& device = physicalDevice.device();
     utils::createDeviceBuffer(physicalDevice, device, commandBuffer, vertexBuffer.size() * sizeof(interfaces::Vertex), vertexBuffer.data(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertexCache, vertices);
@@ -135,7 +138,7 @@ void PlyModel::createDescriptors(VkDevice device) {
         writeDescriptorSet.pBufferInfo = &bufferInfo;
     vkUpdateDescriptorSets(device, 1, &writeDescriptorSet, 0, nullptr);
 
-    mat.createDescriptorSet(device, descriptorPool, materialDescriptorSetLayout);
+    material().createDescriptorSet(device, descriptorPool, materialDescriptorSetLayout);
 }
 
 void PlyModel::create(const utils::PhysicalDevice& device, VkCommandPool commandPool)
@@ -155,10 +158,10 @@ void PlyModel::create(const utils::PhysicalDevice& device, VkCommandPool command
 void PlyModel::render(uint32_t, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t& primitiveCount) const {
     auto descriptors = descriptorSets;
     descriptors.push_back(descriptorSet);
-    descriptors.push_back(mat.descriptorSet);
+    descriptors.push_back(material().descriptorSet);
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, descriptors.size(), descriptors.data(), 0, NULL);
 
-    interfaces::MaterialBlock materialBlock(mat, primitiveCount++);
+    interfaces::MaterialBlock materialBlock(material(), primitiveCount++);
     vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(materialBlock), &materialBlock);
 
     if (indexCount > 0) {

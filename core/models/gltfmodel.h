@@ -25,10 +25,6 @@ private:
     utils::Buffer vertices, indices;
     utils::Buffer vertexCache, indexCache;
 
-    utils::vkDefault::DescriptorSetLayout nodeDescriptorSetLayout;
-    utils::vkDefault::DescriptorSetLayout materialDescriptorSetLayout;
-    utils::vkDefault::DescriptorPool descriptorPool;
-
     Instances instances;
     utils::Textures textures;
     interfaces::Materials materials;

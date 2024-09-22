@@ -22,15 +22,10 @@ private:
     utils::Buffer vertices, indices;
     utils::Buffer vertexCache, indexCache;
 
-    std::vector<utils::Texture> textures;
+    utils::Textures textures;
+    interfaces::Materials materials;
 
-    utils::vkDefault::DescriptorSetLayout meshDescriptorSetLayout;
-    utils::vkDefault::DescriptorSetLayout materialDescriptorSetLayout;
-    utils::vkDefault::DescriptorPool descriptorPool;
-
-    interfaces::Material mat{};
     interfaces::BoundingBox bb;
-
     utils::Buffer uniformBuffer;
     VkDescriptorSet descriptorSet{ VK_NULL_HANDLE };
 
@@ -49,6 +44,8 @@ public:
 
     interfaces::Material& material();
     interfaces::BoundingBox& boundingBox();
+    const interfaces::Material& material() const;
+    const interfaces::BoundingBox& boundingBox() const;
 
     bool hasAnimation(uint32_t) const override {return false;}
     float animationStart(uint32_t, uint32_t) const override {return 0.0f;}

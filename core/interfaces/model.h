@@ -102,6 +102,11 @@ struct Vertex {
 
 class Model
 {
+protected:
+    utils::vkDefault::DescriptorSetLayout meshDescriptorSetLayout;
+    utils::vkDefault::DescriptorSetLayout materialDescriptorSetLayout;
+    utils::vkDefault::DescriptorPool descriptorPool;
+
 public:
     virtual ~Model(){};
 
