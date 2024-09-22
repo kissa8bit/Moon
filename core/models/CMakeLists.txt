@@ -30,8 +30,7 @@ set(SOURCES
 set(HEADERS
     gltfmodel/tinyGLTF.h
     gltfmodel/gltfutils.h
-    gltfmodel/primitive.h
-    gltfmodel/mesh.h
+    gltfmodel/gltfmesh.h
     gltfmodel/skin.h
     gltfmodel/node.h
     gltfmodel.h

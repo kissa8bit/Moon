@@ -52,14 +52,6 @@ void GltfModel::destroyCache() {
     indexCache = utils::Buffer();
 }
 
-const VkBuffer* GltfModel::vertexBuffer() const {
-    return vertices;
-}
-
-const VkBuffer* GltfModel::indexBuffer() const {
-    return indices;
-}
-
 void GltfModel::loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffer commandBuffer) {
     tinygltf::Model gltfModel;
     tinygltf::TinyGLTF gltfContext;
@@ -144,38 +136,14 @@ void GltfModel::create(const utils::PhysicalDevice& device, VkCommandPool comman
 void GltfModel::render(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t &primitiveCount) const {
     for (auto& [_, node] : instances.at(instanceNumber).nodes) {
         if (!CHECK_M(node.get(), std::string("[ GltfModel::render ] node is nullptr"))) continue;
-        for (const Primitive& primitive : node->mesh.primitives) {
-            auto descriptors = descriptorSets;
-            descriptors.push_back(node->mesh.descriptorSet);
-            descriptors.push_back(primitive.material->descriptorSet);
-            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, descriptors.size(), descriptors.data(), 0, NULL);
-
-            if (!CHECK_M(primitive.material, std::string("[ GltfModel::render ] material is nullptr"))) continue;
-            const auto& material = *primitive.material;
-
-            interfaces::MaterialBlock materialBlock(material, primitiveCount++);
-            vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(materialBlock), &materialBlock);
-
-            if (primitive.indexCount > 0) {
-                vkCmdDrawIndexed(commandBuffer, primitive.indexCount, 1, primitive.firstIndex, 0, 0);
-            }
-            else {
-                vkCmdDraw(commandBuffer, primitive.vertexCount, 1, 0, 0);
-            }
-        }
+        node->mesh.render(commandBuffer, pipelineLayout, descriptorSets, primitiveCount);
     }
 }
 
 void GltfModel::renderBB(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets) const {
     for (auto& [_, node] : instances.at(instanceNumber).nodes) {
-        for (const Primitive& primitive : node->mesh.primitives) {
-            auto descriptors = descriptorSets;
-            descriptors.push_back(node->mesh.descriptorSet);
-            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, descriptors.size(), descriptors.data(), 0, NULL);
-
-            vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(interfaces::BoundingBox), (void*)&primitive.bb);
-            vkCmdDraw(commandBuffer, 24, 1, 0, 0);
-        }
+        if (!CHECK_M(node.get(), std::string("[ GltfModel::render ] node is nullptr"))) continue;
+        node->mesh.renderBB(commandBuffer, pipelineLayout, descriptorSets);
     }
 }
 

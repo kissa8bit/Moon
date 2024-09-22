@@ -3,6 +3,7 @@
 
 #include <vulkan.h>
 #include <vector>
+#include <limits>
 
 #include "vector.h"
 #include "matrix.h"
@@ -13,8 +14,8 @@
 namespace moon::interfaces {
 
 struct BoundingBox{
-    alignas(16) math::Vector<float,3> min{0.0f,0.0f,0.0f};
-    alignas(16) math::Vector<float,3> max{0.0f,0.0f,0.0f};
+    alignas(16) math::Vector<float,3> min{std::numeric_limits<float>::max()};
+    alignas(16) math::Vector<float,3> max{0.0f};
 
     BoundingBox() = default;
     BoundingBox(math::Vector<float,3> min, math::Vector<float,3> max);
@@ -78,12 +79,37 @@ struct MaterialBlock {
     MaterialBlock(const Material& material, uint32_t primitive);
 };
 
-#define MAX_NUM_JOINTS 128u
-
 struct MeshBlock {
+    static constexpr auto maxJoints = 128u;
     math::Matrix<float, 4, 4> matrix{ 1.0f };
-    math::Matrix<float, 4, 4> jointMatrix[MAX_NUM_JOINTS]{};
+    math::Matrix<float, 4, 4> jointMatrix[maxJoints]{};
     float jointcount{ 0 };
+};
+
+struct Primitive {
+    uint32_t firstIndex{ 0 };
+    uint32_t indexCount{ 0 };
+    uint32_t vertexCount{ 0 };
+    const interfaces::Material* material{ nullptr };
+    interfaces::BoundingBox bb;
+
+    Primitive() = default;
+    Primitive(uint32_t firstIndex, uint32_t indexCount, uint32_t vertexCount, const interfaces::Material* material, interfaces::BoundingBox bb)
+        : firstIndex(firstIndex), indexCount(indexCount), vertexCount(vertexCount), material(material), bb(bb)
+    {}
+};
+
+struct Mesh {
+    utils::Buffer uniformBuffer;
+    interfaces::MeshBlock uniformBlock;
+
+    std::vector<Primitive> primitives;
+    VkDescriptorSet descriptorSet{ VK_NULL_HANDLE };
+
+    bool empty() const;
+    void createDescriptorSet(VkDevice device, utils::vkDefault::DescriptorPool& descriptorPool, const utils::vkDefault::DescriptorSetLayout& descriptorSetLayout);
+    void render(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t& primitiveCount) const;
+    void renderBB(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets) const;
 };
 
 struct Vertex {
@@ -107,6 +133,10 @@ protected:
     utils::vkDefault::DescriptorSetLayout materialDescriptorSetLayout;
     utils::vkDefault::DescriptorPool descriptorPool;
 
+    utils::Buffer vertices, indices;
+    utils::Textures textures;
+    interfaces::Materials materials;
+
 public:
     virtual ~Model(){};
 
@@ -116,8 +146,8 @@ public:
     virtual void updateAnimation(uint32_t frameIndex, uint32_t index, float time) = 0;
     virtual void changeAnimation(uint32_t frameIndex, uint32_t oldIndex, uint32_t newIndex, float startTime, float time, float changeAnimationTime) = 0;
 
-    virtual const VkBuffer* vertexBuffer() const = 0;
-    virtual const VkBuffer* indexBuffer() const = 0;
+    virtual const VkBuffer* vertexBuffer() const;
+    virtual const VkBuffer* indexBuffer() const;
     virtual void create(const utils::PhysicalDevice& device, VkCommandPool commandPool) = 0;
     virtual void render(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t& primitiveCount) const = 0;
     virtual void renderBB(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets) const = 0;

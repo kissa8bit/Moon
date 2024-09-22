@@ -7,7 +7,6 @@
 #include <vulkan.h>
 
 #include "model.h"
-#include "texture.h"
 #include "buffer.h"
 #include "matrix.h"
 #include "quaternion.h"
@@ -21,13 +20,8 @@ namespace moon::models {
 class GltfModel : public interfaces::Model {
 private:
     std::filesystem::path filename;
-
-    utils::Buffer vertices, indices;
     utils::Buffer vertexCache, indexCache;
-
     Instances instances;
-    utils::Textures textures;
-    interfaces::Materials materials;
 
     void loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffer commandBuffer);
     void loadNode(const tinygltf::Model& gltfModel, const utils::PhysicalDevice& device, NodeMap& instance, Node* parent, uint32_t nodeIndex, uint32_t& indexStart);
@@ -49,8 +43,6 @@ public:
     void updateAnimation(uint32_t frameIndex, uint32_t index, float time) override;
     void changeAnimation(uint32_t frameIndex, uint32_t oldIndex, uint32_t newIndex, float startTime, float time, float changeAnimationTime) override;
 
-    const VkBuffer* vertexBuffer() const override;
-    const VkBuffer* indexBuffer() const override;
     void create(const utils::PhysicalDevice& device, VkCommandPool commandPool) override;
     void render(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t& primitiveCount) const override;
     void renderBB(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets) const override;

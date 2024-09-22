@@ -228,7 +228,7 @@ template<typename T, uint32_t N> BaseVector<T,N> maximum(const BaseVector<T,N>& 
 }
 
 template<typename T, uint32_t N> BaseVector<T, N> minimum(const BaseVector<T, N>& left, const BaseVector<T, N>& right) {
-    return BaseVector<T, N>(minimum(left.vec, right.vec), std::max(left.s, right.s));
+    return BaseVector<T, N>(minimum(left.vec, right.vec), std::min(left.s, right.s));
 }
 
 template<typename T, uint32_t N> T maxAbs(const BaseVector<T,N>& other) {

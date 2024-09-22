@@ -2,7 +2,6 @@
 #define PLYMODEL_H
 
 #include "model.h"
-#include "texture.h"
 #include "buffer.h"
 #include "matrix.h"
 #include "vkdefault.h"
@@ -10,24 +9,13 @@
 #include <filesystem>
 #include <vector>
 
-#define MAX_NUM_JOINTS 128u
-
 namespace moon::models {
 
 class PlyModel : public interfaces::Model{
 private:
     std::filesystem::path filename;
-
-    size_t vertexCount{ 0 }, indexCount{ 0 };
-    utils::Buffer vertices, indices;
     utils::Buffer vertexCache, indexCache;
-
-    utils::Textures textures;
-    interfaces::Materials materials;
-
-    interfaces::BoundingBox bb;
-    utils::Buffer uniformBuffer;
-    VkDescriptorSet descriptorSet{ VK_NULL_HANDLE };
+    interfaces::Mesh mesh;
 
     void loadFromFile(const utils::PhysicalDevice& physicalDevice, VkCommandBuffer commandBuffer);
     void createDescriptors(VkDevice device);
@@ -43,9 +31,8 @@ public:
              const interfaces::Material::PbrWorkflow workflow = interfaces::Material::PbrWorkflow::METALLIC_ROUGHNESS);
 
     interfaces::Material& material();
-    interfaces::BoundingBox& boundingBox();
     const interfaces::Material& material() const;
-    const interfaces::BoundingBox& boundingBox() const;
+    interfaces::BoundingBox boundingBox() const;
 
     bool hasAnimation(uint32_t) const override {return false;}
     float animationStart(uint32_t, uint32_t) const override {return 0.0f;}
@@ -53,8 +40,6 @@ public:
     void updateAnimation(uint32_t, uint32_t, float) override {};
     void changeAnimation(uint32_t, uint32_t, uint32_t, float, float, float) override {};
 
-    const VkBuffer* vertexBuffer() const override;
-    const VkBuffer* indexBuffer() const override;
     void create(const utils::PhysicalDevice& device, VkCommandPool commandPool) override;
     void render(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t& primitiveCount) const override;
     void renderBB(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets) const override;

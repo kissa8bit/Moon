@@ -30,21 +30,12 @@ PlyModel::PlyModel(
 }
 
 interfaces::Material& PlyModel::material() {return materials.back();}
-interfaces::BoundingBox& PlyModel::boundingBox() { return bb; }
 const interfaces::Material& PlyModel::material() const { return materials.back(); }
-const interfaces::BoundingBox& PlyModel::boundingBox() const { return bb; }
+interfaces::BoundingBox PlyModel::boundingBox() const { return mesh.primitives.empty() ? interfaces::BoundingBox() : mesh.primitives.back().bb; }
 
 void PlyModel::destroyCache() {
     vertexCache = utils::Buffer();
     indexCache = utils::Buffer();
-}
-
-const VkBuffer* PlyModel::vertexBuffer() const {
-    return vertices;
-}
-
-const VkBuffer* PlyModel::indexBuffer() const {
-    return indices;
 }
 
 void PlyModel::loadFromFile(const utils::PhysicalDevice& physicalDevice, VkCommandBuffer commandBuffer) {
@@ -64,10 +55,11 @@ void PlyModel::loadFromFile(const utils::PhysicalDevice& physicalDevice, VkComma
 
     file.read(file_stream);
 
-    vertexCount = verts->count;
-    indexCount = faces ? 3 * faces->count : 0;
+    uint32_t vertexCount = verts->count;
+    uint32_t indexCount = faces ? 3 * faces->count : 0;
     std::vector<uint32_t> indexBuffer(indexCount);
     std::vector<interfaces::Vertex> vertexBuffer(verts ? verts->count : 0, interfaces::Vertex());
+    interfaces::BoundingBox bb;
 
     if (faces) {
         std::memcpy(indexBuffer.data(), faces->buffer.get_const(), faces->buffer.size_bytes());
@@ -110,6 +102,10 @@ void PlyModel::loadFromFile(const utils::PhysicalDevice& physicalDevice, VkComma
     material().extensions.specularGlossiness.texture = &textures.back();
     material().extensions.diffuse.texture = &textures.back();
 
+    mesh.primitives.push_back(
+        interfaces::Primitive(0, indexCount, vertexCount, &material(), bb)
+    );
+
     const auto& device = physicalDevice.device();
     utils::createDeviceBuffer(physicalDevice, device, commandBuffer, vertexBuffer.size() * sizeof(interfaces::Vertex), vertexBuffer.data(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertexCache, vertices);
     if (indexCount > 0) {
@@ -117,9 +113,9 @@ void PlyModel::loadFromFile(const utils::PhysicalDevice& physicalDevice, VkComma
     }
 
     interfaces::MeshBlock uniformBlock{};
-    uniformBuffer = utils::vkDefault::Buffer(physicalDevice, device, sizeof(uniformBlock), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    utils::Memory::instance().nameMemory(uniformBuffer, std::string(__FILE__) + " in line " + std::to_string(__LINE__) + ", plyModel::loadFromFile, uniformBuffer");
-    uniformBuffer.copy(&uniformBlock);
+    mesh.uniformBuffer = utils::vkDefault::Buffer(physicalDevice, device, sizeof(mesh.uniformBlock), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    utils::Memory::instance().nameMemory(mesh.uniformBuffer, std::string(__FILE__) + " in line " + std::to_string(__LINE__) + ", plyModel::loadFromFile, uniformBuffer");
+    mesh.uniformBuffer.copy(&uniformBlock);
 }
 
 void PlyModel::createDescriptors(VkDevice device) {
@@ -127,17 +123,7 @@ void PlyModel::createDescriptors(VkDevice device) {
     materialDescriptorSetLayout = interfaces::Model::createMaterialDescriptorSetLayout(device);
     descriptorPool = utils::vkDefault::DescriptorPool(device, { &materialDescriptorSetLayout, &meshDescriptorSetLayout }, 1);
 
-    descriptorSet = descriptorPool.allocateDescriptorSets(meshDescriptorSetLayout, 1).front();
-    VkDescriptorBufferInfo bufferInfo{ uniformBuffer, 0, sizeof(interfaces::MeshBlock) };
-    VkWriteDescriptorSet writeDescriptorSet{};
-        writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        writeDescriptorSet.descriptorCount = 1;
-        writeDescriptorSet.dstSet = descriptorSet;
-        writeDescriptorSet.dstBinding = 0;
-        writeDescriptorSet.pBufferInfo = &bufferInfo;
-    vkUpdateDescriptorSets(device, 1, &writeDescriptorSet, 0, nullptr);
-
+    mesh.createDescriptorSet(device, descriptorPool, meshDescriptorSetLayout);
     material().createDescriptorSet(device, descriptorPool, materialDescriptorSetLayout);
 }
 
@@ -156,29 +142,11 @@ void PlyModel::create(const utils::PhysicalDevice& device, VkCommandPool command
 }
 
 void PlyModel::render(uint32_t, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t& primitiveCount) const {
-    auto descriptors = descriptorSets;
-    descriptors.push_back(descriptorSet);
-    descriptors.push_back(material().descriptorSet);
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, descriptors.size(), descriptors.data(), 0, NULL);
-
-    interfaces::MaterialBlock materialBlock(material(), primitiveCount++);
-    vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(materialBlock), &materialBlock);
-
-    if (indexCount > 0) {
-        vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0);
-    }
-    else {
-        vkCmdDraw(commandBuffer, vertexCount, 1, 0, 0);
-    }
+    mesh.render(commandBuffer, pipelineLayout, descriptorSets, primitiveCount);
 }
 
 void PlyModel::renderBB(uint32_t, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets) const {
-    auto descriptors = descriptorSets;
-    descriptors.push_back(descriptorSet);
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, descriptors.size(), descriptors.data(), 0, NULL);
-
-    vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(bb), &bb);
-    vkCmdDraw(commandBuffer, 24, 1, 0, 0);
+    mesh.renderBB(commandBuffer, pipelineLayout, descriptorSets);
 }
 
 }

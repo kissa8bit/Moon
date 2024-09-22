@@ -1,14 +1,14 @@
 #ifndef GLTFMODEL_NODE_H
 #define GLTFMODEL_NODE_H
 
-#include "mesh.h"
+#include "gltfmesh.h"
 #include "skin.h"
 #include "quaternion.h"
 
 namespace moon::models {
 
 struct Node {
-    Mesh mesh;
+    gltfMesh mesh;
 
     Node* parent{ nullptr };
     Skin* skin{ nullptr };
@@ -21,7 +21,7 @@ struct Node {
 
     void update() {
         const auto matrix = getMatrix();
-        mesh.uniformBlock.jointcount = skin ? std::min((uint32_t)skin->joints.size(), MAX_NUM_JOINTS) : 0;
+        mesh.uniformBlock.jointcount = skin ? std::min((uint32_t)skin->joints.size(), interfaces::MeshBlock::maxJoints) : 0;
         mesh.uniformBlock.matrix = transpose(matrix);
 
         for (size_t i = 0; i < mesh.uniformBlock.jointcount; i++) {
@@ -39,7 +39,7 @@ struct Node {
         convert(scale, nodes.scale);
         convert(matrix, nodes.matrix);
         if (const auto meshIndex = nodes.mesh; isValid(meshIndex)) {
-            mesh = Mesh(gltfModel, materials, device, meshIndex, indexStart);
+            mesh = gltfMesh(gltfModel, materials, device, meshIndex, indexStart);
         }
     }
 
