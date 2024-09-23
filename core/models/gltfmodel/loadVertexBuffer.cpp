@@ -88,14 +88,14 @@ void GltfModel::loadVertexBuffer(const tinygltf::Model& gltfModel, const tinyglt
         }
 
         if (isInvalid(primitive.indices)) continue;
-        const auto [indicesData, indicesCount, indicesComponentType] = extractBuffer(gltfModel, primitive.indices);
+        const GltfBufferExtractor indicesExtract(gltfModel, primitive.indices);
 
 #define GLTFMODEL_LOADVERTEXBUFFER_INDEX_CASE(ComponentType, type)                          \
     case ComponentType:                                                                     \
-        pushBackIndex((const type*)indicesData, indicesCount, vertexStart, indexBuffer);    \
+        pushBackIndex((const type*)indicesExtract.data, indicesExtract.count, vertexStart, indexBuffer);    \
         break;
 
-        switch (indicesComponentType) {
+        switch (indicesExtract.componentType) {
             GLTFMODEL_LOADVERTEXBUFFER_INDEX_CASE(TINYGLTF_PARAMETER_TYPE_UNSIGNED_INT, uint32_t)
             GLTFMODEL_LOADVERTEXBUFFER_INDEX_CASE(TINYGLTF_PARAMETER_TYPE_UNSIGNED_SHORT, uint16_t)
             GLTFMODEL_LOADVERTEXBUFFER_INDEX_CASE(TINYGLTF_PARAMETER_TYPE_UNSIGNED_BYTE, uint8_t)

@@ -173,7 +173,7 @@ void Object::updateAnimation(uint32_t imageNumber, float frameTime){
             animationTimer -= animationTimer > end ? end : 0;
             pObject->model()->updateAnimation(index, animationIndex, animationTimer);
         }else{
-            pObject->model()->changeAnimation(index, animationIndex, newAnimationIndex, startTimer, animationTimer, changeAnimationTime);
+            pObject->model()->changeAnimation(index, newAnimationIndex, startTimer, animationTimer, changeAnimationTime);
             if(startTimer + changeAnimationTime < animationTimer){
                 changeAnimationFlag = false;
                 animationIndex = newAnimationIndex;

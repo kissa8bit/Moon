@@ -38,7 +38,7 @@ public:
     float animationStart(uint32_t, uint32_t) const override {return 0.0f;}
     float animationEnd(uint32_t, uint32_t) const override {return 0.0f;}
     void updateAnimation(uint32_t, uint32_t, float) override {};
-    void changeAnimation(uint32_t, uint32_t, uint32_t, float, float, float) override {};
+    void changeAnimation(uint32_t, uint32_t, float, float, float) override {};
 
     void create(const utils::PhysicalDevice& device, VkCommandPool commandPool) override;
     void render(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t& primitiveCount) const override;

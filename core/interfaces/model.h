@@ -126,8 +126,7 @@ struct Vertex {
     static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
 };
 
-class Model
-{
+class Model {
 protected:
     utils::vkDefault::DescriptorSetLayout meshDescriptorSetLayout;
     utils::vkDefault::DescriptorSetLayout materialDescriptorSetLayout;
@@ -140,11 +139,11 @@ protected:
 public:
     virtual ~Model(){};
 
-    virtual bool hasAnimation(uint32_t frameIndex) const = 0;
-    virtual float animationStart(uint32_t frameIndex, uint32_t index) const = 0;
-    virtual float animationEnd(uint32_t frameIndex, uint32_t index) const = 0;
-    virtual void updateAnimation(uint32_t frameIndex, uint32_t index, float time) = 0;
-    virtual void changeAnimation(uint32_t frameIndex, uint32_t oldIndex, uint32_t newIndex, float startTime, float time, float changeAnimationTime) = 0;
+    virtual bool hasAnimation(uint32_t instanceIndex) const = 0;
+    virtual float animationStart(uint32_t instanceIndex, uint32_t index) const = 0;
+    virtual float animationEnd(uint32_t instanceIndex, uint32_t index) const = 0;
+    virtual void updateAnimation(uint32_t instanceIndex, uint32_t index, float time) = 0;
+    virtual void changeAnimation(uint32_t instanceIndex, uint32_t newIndex, float startTime, float time, float changeAnimationTime) = 0;
 
     virtual const VkBuffer* vertexBuffer() const;
     virtual const VkBuffer* indexBuffer() const;

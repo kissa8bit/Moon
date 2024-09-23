@@ -19,11 +19,11 @@ void GltfModel::loadSkins(const tinygltf::Model& gltfModel) {
 
             const auto accessorsIndex = source.inverseBindMatrices;
             if (isInvalid(accessorsIndex)) continue;
-            const auto [data, count, _] = extractBuffer(gltfModel, accessorsIndex);
+            const GltfBufferExtractor extract(gltfModel, accessorsIndex);
 
             auto& matrices = skin.inverseBindMatrices;
-            matrices.resize(count);
-            std::memcpy((void*)matrices.data(), data, count * sizeof(math::Matrix<float, 4, 4>));
+            matrices.resize(extract.count);
+            std::memcpy((void*)matrices.data(), extract.data, extract.count * sizeof(math::Matrix<float, 4, 4>));
             std::transform(matrices.begin(), matrices.end(), matrices.begin(), [](const auto& matrix) {
                 return math::transpose(matrix);
             });

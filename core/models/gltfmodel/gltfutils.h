@@ -75,18 +75,23 @@ inline VkFilter getVkFilterMode(int32_t filterMode) {
     return VK_FILTER_LINEAR;
 }
 
-/**
- * @param[in] tinygltf Model
-*  @param[in] accessorsIndex != tinygltf::invalidIndex
- * @return pointer to data, number of elements, element type
- */
-inline std::tuple<const void*, size_t, int> extractBuffer(const tinygltf::Model& gltfModel, const int accessorsIndex) {
-    const auto& accessor = gltfModel.accessors.at(accessorsIndex);
-    const auto& bufferView = gltfModel.bufferViews.at(accessor.bufferView);
-    const auto& buffer = gltfModel.buffers.at(bufferView.buffer);
-    const auto data = (const void*)&buffer.data[accessor.byteOffset + bufferView.byteOffset];
-    return { data, accessor.count, accessor.componentType };
-}
+template<typename Type = const void*>
+struct GltfBufferExtractor {
+    Type data{ nullptr };
+    size_t count{0};
+    int componentType{ tinygltf::invalidIndex };
+    int type{ tinygltf::invalidIndex };
+
+    GltfBufferExtractor(const tinygltf::Model& gltfModel, const int accessorsIndex) {
+        const auto& accessor = gltfModel.accessors.at(accessorsIndex);
+        const auto& bufferView = gltfModel.bufferViews.at(accessor.bufferView);
+        const auto& buffer = gltfModel.buffers.at(bufferView.buffer);
+        data = (Type)&buffer.data[accessor.byteOffset + bufferView.byteOffset];
+        count = accessor.count;
+        componentType = accessor.componentType;
+        type = accessor.type;
+    }
+};
 
 inline bool isValid(const int index) {
     return index != tinygltf::invalidIndex;

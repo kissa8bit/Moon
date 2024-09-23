@@ -1,7 +1,70 @@
 #include "gltfmodel.h"
+#include "gltfutils.h"
 #include "node.h"
 
 namespace moon::models {
+
+namespace {
+
+template<typename Type>
+Animation::Sampler makeSampler(
+    Animation::Sampler::InterpolationType interpolation,
+    size_t count,
+    const float* inputData,
+    const Type* outputData,
+    float& start,
+    float& end)
+{
+    Animation::Sampler sampler{};
+    sampler.interpolation = interpolation;
+    for (size_t i = 0; i < count; ++i) {
+        const auto& point = sampler.points.emplace_back(Animation::Point{inputData[i], outputData[i]});
+        start = std::min(point.inputTime, start);
+        end = std::max(point.inputTime, end);
+    }
+    return sampler;
+}
+
+void translate(Node* node, const math::Vector<float,4>& x0, const math::Vector<float, 4>& x1, float t) {
+    node->translation = mix(x0, x1, t).dvec();
+}
+
+void scale(Node* node, const math::Vector<float, 4>& x0, const math::Vector<float, 4>& x1, float t) {
+    node->scale = mix(x0, x1, t).dvec();
+}
+
+void rotate(Node* node, const math::Vector<float, 4>& x0, const math::Vector<float, 4>& x1, float t) {
+    math::Quaternion<float> q1(x0[3], x0.dvec());
+    math::Quaternion<float> q2(x1[3], x1.dvec());
+    node->rotation = normalize(slerp(q1, q2, t));
+}
+
+static const std::unordered_map<Animation::Channel::PathType, void (*)(Node*, const math::Vector<float, 4>&, const math::Vector<float, 4>&, float)> updateFMap = {
+    {Animation::Channel::PathType::ROTATION, rotate},
+    {Animation::Channel::PathType::TRANSLATION, translate},
+    {Animation::Channel::PathType::SCALE, scale}
+};
+
+void translate(Node* node, const math::Vector<float, 4>& x, float t) {
+    node->translation = mix(node->translation, math::Vector<float, 3>(x.dvec()), t);
+}
+
+void scale(Node* node, const math::Vector<float, 4>& x, float t) {
+    node->scale = mix(node->scale, math::Vector<float, 3>(x.dvec()), t);
+}
+
+void rotate(Node* node, const math::Vector<float, 4>& x, float t) {
+    math::Quaternion<float> q(x[3], x.dvec());
+    node->rotation = normalize(slerp(node->rotation, q, t));
+}
+
+static const std::unordered_map<Animation::Channel::PathType, void (*)(Node*, const math::Vector<float, 4>&, float)> changeFMap = {
+    {Animation::Channel::PathType::ROTATION, rotate},
+    {Animation::Channel::PathType::TRANSLATION, translate},
+    {Animation::Channel::PathType::SCALE, scale}
+};
+
+}
 
 bool GltfModel::hasAnimation(uint32_t frameIndex) const {
     return instances[instances.size() > frameIndex ? frameIndex : 0].animations.size() > 0;
@@ -15,221 +78,94 @@ float GltfModel::animationEnd(uint32_t frameIndex, uint32_t index) const {
     return instances[frameIndex].animations[index].end;
 }
 
-void GltfModel::loadAnimations(const tinygltf::Model& gltfModel)
-{
-    for(auto& instance: instances){
-        for (const tinygltf::Animation &anim : gltfModel.animations) {
-            Animation animation{};
+void GltfModel::loadAnimations(const tinygltf::Model& gltfModel){
+    static const std::unordered_map<std::string, Animation::Sampler::InterpolationType> interpolationMap = {
+        {"LINEAR", Animation::Sampler::InterpolationType::LINEAR},
+        {"STEP", Animation::Sampler::InterpolationType::STEP},
+        {"CUBICSPLINE", Animation::Sampler::InterpolationType::CUBICSPLINE}
+    };
+    static const std::unordered_map<std::string, Animation::Channel::PathType> channelsMap = {
+        {"rotation", Animation::Channel::PathType::ROTATION},
+        {"translation", Animation::Channel::PathType::TRANSLATION},
+        {"scale", Animation::Channel::PathType::SCALE}
+    };
 
-            // Samplers
-            for (const auto &samp : anim.samplers) {
-                Animation::AnimationSampler sampler{};
+    for (const tinygltf::Animation &anim : gltfModel.animations) {
+        Animation::Samplers samplers;
+        float start{ std::numeric_limits<float>::max() };
+        float end{ std::numeric_limits<float>::min() };
 
-                if (samp.interpolation == "LINEAR") {
-                    sampler.interpolation = Animation::AnimationSampler::InterpolationType::LINEAR;
-                }
-                if (samp.interpolation == "STEP") {
-                    sampler.interpolation = Animation::AnimationSampler::InterpolationType::STEP;
-                }
-                if (samp.interpolation == "CUBICSPLINE") {
-                    sampler.interpolation = Animation::AnimationSampler::InterpolationType::CUBICSPLINE;
-                }
+        for (const auto& gltfsampler : anim.samplers) {
+            const GltfBufferExtractor<const float*> input(gltfModel, gltfsampler.input);
+            const GltfBufferExtractor output(gltfModel, gltfsampler.output);
 
-                // Read sampler input time values
-                {
-                    const tinygltf::Accessor &accessor = gltfModel.accessors[samp.input];
-                    const tinygltf::BufferView &bufferView = gltfModel.bufferViews[accessor.bufferView];
-                    const tinygltf::Buffer &buffer = gltfModel.buffers[bufferView.buffer];
+            if (!CHECK_M(input.count == output.count, "[ GltfModel::loadAnimations ] : input and output data must have same count")) continue;
 
-                    assert(accessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
+            #define GLTFMODEL_LOADANIMATIONS_SAMPLER_CASE(TINYGLTF_TYPE, VEC_DIM)                                                                                           \
+                case TINYGLTF_TYPE:                                                                                                                                         \
+                    samplers.push_back(                                                                                                                                     \
+                        makeSampler(interpolationMap.at(gltfsampler.interpolation), input.count, input.data, (const math::Vector<float, VEC_DIM>*)output.data, start, end)  \
+                    );                                                                                                                                                      \
+                    break;
 
-                    const void *dataPtr = &buffer.data[accessor.byteOffset + bufferView.byteOffset];
-                    const float *buf = static_cast<const float*>(dataPtr);
-                    for (size_t index = 0; index < accessor.count; index++) {
-                        sampler.inputs.push_back(buf[index]);
-                    }
-
-                    for (const auto& input: sampler.inputs) {
-                        animation.start = std::min(input, animation.start);
-                        animation.end = std::max(input, animation.end);
-                    }
-                }
-
-                // Read sampler output T/R/S values
-                {
-                    const tinygltf::Accessor &accessor = gltfModel.accessors[samp.output];
-                    const tinygltf::BufferView &bufferView = gltfModel.bufferViews[accessor.bufferView];
-                    const tinygltf::Buffer &buffer = gltfModel.buffers[bufferView.buffer];
-
-                    assert(accessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
-
-                    const void *dataPtr = &buffer.data[accessor.byteOffset + bufferView.byteOffset];
-
-                    switch (accessor.type) {
-                        case TINYGLTF_TYPE_VEC3: {
-                            const math::Vector<float,3> *buf = static_cast<const math::Vector<float,3>*>(dataPtr);
-                            for (size_t index = 0; index < accessor.count; index++) {
-                                sampler.outputsVec4.push_back(math::Vector<float,4>(buf[index][0],buf[index][1],buf[index][2], 0.0f));
-                            }
-                            break;
-                        }
-                        case TINYGLTF_TYPE_VEC4: {
-                            const math::Vector<float,4> *buf = static_cast<const math::Vector<float,4>*>(dataPtr);
-                            for (size_t index = 0; index < accessor.count; index++) {
-                                sampler.outputsVec4.push_back(buf[index]);
-                            }
-                            break;
-                        }
-                        default: {
-                            std::cout << "unknown type" << std::endl;
-                            break;
-                        }
-                    }
-                }
-
-                animation.samplers.push_back(sampler);
+            switch (output.type) {
+                GLTFMODEL_LOADANIMATIONS_SAMPLER_CASE(TINYGLTF_TYPE_VEC3, 3)
+                GLTFMODEL_LOADANIMATIONS_SAMPLER_CASE(TINYGLTF_TYPE_VEC4, 4)
             }
+            #undef GLTFMODEL_LOADANIMATIONS_SAMPLER_CASE
+        }
 
-            // Channels
-            for (const auto &source: anim.channels)
-            {
-                Animation::AnimationChannel channel{};
-
-                if (source.target_path == "rotation") {
-                    channel.path = Animation::AnimationChannel::PathType::ROTATION;
-                }
-                if (source.target_path == "translation") {
-                    channel.path = Animation::AnimationChannel::PathType::TRANSLATION;
-                }
-                if (source.target_path == "scale") {
-                    channel.path = Animation::AnimationChannel::PathType::SCALE;
-                }
-                if (source.target_path == "weights") {
-                    std::cout << "weights not yet supported, skipping channel" << std::endl;
-                    continue;
-                }
-                channel.samplerIndex = source.sampler;
+        for (auto& instance : instances) {
+            Animation::Channels channels;
+            for (const auto &source: anim.channels) {
                 if (auto it = instance.nodes.find(source.target_node); it != instance.nodes.end()) {
-                    channel.node = it->second.get();
-                    animation.channels.push_back(channel);
+                    channels.push_back(Animation::Channel{ channelsMap.at(source.target_path) , it->second.get(), source.sampler });
                 }
             }
-
-            instance.animations.push_back(animation);
+            instance.animations.push_back({ channels, samplers, start, end });
         }
     }
 }
 
-void GltfModel::updateAnimation(uint32_t frameIndex, uint32_t index, float time)
+void GltfModel::updateAnimation(uint32_t instanceIndex, uint32_t index, float time)
 {
-    if (instances[frameIndex].animations.empty()) {
-        std::cout << ".glTF does not contain animation." << std::endl;
-        return;
-    }
-    if (index > static_cast<uint32_t>(instances[frameIndex].animations.size()) - 1) {
-        std::cout << "No animation with index " << index << std::endl;
-        return;
-    }
-    Animation &animation = instances[frameIndex].animations[index];
-
-    bool updated = false;
+    bool update = false;
+    const auto& animation = instances.at(instanceIndex).animations.at(index);
     for (const auto& channel : animation.channels) {
-        const Animation::AnimationSampler &sampler = animation.samplers[channel.samplerIndex];
-        if (sampler.inputs.size() > sampler.outputsVec4.size()) {
-            continue;
+        const Animation::Sampler& sampler = animation.samplers[channel.samplerIndex];
+
+        auto left = sampler.points.begin(), right = std::next(left);
+        for (; right != sampler.points.end(); right = std::next(right), left = std::next(left)) {
+            if (time >= left->inputTime && time <= right->inputTime) break;
         }
 
-        for (size_t i = 0; i < sampler.inputs.size() - 1; i++) {
-            if ((time >= sampler.inputs[i]) && (time <= sampler.inputs[i + 1])) {
-                float u = std::max(0.0f, time - sampler.inputs[i]) / (sampler.inputs[i + 1] - sampler.inputs[i]);
-                if (u <= 1.0f) {
-                    switch (channel.path) {
-                        case Animation::AnimationChannel::PathType::TRANSLATION: {
-                            math::Vector<float,4> trans = mix(sampler.outputsVec4[i], sampler.outputsVec4[i + 1], u);
-                            channel.node->translation = math::Vector<float,3>(trans[0],trans[1],trans[2]);
-                            break;
-                        }
-                        case Animation::AnimationChannel::PathType::SCALE: {
-                            math::Vector<float,4> trans = mix(sampler.outputsVec4[i], sampler.outputsVec4[i + 1], u);
-                            channel.node->scale = math::Vector<float,3>(trans[0],trans[1],trans[2]);
-                            break;
-                        }
-                        case Animation::AnimationChannel::PathType::ROTATION: {
-                            math::Quaternion<float> q1(sampler.outputsVec4[i + 0][3], {sampler.outputsVec4[i + 0][0], sampler.outputsVec4[i + 0][1], sampler.outputsVec4[i + 0][2]});
-                            math::Quaternion<float> q2(sampler.outputsVec4[i + 1][3], {sampler.outputsVec4[i + 1][0], sampler.outputsVec4[i + 1][1], sampler.outputsVec4[i + 1][2]});
+        if(right == sampler.points.end()) continue;
+        update |= true;
 
-                            channel.node->rotation = normalize(slerp(q1, q2, u));
-                            break;
-                        }
-                    }
-                    updated = true;
-                }
-            }
-        }
+        const auto& x0 = *left, & x1 = *right;
+        const auto& x0t = x0.inputTime, & x1t = x1.inputTime;
+        const auto& x0d = x0.outputData, & x1d = x1.outputData;
+
+        const float t = (time - x0t) / (x1t - x0t);
+        updateFMap.at(channel.path)(channel.node, x0d, x1d, t);
     }
-    if (updated) {
-        for (auto & [_, node] : instances[frameIndex].nodes) {
+    if (update) {
+        for (auto& [_, node] : instances.at(instanceIndex).nodes) {
             node->update();
         }
     }
 }
 
-void GltfModel::changeAnimation(uint32_t frameIndex, uint32_t oldIndex, uint32_t newIndex, float startTime, float time, float changeAnimationTime)
+void GltfModel::changeAnimation(uint32_t instanceIndex, uint32_t newIndex, float startTime, float time, float changeAnimationTime)
 {
-    if (instances[frameIndex].animations.empty()) {
-        std::cout << ".glTF does not contain animation." << std::endl;
-        return;
+    const auto& animation = instances.at(instanceIndex).animations.at(newIndex);
+    for (const auto& channel : animation.channels) {
+        const auto& sampler = animation.samplers[channel.samplerIndex];
+        float t = (time - startTime) / changeAnimationTime;
+        changeFMap.at(channel.path)(channel.node, sampler.points[0].outputData, t);
     }
-    if (oldIndex > static_cast<uint32_t>(instances[frameIndex].animations.size()) - 1) {
-        std::cout << "No animation with index " << oldIndex << std::endl;
-        return;
-    }
-    if (newIndex > static_cast<uint32_t>(instances[frameIndex].animations.size()) - 1) {
-        std::cout << "No animation with index " << newIndex << std::endl;
-        return;
-    }
-
-    Animation &animationOld = instances[frameIndex].animations[oldIndex];
-    Animation &animationNew = instances[frameIndex].animations[newIndex];
-
-    bool updated = false;
-    for (auto& channel : animationOld.channels) {
-        const Animation::AnimationSampler &samplerOld = animationOld.samplers[channel.samplerIndex];
-        const Animation::AnimationSampler &samplerNew = animationNew.samplers[channel.samplerIndex];
-        if (samplerOld.inputs.size() > samplerOld.outputsVec4.size())
-            continue;
-
-        for (size_t i = 0; i < samplerOld.inputs.size(); i++) {
-            if ((startTime >= samplerOld.inputs[i]) && (time <= samplerOld.inputs[i]+changeAnimationTime)) {
-                float u = std::max(0.0f, time - startTime) / changeAnimationTime;
-                if (u <= 1.0f) {
-                    switch (channel.path) {
-                        case Animation::AnimationChannel::PathType::TRANSLATION: {
-                            math::Vector<float,4> trans = mix(samplerOld.outputsVec4[i], samplerNew.outputsVec4[0], u);
-                            channel.node->translation = math::Vector<float,3>(trans[0],trans[1],trans[2]);
-                            break;
-                        }
-                        case Animation::AnimationChannel::PathType::SCALE: {
-                            math::Vector<float,4> trans = mix(samplerOld.outputsVec4[i], samplerNew.outputsVec4[0], u);
-                            channel.node->scale = math::Vector<float,3>(trans[0],trans[1],trans[2]);
-                            break;
-                        }
-                        case Animation::AnimationChannel::PathType::ROTATION: {
-                            math::Quaternion<float> q1(samplerOld.outputsVec4[i + 0][3], {samplerOld.outputsVec4[i + 0][0], samplerOld.outputsVec4[i + 0][1], samplerOld.outputsVec4[i + 0][2]});
-                            math::Quaternion<float> q2(samplerNew.outputsVec4[0][3], {samplerNew.outputsVec4[0][0], samplerNew.outputsVec4[0][1], samplerNew.outputsVec4[0][2]});
-                            channel.node->rotation = normalize(slerp(q1, q2, u));
-                            break;
-                        }
-                    }
-                    updated = true;
-                }
-            }
-        }
-    }
-    if (updated) {
-        for (auto& [_, node] : instances[frameIndex].nodes) {
-            node->update();
-        }
+    for (auto& [_, node] : instances.at(instanceIndex).nodes) {
+        node->update();
     }
 }
 

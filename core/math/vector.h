@@ -517,7 +517,7 @@ class Vector<type, 3> : public BaseVector<type, 3>
 {
 public:
     Vector() : BaseVector<type, 3>() {}
-    Vector(const BaseVector<type, 2>& other, const type& s) : BaseVector<type, 3>(other, s) {}
+    Vector(const BaseVector<type, 2>& other, const type& s = type(0)) : BaseVector<type, 3>(other, s) {}
     Vector(const BaseVector<type, 3>& other) : BaseVector<type, 3>(other) {}
     Vector(const Vector<type, 3>& other) : BaseVector<type, 3>(other.vec, other.s) {}
     Vector(const type& x0, const type& x1, const type& s) {
@@ -543,7 +543,7 @@ class Vector<type, 4> : public BaseVector<type, 4>
 {
 public:
     Vector() : BaseVector<type,4>() {}
-    Vector(const BaseVector<type, 3>& other, const type& s) : BaseVector<type, 4>(other, s) {}
+    Vector(const BaseVector<type, 3>& other, const type& s = type(0)) : BaseVector<type, 4>(other, s) {}
     Vector(const BaseVector<type, 4>& other) : BaseVector<type, 4>(other) {}
     Vector(const Vector<type, 4>& other) : BaseVector<type,4>(other.vec, other.s) {}
     Vector(const type& x0, const type& x1, const type& x2, const type& s) {

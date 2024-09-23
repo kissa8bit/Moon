@@ -37,11 +37,11 @@ private:
 public:
     GltfModel(std::filesystem::path filename, uint32_t instanceCount = 1);
 
-    bool hasAnimation(uint32_t frameIndex) const override;
-    float animationStart(uint32_t frameIndex, uint32_t index) const override;
-    float animationEnd(uint32_t frameIndex, uint32_t index) const override;
-    void updateAnimation(uint32_t frameIndex, uint32_t index, float time) override;
-    void changeAnimation(uint32_t frameIndex, uint32_t oldIndex, uint32_t newIndex, float startTime, float time, float changeAnimationTime) override;
+    bool hasAnimation(uint32_t instanceIndex) const override;
+    float animationStart(uint32_t instanceIndex, uint32_t index) const override;
+    float animationEnd(uint32_t instanceIndex, uint32_t index) const override;
+    void updateAnimation(uint32_t instanceIndex, uint32_t index, float time) override;
+    void changeAnimation(uint32_t instanceIndex, uint32_t newIndex, float startTime, float time, float changeAnimationTime) override;
 
     void create(const utils::PhysicalDevice& device, VkCommandPool commandPool) override;
     void render(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t& primitiveCount) const override;
