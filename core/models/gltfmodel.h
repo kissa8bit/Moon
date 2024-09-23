@@ -24,7 +24,7 @@ private:
     Instances instances;
 
     void loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffer commandBuffer);
-    void loadNode(const tinygltf::Model& gltfModel, const utils::PhysicalDevice& device, NodeMap& instance, Node* parent, uint32_t nodeIndex, uint32_t& indexStart);
+    void loadNode(const tinygltf::Model& gltfModel, NodeMap& instance, Node* parent, uint32_t nodeIndex, uint32_t& indexStart);
     void loadVertexBuffer(const tinygltf::Model& gltfModel, const tinygltf::Node& node, std::vector<uint32_t>& indexBuffer, std::vector<interfaces::Vertex>& vertexBuffer);
     void loadSkins(const tinygltf::Model& gltfModel);
     void loadTextures(const tinygltf::Model& gltfModel, const utils::PhysicalDevice& device, VkCommandBuffer commandBuffer);

@@ -18,9 +18,9 @@ layout(set = 1, binding = 0) uniform LocalUniformBuffer {
 } local;
 
 layout(set = 2, binding = 0) uniform UBONode {
+    float jointCount;
     mat4 matrix;
     mat4 jointMatrix[MAX_NUM_JOINTS];
-    float jointCount;
 } node;
 
 layout(location = 0) in vec3 inPosition;

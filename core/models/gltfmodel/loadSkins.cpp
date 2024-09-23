@@ -34,6 +34,7 @@ void GltfModel::loadSkins(const tinygltf::Model& gltfModel) {
             if (isInvalid(skinIndex)) continue;
 
             node->skin = &instance.skins.at(skinIndex);
+            node->mesh.uniformBlock.jointcount = std::min((uint32_t)node->skin->joints.size(), interfaces::MeshBlock::maxJoints);
         }
     }
 }

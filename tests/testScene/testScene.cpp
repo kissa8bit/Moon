@@ -46,6 +46,7 @@ void testScene::resize() {
 void testScene::create()
 {
     cameras["base"] = std::make_shared<moon::transformational::Camera>(45.0f, window.aspectRatio(), 0.1f);
+    cameras["base"]->translate({0.0f, 0.0f, 10.0f});
     moon::deferredGraphics::Parameters deferredGraphicsParameters;
     deferredGraphicsParameters.shadersPath = ExternalPath / "core/deferredGraphics/spv";
     deferredGraphicsParameters.workflowsShadersPath = ExternalPath / "core/workflows/spv";
@@ -341,7 +342,7 @@ void testScene::createObjects()
     objects["bee1"]->setAnimation(1, 1.0f);
 
     objects["duck"] = std::make_shared<moon::transformational::Object>(models["duck"].get());
-    objects["duck"]->translate({0.0f,0.0f,3.0f}).rotate(moon::math::radians(90.0f),{1.0f,0.0f,0.0f}).scale({3.0f});
+    objects["duck"]->translate({0.0f,6.3f,12.1f}).rotate(moon::math::radians(90.0f),{1.0f,0.0f,0.0f}).rotate(moon::math::radians(-45.0f), { 0.0f,0.0f,1.0f });
     objects["duck"]->setBase(moon::math::Vector<float,4>(0.0f,0.0f,0.0f,-0.8f));
 
     objects["lightBox"] = std::make_shared<moon::transformational::Object>(models["box"].get());

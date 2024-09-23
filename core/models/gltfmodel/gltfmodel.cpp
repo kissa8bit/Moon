@@ -68,7 +68,7 @@ void GltfModel::loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffe
     for(auto& instance: instances){
         uint32_t indexStart = 0;
         for (const auto& nodeIndex: gltfModel.scenes[isValid(gltfModel.defaultScene) ? gltfModel.defaultScene : 0].nodes) {
-            loadNode(gltfModel, device, instance.nodes, nullptr, nodeIndex, indexStart);
+            loadNode(gltfModel, instance.nodes, nullptr, nodeIndex, indexStart);
         }
     }
 
@@ -86,6 +86,7 @@ void GltfModel::loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffe
 
     for(auto& instance : instances){
         for (auto& [_, node] : instance.nodes) {
+            node->mesh.createDeviceBuffer(device);
             node->update();
         }
     }

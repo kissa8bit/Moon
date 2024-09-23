@@ -81,9 +81,13 @@ struct MaterialBlock {
 
 struct MeshBlock {
     static constexpr auto maxJoints = 128u;
-    math::Matrix<float, 4, 4> matrix{ 1.0f };
-    math::Matrix<float, 4, 4> jointMatrix[maxJoints]{};
     float jointcount{ 0 };
+    alignas(16) math::Matrix<float, 4, 4> matrix{ 1.0f };
+    alignas(16) math::Matrix<float, 4, 4> jointMatrix[maxJoints]{};
+
+    size_t size() const {
+        return 4 * sizeof(float) + (jointcount + 1) * sizeof(math::Matrix<float, 4, 4>);
+    }
 };
 
 struct Primitive {

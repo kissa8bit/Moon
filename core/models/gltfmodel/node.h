@@ -23,14 +23,14 @@ struct Node {
         const auto matrix = getMatrix();
         mesh.uniformBlock.jointcount = skin ? std::min((uint32_t)skin->joints.size(), interfaces::MeshBlock::maxJoints) : 0;
         mesh.uniformBlock.matrix = transpose(matrix);
-
         for (size_t i = 0; i < mesh.uniformBlock.jointcount; i++) {
             mesh.uniformBlock.jointMatrix[i] = transpose(inverse(matrix) * skin->joints[i]->getMatrix() * skin->inverseBindMatrices[i]);
         }
+
         mesh.uniformBuffer.copy(&mesh.uniformBlock);
     }
 
-    Node(const tinygltf::Node& gltfNode, const tinygltf::Model& gltfModel, const interfaces::Materials& materials, const utils::PhysicalDevice& device, Node* parent, uint32_t& indexStart)
+    Node(const tinygltf::Node& gltfNode, const tinygltf::Model& gltfModel, const interfaces::Materials& materials, Node* parent, uint32_t& indexStart)
         : parent(parent)
     {
         const auto& nodes = gltfNode;
@@ -39,7 +39,7 @@ struct Node {
         convert(scale, nodes.scale);
         convert(matrix, nodes.matrix);
         if (const auto meshIndex = nodes.mesh; isValid(meshIndex)) {
-            mesh = gltfMesh(gltfModel, materials, device, meshIndex, indexStart);
+            mesh = gltfMesh(gltfModel, materials, meshIndex, indexStart);
         }
     }
 

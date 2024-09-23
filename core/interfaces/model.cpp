@@ -43,7 +43,7 @@ void Mesh::createDescriptorSet(VkDevice device, utils::vkDefault::DescriptorPool
 
     descriptorSet = descriptorPool.allocateDescriptorSet(descriptorSetLayout);
 
-    VkDescriptorBufferInfo bufferInfo{ uniformBuffer, 0, sizeof(interfaces::MeshBlock) };
+    VkDescriptorBufferInfo bufferInfo{ uniformBuffer, 0, uniformBlock.size() };
     VkWriteDescriptorSet writeDescriptorSet{};
     writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;

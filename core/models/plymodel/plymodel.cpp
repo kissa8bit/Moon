@@ -22,6 +22,7 @@ PlyModel::PlyModel(
 {
     auto& mat = materials.emplace_back();
     mat.baseColor.factor = baseColorFactor;
+    mat.baseColor.coordSet = 1;
     mat.extensions.diffuse.factor = diffuseFactor;
     mat.extensions.specularGlossiness.factor = specularFactor;
     mat.metallicRoughness.factor[interfaces::Material::metallicIndex] = metallicFactor;
@@ -113,7 +114,7 @@ void PlyModel::loadFromFile(const utils::PhysicalDevice& physicalDevice, VkComma
     }
 
     interfaces::MeshBlock uniformBlock{};
-    mesh.uniformBuffer = utils::vkDefault::Buffer(physicalDevice, device, sizeof(mesh.uniformBlock), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    mesh.uniformBuffer = utils::vkDefault::Buffer(physicalDevice, device, mesh.uniformBlock.size(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     utils::Memory::instance().nameMemory(mesh.uniformBuffer, std::string(__FILE__) + " in line " + std::to_string(__LINE__) + ", plyModel::loadFromFile, uniformBuffer");
     mesh.uniformBuffer.copy(&uniformBlock);
 }
