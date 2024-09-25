@@ -12,7 +12,7 @@ namespace moon::models {
 struct Instance {
     NodeMap nodes;
     Skins skins;
-    Animations animations;
+    GltfAnimations animations;
 
     Instance() = default;
     Instance(Instance&& other) noexcept {

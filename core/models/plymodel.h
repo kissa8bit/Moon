@@ -34,11 +34,7 @@ public:
     const interfaces::Material& material() const;
     interfaces::BoundingBox boundingBox() const;
 
-    bool hasAnimation(uint32_t) const override {return false;}
-    float animationStart(uint32_t, uint32_t) const override {return 0.0f;}
-    float animationEnd(uint32_t, uint32_t) const override {return 0.0f;}
-    void updateAnimation(uint32_t, uint32_t, float) override {};
-    void changeAnimation(uint32_t, uint32_t, float, float, float) override {};
+    std::vector<interfaces::Animation*> animations(uint32_t instanceNumber) override;
 
     void create(const utils::PhysicalDevice& device, VkCommandPool commandPool) override;
     void render(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t& primitiveCount) const override;

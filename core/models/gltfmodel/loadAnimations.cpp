@@ -2,25 +2,25 @@
 #include "gltfutils.h"
 #include "node.h"
 
+#include <unordered_set>
+
 namespace moon::models {
 
 namespace {
 
 template<typename Type>
-Animation::Sampler makeSampler(
-    Animation::Sampler::InterpolationType interpolation,
+GltfAnimation::Sampler makeSampler(
+    GltfAnimation::Sampler::InterpolationType interpolation,
     size_t count,
     const float* inputData,
     const Type* outputData,
-    float& start,
-    float& end)
+    float& duration)
 {
-    Animation::Sampler sampler{};
+    GltfAnimation::Sampler sampler{};
     sampler.interpolation = interpolation;
     for (size_t i = 0; i < count; ++i) {
-        const auto& point = sampler.points.emplace_back(Animation::Point{inputData[i], outputData[i]});
-        start = std::min(point.inputTime, start);
-        end = std::max(point.inputTime, end);
+        const auto& point = sampler.points.emplace_back(GltfAnimation::Point{inputData[i], outputData[i]});
+        duration = std::max(point.inputTime, duration);
     }
     return sampler;
 }
@@ -39,10 +39,10 @@ void rotate(Node* node, const math::Vector<float, 4>& x0, const math::Vector<flo
     node->rotation = normalize(slerp(q1, q2, t));
 }
 
-static const std::unordered_map<Animation::Channel::PathType, void (*)(Node*, const math::Vector<float, 4>&, const math::Vector<float, 4>&, float)> updateFMap = {
-    {Animation::Channel::PathType::ROTATION, rotate},
-    {Animation::Channel::PathType::TRANSLATION, translate},
-    {Animation::Channel::PathType::SCALE, scale}
+static const std::unordered_map<GltfAnimation::Channel::PathType, void (*)(Node*, const math::Vector<float, 4>&, const math::Vector<float, 4>&, float)> updateFMap = {
+    {GltfAnimation::Channel::PathType::ROTATION, rotate},
+    {GltfAnimation::Channel::PathType::TRANSLATION, translate},
+    {GltfAnimation::Channel::PathType::SCALE, scale}
 };
 
 void translate(Node* node, const math::Vector<float, 4>& x, float t) {
@@ -58,42 +58,29 @@ void rotate(Node* node, const math::Vector<float, 4>& x, float t) {
     node->rotation = normalize(slerp(node->rotation, q, t));
 }
 
-static const std::unordered_map<Animation::Channel::PathType, void (*)(Node*, const math::Vector<float, 4>&, float)> changeFMap = {
-    {Animation::Channel::PathType::ROTATION, rotate},
-    {Animation::Channel::PathType::TRANSLATION, translate},
-    {Animation::Channel::PathType::SCALE, scale}
+static const std::unordered_map<GltfAnimation::Channel::PathType, void (*)(Node*, const math::Vector<float, 4>&, float)> changeFMap = {
+    {GltfAnimation::Channel::PathType::ROTATION, rotate},
+    {GltfAnimation::Channel::PathType::TRANSLATION, translate},
+    {GltfAnimation::Channel::PathType::SCALE, scale}
 };
 
 }
 
-bool GltfModel::hasAnimation(uint32_t frameIndex) const {
-    return instances[instances.size() > frameIndex ? frameIndex : 0].animations.size() > 0;
-}
-
-float GltfModel::animationStart(uint32_t frameIndex, uint32_t index) const {
-    return instances[frameIndex].animations[index].start;
-}
-
-float GltfModel::animationEnd(uint32_t frameIndex, uint32_t index) const {
-    return instances[frameIndex].animations[index].end;
-}
-
 void GltfModel::loadAnimations(const tinygltf::Model& gltfModel){
-    static const std::unordered_map<std::string, Animation::Sampler::InterpolationType> interpolationMap = {
-        {"LINEAR", Animation::Sampler::InterpolationType::LINEAR},
-        {"STEP", Animation::Sampler::InterpolationType::STEP},
-        {"CUBICSPLINE", Animation::Sampler::InterpolationType::CUBICSPLINE}
+    static const std::unordered_map<std::string, GltfAnimation::Sampler::InterpolationType> interpolationMap = {
+        {"LINEAR", GltfAnimation::Sampler::InterpolationType::LINEAR},
+        {"STEP", GltfAnimation::Sampler::InterpolationType::STEP},
+        {"CUBICSPLINE", GltfAnimation::Sampler::InterpolationType::CUBICSPLINE}
     };
-    static const std::unordered_map<std::string, Animation::Channel::PathType> channelsMap = {
-        {"rotation", Animation::Channel::PathType::ROTATION},
-        {"translation", Animation::Channel::PathType::TRANSLATION},
-        {"scale", Animation::Channel::PathType::SCALE}
+    static const std::unordered_map<std::string, GltfAnimation::Channel::PathType> channelsPathMap = {
+        {"rotation", GltfAnimation::Channel::PathType::ROTATION},
+        {"translation", GltfAnimation::Channel::PathType::TRANSLATION},
+        {"scale", GltfAnimation::Channel::PathType::SCALE}
     };
 
     for (const tinygltf::Animation &anim : gltfModel.animations) {
-        Animation::Samplers samplers;
-        float start{ std::numeric_limits<float>::max() };
-        float end{ std::numeric_limits<float>::min() };
+        GltfAnimation::Samplers samplers;
+        float duration{ 0 };
 
         for (const auto& gltfsampler : anim.samplers) {
             const GltfBufferExtractor<const float*> input(gltfModel, gltfsampler.input);
@@ -104,7 +91,7 @@ void GltfModel::loadAnimations(const tinygltf::Model& gltfModel){
             #define GLTFMODEL_LOADANIMATIONS_SAMPLER_CASE(TINYGLTF_TYPE, VEC_DIM)                                                                                           \
                 case TINYGLTF_TYPE:                                                                                                                                         \
                     samplers.push_back(                                                                                                                                     \
-                        makeSampler(interpolationMap.at(gltfsampler.interpolation), input.count, input.data, (const math::Vector<float, VEC_DIM>*)output.data, start, end)  \
+                        makeSampler(interpolationMap.at(gltfsampler.interpolation), input.count, input.data, (const math::Vector<float, VEC_DIM>*)output.data, duration)    \
                     );                                                                                                                                                      \
                     break;
 
@@ -116,57 +103,57 @@ void GltfModel::loadAnimations(const tinygltf::Model& gltfModel){
         }
 
         for (auto& instance : instances) {
-            Animation::Channels channels;
+            GltfAnimation::ChannelsMap channelsMap;
             for (const auto &source: anim.channels) {
                 if (auto it = instance.nodes.find(source.target_node); it != instance.nodes.end()) {
-                    channels.push_back(Animation::Channel{ channelsMap.at(source.target_path) , it->second.get(), source.sampler });
+                    channelsMap[it->first].push_back(GltfAnimation::Channel{ channelsPathMap.at(source.target_path), source.sampler });
                 }
             }
-            instance.animations.push_back({ channels, samplers, start, end });
+            instance.animations.push_back(GltfAnimation(&instance.nodes, channelsMap, samplers, duration));
         }
     }
 }
 
-void GltfModel::updateAnimation(uint32_t instanceIndex, uint32_t index, float time)
-{
-    bool update = false;
-    const auto& animation = instances.at(instanceIndex).animations.at(index);
-    for (const auto& channel : animation.channels) {
-        const Animation::Sampler& sampler = animation.samplers[channel.samplerIndex];
+GltfAnimation::GltfAnimation(NodeMap* nodes, const GltfAnimation::ChannelsMap& channelsMap, const GltfAnimation::Samplers& samplers, float duration)
+    : nodes(nodes), channelsMap(channelsMap), samplers(samplers), dur(duration)
+{}
 
-        auto left = sampler.points.begin(), right = std::next(left);
-        for (; right != sampler.points.end(); right = std::next(right), left = std::next(left)) {
-            if (time >= left->inputTime && time <= right->inputTime) break;
-        }
-
-        if(right == sampler.points.end()) continue;
-        update |= true;
-
-        const auto& x0 = *left, & x1 = *right;
-        const auto& x0t = x0.inputTime, & x1t = x1.inputTime;
-        const auto& x0d = x0.outputData, & x1d = x1.outputData;
-
-        const float t = (time - x0t) / (x1t - x0t);
-        updateFMap.at(channel.path)(channel.node, x0d, x1d, t);
+bool GltfAnimation::change(float time, float changetime) {
+    if (time > changetime) {
+        return false;
     }
-    if (update) {
-        for (auto& [_, node] : instances.at(instanceIndex).nodes) {
-            node->update();
+
+    for (const auto& [nodeIndex, channels] : channelsMap) {
+        for (const auto& channel : channels) {
+            const auto& sampler = samplers[channel.samplerIndex];
+            float t = time / changetime;
+            changeFMap.at(channel.path)(nodes->at(nodeIndex).get(), sampler.points[0].outputData, t);
         }
     }
-}
-
-void GltfModel::changeAnimation(uint32_t instanceIndex, uint32_t newIndex, float startTime, float time, float changeAnimationTime)
-{
-    const auto& animation = instances.at(instanceIndex).animations.at(newIndex);
-    for (const auto& channel : animation.channels) {
-        const auto& sampler = animation.samplers[channel.samplerIndex];
-        float t = (time - startTime) / changeAnimationTime;
-        changeFMap.at(channel.path)(channel.node, sampler.points[0].outputData, t);
-    }
-    for (auto& [_, node] : instances.at(instanceIndex).nodes) {
+    for (const auto& [_, node] : *nodes) {
         node->update();
     }
+    return true;
+}
+
+bool GltfAnimation::update(float time){
+    for (const auto& [nodeIndex, channels] : channelsMap) {
+        for (const auto& channel : channels) {
+            const auto& sampler = samplers[channel.samplerIndex];
+            for (size_t i = 0; i < sampler.points.size() - 1; i++) {
+                if (const auto& x0 = sampler.points[i], &x1 = sampler.points[i + 1]; time >= x0.inputTime && time <= x1.inputTime) {
+                    const auto& x0t = x0.inputTime, & x1t = x1.inputTime;
+                    const auto& x0d = x0.outputData, & x1d = x1.outputData;
+                    const float t = (time - x0t) / (x1t - x0t);
+                    updateFMap.at(channel.path)(nodes->at(nodeIndex).get(), x0d, x1d, t);
+                }
+            }
+        }
+    }
+    for (const auto& [_, node] : *nodes) {
+        node->update();
+    }
+    return true;
 }
 
 }

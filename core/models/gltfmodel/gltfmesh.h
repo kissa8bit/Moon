@@ -11,9 +11,9 @@
 
 namespace moon::models {
 
-struct gltfMesh : public interfaces::Mesh {
-    gltfMesh() = default;
-    gltfMesh(const tinygltf::Model& gltfModel, const interfaces::Materials& materials, const size_t meshIndex, uint32_t& firstIndex) {
+struct GltfMesh : public interfaces::Mesh {
+    GltfMesh() = default;
+    GltfMesh(const tinygltf::Model& gltfModel, const interfaces::Materials& materials, const size_t meshIndex, uint32_t& firstIndex) {
         for (const tinygltf::Primitive& primitive : gltfModel.meshes[meshIndex].primitives) {
             const auto posAttributes = primitive.attributes.find("POSITION");
             if (posAttributes == primitive.attributes.end()) continue;

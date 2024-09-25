@@ -148,4 +148,14 @@ void GltfModel::renderBB(uint32_t instanceNumber, VkCommandBuffer commandBuffer,
     }
 }
 
+std::vector<interfaces::Animation*> GltfModel::animations(uint32_t instanceNumber) {
+    auto& animations = instances[instanceNumber].animations;
+    std::vector<interfaces::Animation*> animationsPtrs;
+    animationsPtrs.reserve(animations.size());
+    for(auto& animation: animations){
+        animationsPtrs.emplace_back(&animation);
+    }
+    return animationsPtrs;
+}
+
 }

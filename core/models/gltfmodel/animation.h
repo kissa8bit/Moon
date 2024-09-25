@@ -5,18 +5,17 @@
 #include <limits>
 
 #include "vector.h"
+#include "model.h"
+#include "node.h"
 
 namespace moon::models {
 
-struct Node;
-
-struct Animation {
+struct GltfAnimation : interfaces::Animation {
     struct Channel {
         enum PathType { TRANSLATION, ROTATION, SCALE } path;
-        Node* node{ nullptr };
         int samplerIndex{ tinygltf::invalidIndex };
     };
-    using Channels = std::vector<Channel>;
+    using ChannelsMap = std::unordered_map<uint32_t, std::vector<Channel>>;
 
     struct Point {
         float inputTime{ 0.0f };
@@ -30,13 +29,19 @@ struct Animation {
     };
     using Samplers = std::vector<Sampler>;
 
-    Channels channels;
+    NodeMap* nodes{nullptr};
+    ChannelsMap channelsMap;
     Samplers samplers;
-    float start{ std::numeric_limits<float>::max() };
-    float end{ std::numeric_limits<float>::min() };
+    float dur{0};
+
+    bool change(float time, float changetime) override;
+    bool update(float time) override;
+    float duration() const override {return dur;}
+
+    GltfAnimation(NodeMap* nodes, const ChannelsMap& channelsMap, const Samplers& samplers, float duration);
 };
 
-using Animations = std::vector<Animation>;
+using GltfAnimations = std::vector<GltfAnimation>;
 
 }
 

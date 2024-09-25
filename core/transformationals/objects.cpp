@@ -118,6 +118,13 @@ namespace moon::transformational {
 Object::Object(interfaces::Model* model, uint32_t firstInstance, uint32_t instanceCount) {
     uint8_t pipelineBitMask = interfaces::ObjectType::base | interfaces::ObjectProperty::non;
     pObject = std::make_unique<interfaces::BaseObject>(pipelineBitMask , &buffer, sizeof(buffer), model, firstInstance, instanceCount);
+
+    if (model) {
+        for (auto instance = 0; instance < instanceCount; ++instance) {
+            animationControl.animationsMap[instance] = model->animations(firstInstance + instance);
+            animationControl.total = animationControl.animationsMap[instance].size();
+        }
+    }
 }
 
 Object::Object(const utils::Paths& texturePaths, const float& mipLevel) {
@@ -166,41 +173,46 @@ Object& Object::setOutlining(const bool& enable, const float& width, const math:
     return *this;
 }
 
-void Object::updateAnimation(uint32_t imageNumber, float frameTime){
-    animationTimer += frameTime;
-    if(uint32_t index = pObject->getInstanceNumber(imageNumber); pObject->model()->hasAnimation(index)){
-        if(float end = pObject->model()->animationEnd(index, animationIndex); !changeAnimationFlag){
-            animationTimer -= animationTimer > end ? end : 0;
-            pObject->model()->updateAnimation(index, animationIndex, animationTimer);
-        }else{
-            pObject->model()->changeAnimation(index, newAnimationIndex, startTimer, animationTimer, changeAnimationTime);
-            if(startTimer + changeAnimationTime < animationTimer){
-                changeAnimationFlag = false;
-                animationIndex = newAnimationIndex;
-                animationTimer = pObject->model()->animationStart(index, animationIndex);
-            }
+Object::operator interfaces::Object* () const {
+    return pObject.get();
+}
+
+size_t Object::AnimationControl::size() const {
+    return total;
+}
+
+size_t Object::AnimationControl::current() const {
+    return animIndex;
+}
+
+void Object::AnimationControl::set(int index, float changeTime) {
+    for (auto& [_, animations] : animationsMap) {
+        if (index > -1 && index < animations.size()) {
+            animIndex = index;
+            startOffset = changeTime;
+            time = 0;
         }
     }
 }
 
-void Object::changeAnimation(uint32_t newAnimationIndex, float changeAnimationTime){
-    changeAnimationFlag = true;
-    startTimer = animationTimer;
-    this->changeAnimationTime = changeAnimationTime;
-    this->newAnimationIndex = newAnimationIndex;
-}
+bool Object::AnimationControl::update(size_t frameNumber, float dtime) {
+    if(animIndex == -1) return false;
 
-void Object::setAnimation(uint32_t animationIndex, float animationTime){
-    this->animationIndex = animationIndex;
-    this->animationTimer = animationTime;
-}
+    if (auto animationsIt = animationsMap.find(frameNumber); animationsIt != animationsMap.end()) {
+        auto& [_, animations] = *animationsIt;
+        auto animation = animations.at(animIndex);
+        if (!animation) return false;
 
-uint32_t Object::getAnimationIndex(){
-    return animationIndex;
-}
-
-Object::operator interfaces::Object* () const {
-    return pObject.get();
+        time += dtime;
+        if (!animation->change(time, startOffset)) {
+            float animationTime = time - startOffset;
+            if (animationTime > animation->duration()) {
+                time = startOffset;
+            }
+            return animation->update(animationTime);
+        }
+    }
+    return false;
 }
 
 }

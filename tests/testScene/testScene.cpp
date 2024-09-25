@@ -56,7 +56,7 @@ void testScene::create()
     graphics["base"]->bind(*cameras["base"].get());
     graphics["base"]->bind(mouse);
     graphics["base"]->
-        setEnable("TransparentLayer", true).
+        setEnable("TransparentLayer", false).
         setEnable("Skybox", true).
         setEnable("Blur", true).
         setEnable("Bloom", true).
@@ -300,7 +300,7 @@ void testScene::updateFrame(uint32_t frameNumber, float inFrameTime)
     objects["helmet"]->update();
 
     std::for_each(std::execution::par, objects.begin(), objects.end(), [&frameNumber, &animationTime](auto& object) {
-        object.second->updateAnimation(frameNumber, animationTime);
+        object.second->animationControl.update(frameNumber, animationTime);
     });
 }
 
@@ -336,10 +336,11 @@ void testScene::createObjects()
 
     objects["bee0"] = std::make_shared<moon::transformational::Object>(models["bee"].get(), 0, resourceCount);
     objects["bee0"]->translate({3.0f,0.0f,0.0f}).rotate(moon::math::radians(90.0f),{1.0f,0.0f,0.0f}).scale({0.2f,0.2f,0.2f});
+    objects["bee0"]->animationControl.set(0);
 
     objects["bee1"] = std::make_shared<moon::transformational::Object>(models["bee"].get(), resourceCount, resourceCount);
     objects["bee1"]->translate({-3.0f,0.0f,0.0f}).rotate(moon::math::radians(90.0f),{1.0f,0.0f,0.0f}).scale({0.2f,0.2f,0.2f}).setBase(moon::math::Vector<float,4>(0.0f,0.0f,0.0f,-0.7f));
-    objects["bee1"]->setAnimation(1, 1.0f);
+    objects["bee1"]->animationControl.set(1);
 
     objects["duck"] = std::make_shared<moon::transformational::Object>(models["duck"].get());
     objects["duck"]->translate({0.0f,6.3f,12.1f}).rotate(moon::math::radians(90.0f),{1.0f,0.0f,0.0f}).rotate(moon::math::radians(-45.0f), { 0.0f,0.0f,1.0f });
@@ -358,6 +359,7 @@ void testScene::createObjects()
 
     objects["robot"] = std::make_shared<moon::transformational::Object>(models["robot"].get(), 0, resourceCount);
     objects["robot"]->scale(25.0f).rotate(moon::math::Quaternion<float>(0.5f, 0.5f, -0.5f, -0.5f)).rotate(moon::math::radians(180.0f), {0.0f, 0.0f, 1.0f}).translate(moon::math::Vector<float,3>(-30.0f, 11.0f, 10.0f));
+    objects["robot"]->animationControl.set(0);
 
     objects["AlphaBlendModeTest"] = std::make_shared<moon::transformational::Object>(models["AlphaBlendModeTest"].get());
     objects["AlphaBlendModeTest"]->rotate(moon::math::radians(90.0f), { 1.0f,0.0f,0.0f }).rotate(moon::math::radians(-90.0f), { 0.0f,0.0f,1.0f }).translate({-24.0f, 3.25f, 12.2f}).scale({0.3f,0.3f, 0.3f});
@@ -586,7 +588,8 @@ void testScene::keyboardEvent()
     if(board->released(GLFW_KEY_ESCAPE)) window.close();
 
     if(board->released(GLFW_KEY_T)) {
-        objects["bee0"]->changeAnimation(objects["bee0"]->getAnimationIndex() == 0 ? 1 : 0, 0.5f);
+        auto& animationControl = objects["bee0"]->animationControl;
+        animationControl.set(animationControl.current == 0 ? 1 : 0, 0.5f);
     }
 
     static uint32_t ufoCounter = 0;

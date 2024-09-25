@@ -8,7 +8,7 @@
 namespace moon::models {
 
 struct Node {
-    gltfMesh mesh;
+    GltfMesh mesh;
 
     Node* parent{ nullptr };
     Skin* skin{ nullptr };
@@ -39,7 +39,7 @@ struct Node {
         convert(scale, nodes.scale);
         convert(matrix, nodes.matrix);
         if (const auto meshIndex = nodes.mesh; isValid(meshIndex)) {
-            mesh = gltfMesh(gltfModel, materials, meshIndex, indexStart);
+            mesh = GltfMesh(gltfModel, materials, meshIndex, indexStart);
         }
     }
 

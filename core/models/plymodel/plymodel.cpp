@@ -150,4 +150,8 @@ void PlyModel::renderBB(uint32_t, VkCommandBuffer commandBuffer, VkPipelineLayou
     mesh.renderBB(commandBuffer, pipelineLayout, descriptorSets);
 }
 
+std::vector<interfaces::Animation*> PlyModel::animations(uint32_t instanceNumber) {
+    return {};
+}
+
 }

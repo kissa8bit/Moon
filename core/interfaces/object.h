@@ -43,6 +43,7 @@ public:
     Object() = default;
     Object(uint8_t pipelineBitMask);
     Object(uint8_t pipelineBitMask, Model* model, uint32_t firstInstance = 0, uint32_t instanceCount = 1);
+
     Model* model();
     uint32_t getInstanceNumber(uint32_t imageNumber) const;
 

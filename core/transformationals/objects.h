@@ -71,13 +71,6 @@ private:
 
     std::unique_ptr<interfaces::Object> pObject;
 
-    bool changeAnimationFlag{false};
-    uint32_t animationIndex{0};
-    uint32_t newAnimationIndex{0};
-    float animationTimer{0.0f};
-    float startTimer{0.0f};
-    float changeAnimationTime{0.0f};
-
 public:
     Object() = default;
     Object(interfaces::Model* model, uint32_t firstInstance = 0, uint32_t instanceCount = 1);
@@ -90,10 +83,22 @@ public:
     Object& setBase(std::optional<math::Vector<float,4>> constant = std::nullopt, std::optional<math::Vector<float, 4>> factor = std::nullopt);
     Object& setBloom(std::optional<math::Vector<float, 4>> constant = std::nullopt, std::optional<math::Vector<float, 4>> factor = std::nullopt);
 
-    uint32_t getAnimationIndex();
-    void setAnimation(uint32_t animationIndex, float animationTime);
-    void changeAnimation(uint32_t newAnimationIndex, float changeAnimationTime);
-    void updateAnimation(uint32_t imageNumber, float frameTime);
+    class AnimationControl {
+    private:
+        size_t total{0};
+        std::map<size_t, std::vector<interfaces::Animation*>> animationsMap;
+        float time{0};
+        float startOffset{ 0 };
+        int animIndex{ -1 };
+
+        friend class Object;
+
+    public:
+        size_t size() const;
+        size_t current() const;
+        void set(int animIndex, float changeTime = 0);
+        bool update(size_t frameNumber, float dtime);
+    } animationControl;
 
     operator interfaces::Object* () const;
 };
