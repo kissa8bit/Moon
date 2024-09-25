@@ -95,7 +95,6 @@ bool switchers(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> graphic
 bool setOutlighting(tests::ControledObject& obj, float width = 300.0f) {
     bool res = false;
     ImGui::BeginGroup();
-    ImGui::Separator();
     auto& outlighting = obj.outlighting;
     auto& enable = outlighting.enable;
     auto& color = outlighting.color;
@@ -122,6 +121,70 @@ void rotationmManipulator(transformational::Object& obj, const moon::transformat
         obj.rotation() = moon::math::Quaternion<float>(qu.w, qu.x, qu.y, qu.z);
         obj.update();
     }
+}
+
+bool setColors(moon::transformational::Object* obecjt, float width = 300.0f) {
+    static moon::math::Vector<float, 4> constColor = { 0.0f };
+    static moon::math::Vector<float, 4> colorFactor = { 1.0f };
+    ImGui::SetNextItemWidth(width);
+    ImGui::ColorEdit4("const color", (float*)&constColor, ImGuiColorEditFlags_NoDragDrop);
+    ImGui::SetNextItemWidth(width);
+    ImGui::ColorEdit4("color factor", (float*)&colorFactor, ImGuiColorEditFlags_NoDragDrop);
+    if (ImGui::Button("update")) {
+        obecjt->setBase(constColor, colorFactor);
+        return true;
+    }
+    return false;
+}
+
+bool setPlyMaterial(moon::models::PlyModel* model) {
+    if (!model) return false;
+    auto& material = model->material();
+    static bool metallic = material.pbrWorkflows == moon::interfaces::Material::METALLIC_ROUGHNESS;
+    bool update = false;
+    if (ImGui::RadioButton("metallic roughbess", metallic)) {
+        material.pbrWorkflows = moon::interfaces::Material::METALLIC_ROUGHNESS;
+        metallic = true;
+        update |= true;
+    }
+    if (ImGui::RadioButton("specular glossiness", !metallic)) {
+        material.pbrWorkflows = moon::interfaces::Material::SPECULAR_GLOSSINESS;
+        metallic = false;
+        update |= true;
+    }
+    ImGui::SetNextItemWidth(150.0f);
+    update |= ImGui::SliderFloat("metallic", &material.metallicRoughness.factor[moon::interfaces::Material::metallicIndex], 0.0f, 1.0f);
+    ImGui::SetNextItemWidth(150.0f);
+    update |= ImGui::SliderFloat("roughness", &material.metallicRoughness.factor[moon::interfaces::Material::roughnessIndex], 0.0f, 1.0f);
+    return update;
+}
+
+bool graphicsProps(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> graphics, std::shared_ptr<utils::Cursor> cursor = nullptr) {
+    if(!graphics) return false;
+
+    ImGui::SetNextItemWidth(150.0f);
+    if (float val = graphics->parameters().minAmbientFactor(); ImGui::SliderFloat("ambient", &val, 0.0f, 1.0f)) {
+        graphics->parameters().minAmbientFactor() = val;
+    }
+
+    ImGui::SetNextItemWidth(150.0f);
+    if (float val = graphics->parameters().blitFactor(); ImGui::SliderFloat("bloom factor", &val, 1.0f, 3.0f)) {
+        graphics->parameters().blitFactor() = val;
+    }
+
+    if (cursor) {
+        ImGui::SetNextItemWidth(150.0f);
+        const moon::utils::CursorBuffer& cursorBuffer = cursor->read();
+        float farBlurDepth = cursorBuffer.info.depth;
+        ImGui::SliderFloat("far blur depth", &farBlurDepth, 0.0f, 1.0f);
+        graphics->parameters().blurDepth() = graphics->getEnable("Blur") ? 1.02f * farBlurDepth : 1.0f;
+    }
+
+    if (bool val = graphics->parameters().scatteringRefraction(); ImGui::RadioButton("refraction of scattering", val)) {
+        graphics->parameters().scatteringRefraction() = !val;
+    }
+
+    return true;
 }
 
 }

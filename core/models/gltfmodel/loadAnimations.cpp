@@ -2,8 +2,6 @@
 #include "gltfutils.h"
 #include "node.h"
 
-#include <unordered_set>
-
 namespace moon::models {
 
 namespace {

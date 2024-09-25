@@ -187,7 +187,7 @@ size_t Object::AnimationControl::current() const {
 
 void Object::AnimationControl::set(int index, float changeTime) {
     for (auto& [_, animations] : animationsMap) {
-        if (index > -1 && index < animations.size()) {
+        if (index < static_cast<int>(animations.size())) {
             animIndex = index;
             startOffset = changeTime;
             time = 0;
@@ -196,10 +196,12 @@ void Object::AnimationControl::set(int index, float changeTime) {
 }
 
 bool Object::AnimationControl::update(size_t frameNumber, float dtime) {
-    if(animIndex == -1) return false;
-
     if (auto animationsIt = animationsMap.find(frameNumber); animationsIt != animationsMap.end()) {
         auto& [_, animations] = *animationsIt;
+
+        if (animations.size() == 0) return false;
+        if (animIndex < 0) return animations.front()->update(0);
+
         auto animation = animations.at(animIndex);
         if (!animation) return false;
 

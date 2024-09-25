@@ -140,37 +140,20 @@ void testScene::makeGui() {
 
     if (ImGui::TreeNodeEx("Base Graphics Settings", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen))
     {
-        ImGui::Text("props : "); ImGui::SameLine(); ImGui::Separator();
         ImGui::BeginGroup();
-            float minAmbientFactor = graphics["base"]->parameters().minAmbientFactor();
-            ImGui::SetNextItemWidth(150.0f);
-            if (ImGui::SliderFloat("ambient", &minAmbientFactor, 0.0f, 1.0f)) {
-                graphics["base"]->parameters().minAmbientFactor() = minAmbientFactor;
-            }
-
-            ImGui::SetNextItemWidth(150.0f);
-            float blitFactor = graphics["base"]->parameters().blitFactor();
-            if (ImGui::SliderFloat("bloom factor", &blitFactor, 1.0f, 3.0f)) {
-                graphics["base"]->parameters().blitFactor() = blitFactor;
-            }
-
-            ImGui::SetNextItemWidth(150.0f);
-            const moon::utils::CursorBuffer& cursorBuffer = mouse.cursor->read();
-            float farBlurDepth = cursorBuffer.info.depth;
-            ImGui::SliderFloat("far blur depth", &farBlurDepth, 0.0f, 1.0f);
-            graphics["base"]->parameters().blurDepth() = graphics["base"]->getEnable("Blur") ? 1.02f * farBlurDepth : 1.0f;
-
-            bool enableScatteringRefraction = graphics["base"]->parameters().scatteringRefraction();
-            if (ImGui::RadioButton("refraction of scattering", enableScatteringRefraction)) {
-                graphics["base"]->parameters().scatteringRefraction() = !enableScatteringRefraction;
-            }
+            ImGui::Text("props : "); ImGui::SameLine(); ImGui::Separator();
+            moon::tests::gui::graphicsProps(graphics["base"], mouse.cursor);
         ImGui::EndGroup();
 
-        ImGui::Text("pose in window : "); ImGui::SameLine(); ImGui::Separator();
-        moon::tests::gui::setPoseInWindow(graphics["base"]);
+        ImGui::BeginGroup();
+            ImGui::Text("pose in window : "); ImGui::SameLine(); ImGui::Separator();
+            moon::tests::gui::setPoseInWindow(graphics["base"]);
+        ImGui::EndGroup();
 
-        ImGui::Text("pipelines : "); ImGui::SameLine(); ImGui::Separator();
-        window.windowResized() |= moon::tests::gui::switchers(graphics["base"]);
+        ImGui::BeginGroup();
+            ImGui::Text("pipelines : "); ImGui::SameLine(); ImGui::Separator();
+            window.windowResized() |= moon::tests::gui::switchers(graphics["base"]);
+        ImGui::EndGroup();
 
         ImGui::TreePop();
     }
@@ -218,45 +201,36 @@ void testScene::makeGui() {
             moon::tests::gui::printQuaternion(controledObject->rotation());
         ImGui::EndGroup();
 
-        if(moon::tests::gui::setOutlighting(controledObject)){
-            requestUpdate();
-        }
-
         ImGui::BeginGroup();
-            ImGui::Text("set object extra color : "); ImGui::SameLine(); ImGui::Separator();
-            static moon::math::Vector<float, 4> constColor = {0.0f};
-            static moon::math::Vector<float, 4> colorFactor = { 1.0f };
-            if (ImGui::ColorEdit4("const color", (float*)&constColor, ImGuiColorEditFlags_NoDragDrop)) {}
-            if (ImGui::ColorEdit4("color factor", (float*)&colorFactor, ImGuiColorEditFlags_NoDragDrop)) {}
-            if (ImGui::Button("update")) {
-                controledObject->setBase(constColor, colorFactor);
-            }
-        ImGui::EndGroup();
-
-        auto model = dynamic_cast<moon::models::PlyModel*>(static_cast<moon::interfaces::Object*>(*controledObject.ptr)->model());
-        if(model){
-            ImGui::BeginGroup();
-            ImGui::Text("material : "); ImGui::SameLine(); ImGui::Separator();
-            auto& material = model->material();
-            static bool metallic = material.pbrWorkflows == moon::interfaces::Material::METALLIC_ROUGHNESS;
-            bool update = false;
-            if (ImGui::RadioButton("metallic roughbess", metallic)) {
-                material.pbrWorkflows = moon::interfaces::Material::METALLIC_ROUGHNESS;
-                metallic = true;
-                update |= true;
-            }
-            if (ImGui::RadioButton("specular glossiness", !metallic)) {
-                material.pbrWorkflows = moon::interfaces::Material::SPECULAR_GLOSSINESS;
-                metallic = false;
-                update |= true;
-            }
-            ImGui::SetNextItemWidth(150.0f);
-            update |= ImGui::SliderFloat("metallic", &material.metallicRoughness.factor[moon::interfaces::Material::metallicIndex], 0.0f, 1.0f);
-            ImGui::SetNextItemWidth(150.0f);
-            update |= ImGui::SliderFloat("roughness", &material.metallicRoughness.factor[moon::interfaces::Material::roughnessIndex], 0.0f, 1.0f);
-            if(update){
+            ImGui::Text("colors : "); ImGui::SameLine(); ImGui::Separator();
+            if(moon::tests::gui::setOutlighting(controledObject)){
                 requestUpdate();
             }
+            moon::tests::gui::setColors(controledObject);
+        ImGui::EndGroup();
+
+        if(auto model = dynamic_cast<moon::models::PlyModel*>(static_cast<moon::interfaces::Object*>(*controledObject.ptr)->model()); model){
+            ImGui::BeginGroup();
+                ImGui::Text("materials : "); ImGui::SameLine(); ImGui::Separator();
+                if(moon::tests::gui::setPlyMaterial(model)){
+                    requestUpdate();
+                }
+            ImGui::EndGroup();
+        }
+
+        if(controledObject->animationControl.size() > 0){
+            ImGui::BeginGroup();
+                ImGui::Text("animations : "); ImGui::SameLine(); ImGui::Separator();
+                ImGui::SetNextItemWidth(150.0f);
+                static float changeTime = 0.5f;
+                ImGui::SliderFloat("change animation time", &changeTime, 0.0f, 1.0f);
+
+                static const char* animationsList[] = {"-1", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"};
+                int selected = controledObject->animationControl.current() + 1;
+                ImGui::SetNextItemWidth(150.0f);
+                if (ImGui::Combo("animations list", &selected, animationsList, std::min(IM_ARRAYSIZE(animationsList), (int) controledObject->animationControl.size() + 1))) {
+                    controledObject->animationControl.set(selected - 1, changeTime);
+                }
             ImGui::EndGroup();
         }
 
@@ -587,13 +561,7 @@ void testScene::keyboardEvent()
 
     if(board->released(GLFW_KEY_ESCAPE)) window.close();
 
-    if(board->released(GLFW_KEY_T)) {
-        auto& animationControl = objects["bee0"]->animationControl;
-        animationControl.set(animationControl.current == 0 ? 1 : 0, 0.5f);
-    }
-
     static uint32_t ufoCounter = 0;
-
     if(board->released(GLFW_KEY_N)) {
         std::random_device device;
         std::uniform_real_distribution dist(0.3f, 1.0f);
