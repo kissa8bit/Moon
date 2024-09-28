@@ -32,9 +32,9 @@ void scale(Node* node, const math::Vector<float, 4>& x0, const math::Vector<floa
 }
 
 void rotate(Node* node, const math::Vector<float, 4>& x0, const math::Vector<float, 4>& x1, float t) {
-    math::Quaternion<float> q1(x0[3], x0.dvec());
-    math::Quaternion<float> q2(x1[3], x1.dvec());
-    node->rotation = normalize(slerp(q1, q2, t));
+    auto q1 = math::Quaternion<float>(x0[3], x0[0], x0[1], x0[2]);
+    auto q2 = math::Quaternion<float>(x1[3], x1[0], x1[1], x1[2]);
+    node->rotation = slerp(normalize(q1), normalize(q2), t);
 }
 
 static const std::unordered_map<GltfAnimation::Channel::PathType, void (*)(Node*, const math::Vector<float, 4>&, const math::Vector<float, 4>&, float)> updateFMap = {
@@ -101,19 +101,20 @@ void GltfModel::loadAnimations(const tinygltf::Model& gltfModel){
         }
 
         for (auto& instance : instances) {
-            GltfAnimation::ChannelsMap channelsMap;
+            GltfAnimation::Channels channels;
             for (const auto &source: anim.channels) {
                 if (auto it = instance.nodes.find(source.target_node); it != instance.nodes.end()) {
-                    channelsMap[it->first].push_back(GltfAnimation::Channel{ channelsPathMap.at(source.target_path), source.sampler });
+                    const auto& [_, node] = *it;
+                    channels.push_back(GltfAnimation::Channel{ channelsPathMap.at(source.target_path), source.sampler, node.get() });
                 }
             }
-            instance.animations.push_back(GltfAnimation(&instance.nodes, channelsMap, samplers, duration));
+            instance.animations.push_back(GltfAnimation(instance.rootNodes, channels, samplers, duration));
         }
     }
 }
 
-GltfAnimation::GltfAnimation(NodeMap* nodes, const GltfAnimation::ChannelsMap& channelsMap, const GltfAnimation::Samplers& samplers, float duration)
-    : nodes(nodes), channelsMap(channelsMap), samplers(samplers), dur(duration)
+GltfAnimation::GltfAnimation(const RootNodes& rootNodes, const GltfAnimation::Channels& channels, const GltfAnimation::Samplers& samplers, float duration)
+    : rootNodes(rootNodes), channels(channels), samplers(samplers), totalTime(duration)
 {}
 
 bool GltfAnimation::change(float time, float changetime) {
@@ -121,37 +122,35 @@ bool GltfAnimation::change(float time, float changetime) {
         return false;
     }
 
-    for (const auto& [nodeIndex, channels] : channelsMap) {
-        for (const auto& channel : channels) {
-            const auto& sampler = samplers[channel.samplerIndex];
-            float t = time / changetime;
-            changeFMap.at(channel.path)(nodes->at(nodeIndex).get(), sampler.points[0].outputData, t);
-        }
+    for (const auto& channel : channels) {
+        const auto& sampler = samplers[channel.samplerIndex];
+        float t = time / changetime;
+        changeFMap.at(channel.path)(channel.node, sampler.points[0].outputData, t);
     }
-    for (const auto& [_, node] : *nodes) {
-        node->update();
-    }
+    updateRootNodes(rootNodes);
     return true;
 }
 
 bool GltfAnimation::update(float time){
-    for (const auto& [nodeIndex, channels] : channelsMap) {
-        for (const auto& channel : channels) {
-            const auto& sampler = samplers[channel.samplerIndex];
-            for (size_t i = 0; i < sampler.points.size() - 1; i++) {
-                if (const auto& x0 = sampler.points[i], &x1 = sampler.points[i + 1]; time >= x0.inputTime && time <= x1.inputTime) {
-                    const auto& x0t = x0.inputTime, & x1t = x1.inputTime;
-                    const auto& x0d = x0.outputData, & x1d = x1.outputData;
-                    const float t = (time - x0t) / (x1t - x0t);
-                    updateFMap.at(channel.path)(nodes->at(nodeIndex).get(), x0d, x1d, t);
-                }
+    bool needUpdate = false;
+    for (const auto& channel : channels) {
+        const auto& sampler = samplers[channel.samplerIndex];
+        for (size_t i = 0; i < sampler.points.size() - 1; i++) {
+            if (const auto& x0 = sampler.points[i], &x1 = sampler.points[i + 1]; time > x0.inputTime && time < x1.inputTime) {
+                const auto& x0t = x0.inputTime, & x1t = x1.inputTime;
+                const auto& x0d = x0.outputData, & x1d = x1.outputData;
+                const float t = (time - x0t) / (x1t - x0t);
+                updateFMap.at(channel.path)(channel.node, x0d, x1d, t);
+                needUpdate |= true;
             }
         }
     }
-    for (const auto& [_, node] : *nodes) {
-        node->update();
-    }
+    if (needUpdate) updateRootNodes(rootNodes);
     return true;
+}
+
+float GltfAnimation::duration() const {
+    return totalTime;
 }
 
 }

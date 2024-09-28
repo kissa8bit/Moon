@@ -281,21 +281,34 @@ void testScene::updateFrame(uint32_t frameNumber, float inFrameTime)
 void testScene::createModels()
 {
     const auto resourceCount = app.getResourceCount();
-    const std::filesystem::path modelPath = "dependences/model";
+    const std::filesystem::path modelPath = ExternalPath / "dependences/model";
     const auto glTFSamples = modelPath / "glTF-Sample-Models/2.0";
 
-    models["bee"] = std::make_shared<moon::models::GltfModel>(ExternalPath / modelPath / "glb/Bee.glb", 2 * resourceCount);
-    models["ufo"] = std::make_shared<moon::models::GltfModel>(ExternalPath / modelPath / "glb/RetroUFO.glb");
-    models["robot"] = std::make_shared<moon::models::GltfModel>(ExternalPath / modelPath / "glb/Robot.glb", resourceCount);
+#define MAKE_GLTF std::make_shared<moon::models::GltfModel>
+#define MAKE_PLY std::make_shared<moon::models::PlyModel>
 
-    models["box"] = std::make_shared<moon::models::GltfModel>(ExternalPath / glTFSamples / "Box/glTF-Binary/Box.glb");
-    models["sponza"] = std::make_shared<moon::models::GltfModel>(ExternalPath / glTFSamples / "Sponza/glTF/Sponza.gltf");
-    models["duck"] = std::make_shared<moon::models::GltfModel>(ExternalPath / glTFSamples / "Duck/glTF-Binary/Duck.glb");
-    models["DragonAttenuation"] = std::make_shared<moon::models::GltfModel>(ExternalPath / glTFSamples / "DragonAttenuation/glTF-Binary/DragonAttenuation.glb");
-    models["DamagedHelmet"] = std::make_shared<moon::models::GltfModel>(ExternalPath / glTFSamples / "DamagedHelmet/glTF-Binary/DamagedHelmet.glb");
-    models["AlphaBlendModeTest"] = std::make_shared<moon::models::GltfModel>(ExternalPath / glTFSamples / "AlphaBlendModeTest/glTF-Binary/AlphaBlendModeTest.glb");
+    models["bee"] = MAKE_GLTF(modelPath / "glb/Bee.glb", 2 * resourceCount);
+    models["butterfly"] = MAKE_GLTF(modelPath / "glb/butterfly.glb", resourceCount);
+    models["ufo"] = MAKE_GLTF(modelPath / "glb/RetroUFO.glb");
+    models["robot"] = MAKE_GLTF(modelPath / "glb/Robot.glb", resourceCount);
+    models["skeleton"] = MAKE_GLTF(modelPath / "glb/skeleton.glb", resourceCount);
+    models["octopus"] = MAKE_GLTF(modelPath / "glb/octopus.glb", resourceCount);
+    models["SimpleSkin"] = MAKE_GLTF(glTFSamples / "SimpleSkin/glTF/SimpleSkin.gltf", resourceCount);
+    models["RiggedFigure"] = MAKE_GLTF(glTFSamples / "RiggedFigure/glTF-Binary/RiggedFigure.glb", resourceCount);
+    models["RecursiveSkeletons"] = MAKE_GLTF(glTFSamples / "RecursiveSkeletons/glTF-Binary/RecursiveSkeletons.glb", resourceCount);
 
-    models["teapot"] = std::make_shared<moon::models::PlyModel>(ExternalPath / modelPath / "ply/teapot.ply");
+    models["box"] = MAKE_GLTF(glTFSamples / "Box/glTF-Binary/Box.glb");
+    models["sponza"] = MAKE_GLTF(glTFSamples / "Sponza/glTF/Sponza.gltf");
+    models["duck"] = MAKE_GLTF(glTFSamples / "Duck/glTF-Binary/Duck.glb");
+    models["wasd"] = MAKE_GLTF(glTFSamples / "Duck/glTF-Binary/Duck.glb");
+    models["DragonAttenuation"] = MAKE_GLTF(glTFSamples / "DragonAttenuation/glTF-Binary/DragonAttenuation.glb");
+    models["DamagedHelmet"] = MAKE_GLTF(glTFSamples / "DamagedHelmet/glTF-Binary/DamagedHelmet.glb");
+    models["AlphaBlendModeTest"] = MAKE_GLTF(glTFSamples / "AlphaBlendModeTest/glTF-Binary/AlphaBlendModeTest.glb");
+
+    models["teapot"] = MAKE_PLY(modelPath / "ply/teapot.ply");
+
+#undef MAKE_GLTF
+#undef MAKE_PLY
 
     for(auto& [_,model]: models){
         graphics["base"]->create(model.get());
@@ -309,12 +322,16 @@ void testScene::createObjects()
     staticObjects["sponza"]->rotate(moon::math::radians(90.0f),{1.0f,0.0f,0.0f}).scale({3.0f,3.0f,3.0f});
 
     objects["bee0"] = std::make_shared<moon::transformational::Object>(models["bee"].get(), 0, resourceCount);
-    objects["bee0"]->translate({3.0f,0.0f,0.0f}).rotate(moon::math::radians(90.0f),{1.0f,0.0f,0.0f}).scale({0.2f,0.2f,0.2f});
+    objects["bee0"]->translate({5.0f,0.0f,0.0f}).rotate(moon::math::radians(90.0f),{1.0f,0.0f,0.0f}).scale({0.2f,0.2f,0.2f});
     objects["bee0"]->animationControl.set(0);
 
     objects["bee1"] = std::make_shared<moon::transformational::Object>(models["bee"].get(), resourceCount, resourceCount);
-    objects["bee1"]->translate({-3.0f,0.0f,0.0f}).rotate(moon::math::radians(90.0f),{1.0f,0.0f,0.0f}).scale({0.2f,0.2f,0.2f}).setBase(moon::math::Vector<float,4>(0.0f,0.0f,0.0f,-0.7f));
+    objects["bee1"]->translate({-5.0f,0.0f,0.0f}).rotate(moon::math::radians(90.0f),{1.0f,0.0f,0.0f}).scale({0.2f,0.2f,0.2f}).setBase(moon::math::Vector<float,4>(0.0f,0.0f,0.0f,-0.7f));
     objects["bee1"]->animationControl.set(1);
+
+    objects["butterfly"] = std::make_shared<moon::transformational::Object>(models["butterfly"].get(), 0, resourceCount);
+    objects["butterfly"]->rotate(moon::math::radians(90.0f), { 1.0f,0.0f,0.0f }).scale({ 20.2f,20.2f,20.2f });
+    objects["butterfly"]->animationControl.set(0);
 
     objects["duck"] = std::make_shared<moon::transformational::Object>(models["duck"].get());
     objects["duck"]->translate({0.0f,6.3f,12.1f}).rotate(moon::math::radians(90.0f),{1.0f,0.0f,0.0f}).rotate(moon::math::radians(-45.0f), { 0.0f,0.0f,1.0f });
@@ -331,9 +348,29 @@ void testScene::createObjects()
     objects["helmet"] = std::make_shared<moon::transformational::Object>(models["DamagedHelmet"].get());
     objects["helmet"]->scale(1.0f).rotate(moon::math::Quaternion<float>(0.5f, 0.5f, -0.5f, -0.5f));
 
+    objects["octopus"] = std::make_shared<moon::transformational::Object>(models["octopus"].get(), 0, resourceCount);
+    objects["octopus"]->rotate(moon::math::radians(90.0f), { 1.0f,0.0f,0.0f }).scale({ 3.0f,3.0f,3.0f }).translate({27.0f, -2.0f, 10.0f});
+    objects["octopus"]->animationControl.set(0);
+
     objects["robot"] = std::make_shared<moon::transformational::Object>(models["robot"].get(), 0, resourceCount);
     objects["robot"]->scale(25.0f).rotate(moon::math::Quaternion<float>(0.5f, 0.5f, -0.5f, -0.5f)).rotate(moon::math::radians(180.0f), {0.0f, 0.0f, 1.0f}).translate(moon::math::Vector<float,3>(-30.0f, 11.0f, 10.0f));
-    objects["robot"]->animationControl.set(0);
+    objects["robot"]->animationControl.set(1);
+
+    objects["skeleton"] = std::make_shared<moon::transformational::Object>(models["skeleton"].get(), 0, resourceCount);
+    objects["skeleton"]->scale(3.0f).rotate(moon::math::Quaternion<float>(0.5f, 0.5f, -0.5f, -0.5f)).rotate(moon::math::radians(180.0f), { 0.0f, 0.0f, 1.0f }).translate(moon::math::Vector<float, 3>(-30.0f, 6.0f, 10.0f));
+    objects["skeleton"]->animationControl.set(0);
+
+    objects["RecursiveSkeletons"] = std::make_shared<moon::transformational::Object>(models["RecursiveSkeletons"].get());
+    objects["RecursiveSkeletons"]->scale(0.02f).rotate(moon::math::radians(90.0f), { 1.0f,0.0f,0.0f }).translate(moon::math::Vector<float, 3>(-30.0f, -10.0f, 10.0f));
+    objects["RecursiveSkeletons"]->animationControl.set(0);
+
+    objects["SimpleSkin"] = std::make_shared<moon::transformational::Object>(models["SimpleSkin"].get());
+    objects["SimpleSkin"]->scale(2.0f).rotate(moon::math::radians(90.0f), { 1.0f,0.0f,0.0f }).rotate(moon::math::radians(90.0f), { 0.0f,0.0f,1.0f }).translate(moon::math::Vector<float, 3>(-34.0f, -7.0f, 10.0f));
+    objects["SimpleSkin"]->animationControl.set(0);
+
+    objects["RiggedFigure"] = std::make_shared<moon::transformational::Object>(models["RiggedFigure"].get());
+    objects["RiggedFigure"]->scale(1.0f).rotate(moon::math::radians(90.0f), { 1.0f,0.0f,0.0f }).rotate(moon::math::radians(90.0f), { 0.0f,0.0f,1.0f }).translate(moon::math::Vector<float, 3>(-32.0f, -5.0f, 10.0f));
+    objects["RiggedFigure"]->animationControl.set(0);
 
     objects["AlphaBlendModeTest"] = std::make_shared<moon::transformational::Object>(models["AlphaBlendModeTest"].get());
     objects["AlphaBlendModeTest"]->rotate(moon::math::radians(90.0f), { 1.0f,0.0f,0.0f }).rotate(moon::math::radians(-90.0f), { 0.0f,0.0f,1.0f }).translate({-24.0f, 3.25f, 12.2f}).scale({0.3f,0.3f, 0.3f});

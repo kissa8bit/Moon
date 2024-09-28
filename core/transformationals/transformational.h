@@ -25,7 +25,7 @@ public:
 protected:                                                                      \
     moon::math::Quaternion<float>     m_translation{ 0.0f,0.0f,0.0f,0.0f };     \
     moon::math::Quaternion<float>     m_rotation{ 1.0f,0.0f,0.0f,0.0f };        \
-    moon::math::Vector<float, 3>      m_scaling{ 1.0f,1.0f,1.0f };              \
+    moon::math::Vector<float, 3>      m_scaling{ 1.0f };                        \
     moon::math::Matrix<float, 4, 4>   m_globalTransformation{ 1.0f };
 
 #define DEFAULT_TRANSFORMATIONAL_GETTERS()                      \

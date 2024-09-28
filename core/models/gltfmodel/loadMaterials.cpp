@@ -7,13 +7,13 @@ namespace {
 
 class Extractor {
 public:
-    Extractor(const tinygltf::Material& material, const utils::Textures& textures)
-        : material(material), textures(textures)
-    {
-        if(!textures.empty()){
-            emptyTexture = &textures.back();
-        }
+    static const utils::Texture* getEmptyTexture(const utils::Textures& textures) {
+        return textures.empty() ? nullptr : &textures.back();
     }
+
+    Extractor(const tinygltf::Material& material, const utils::Textures& textures)
+        : material(material), textures(textures), emptyTexture(getEmptyTexture(textures))
+    {}
 
     template<typename TextureInfo, typename FactorType = double>
     interfaces::Material::TextureParameters operator()(const TextureInfo& textureInfo, const std::vector<FactorType>& factor = {}) const {
@@ -110,6 +110,7 @@ void GltfModel::loadMaterials(const tinygltf::Model& gltfModel) {
             material.extensions.diffuse = extractor(extensions, "diffuseTexture", "diffuseFactor");
         }
     }
+    auto& emptyMaterial = materials.emplace_back(Extractor::getEmptyTexture(textures));
 }
 
 }

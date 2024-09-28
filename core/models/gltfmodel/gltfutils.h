@@ -47,6 +47,7 @@ void convert(math::Matrix<T1, n, m>& dst, const std::vector<T2>& src) {
             }
         }
     }
+    dst = transpose(dst);
 }
 
 inline VkSamplerAddressMode getVkWrapMode(int32_t wrapMode) {

@@ -11,6 +11,7 @@ namespace moon::models {
 
 struct Instance {
     NodeMap nodes;
+    RootNodes rootNodes;
     Skins skins;
     GltfAnimations animations;
 

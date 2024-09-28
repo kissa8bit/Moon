@@ -21,7 +21,7 @@ struct GltfMesh : public interfaces::Mesh {
             const auto& [_, poseIndex] = *posAttributes;
             const auto& posAccessor = gltfModel.accessors.at(poseIndex);
 
-            const interfaces::Material* material = isValid(primitive.material) ? &materials.at(primitive.material) : nullptr;
+            const interfaces::Material* material = isValid(primitive.material) ? &materials.at(primitive.material) : &materials.back();
             uint32_t indexCount = isValid(primitive.indices) ? gltfModel.accessors.at(primitive.indices).count : 0;
             uint32_t vertexCount = posAccessor.count;
 

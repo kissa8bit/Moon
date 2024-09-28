@@ -323,19 +323,20 @@ Quaternion<T> convertToAnglesAndAxis(const Quaternion<T>& quat)
 }
 
 template<typename T>
-Quaternion<T> slerp(const Quaternion<T>& quat1, const Quaternion<T>& quat2, const T& t)
-{
-    T q1q2 = quat1.s*quat2.s + quat1.x*quat2.x + quat1.y*quat2.y + quat1.z*quat2.z;
-    T modq1 = std::sqrt(quat1.s*quat1.s + quat1.x*quat1.x + quat1.y*quat1.y + quat1.z*quat1.z);
-    T modq2 = std::sqrt(quat2.s*quat2.s + quat2.x*quat2.x + quat2.y*quat2.y + quat2.z*quat2.z);
-    T theta = modq1*modq2 == 0.0f ? 0.0f : std::acos(q1q2/modq1/modq2);
-    theta = std::isnan(theta) ? 0.0f : theta;
-
-    auto sinRatio = [](const T& theta, const T& t){
-        return theta == T(0) ? t : std::sin(t*theta)/std::sin(theta);
+Quaternion<T> slerp(const Quaternion<T>& x, const Quaternion<T>& y, const T& t) {
+    auto mix = [&t](const T& a, const T& b) {
+        return a + t * (b - a);
     };
 
-    return normalize(sinRatio(theta, T(1)-t) * quat1 + sinRatio(theta, t) * quat2);
+    const T cosTheta = x.s * y.s + x.x * y.x + x.y * y.y + x.z * y.z;
+    Quaternion<T> z = cosTheta < 0.0f ? (-1.0f) * y : y;
+
+    if (cosTheta > static_cast<T>(1) - std::numeric_limits<T>::epsilon()) {
+        return normalize(Quaternion<T>(mix(x.s, z.s), mix(x.x, z.x), mix(x.y, z.y), mix(x.z, z.z)));
+    }
+
+    const T angle = std::acos(cosTheta);
+    return normalize(std::sin((static_cast<T>(1) - t) * angle) / std::sin(angle) * x + std::sin(t * angle) / std::sin(angle) * z);
 }
 
 template<typename type>

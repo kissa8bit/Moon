@@ -14,8 +14,9 @@ struct GltfAnimation : interfaces::Animation {
     struct Channel {
         enum PathType { TRANSLATION, ROTATION, SCALE } path;
         int samplerIndex{ tinygltf::invalidIndex };
+        Node* node{nullptr};
     };
-    using ChannelsMap = std::unordered_map<uint32_t, std::vector<Channel>>;
+    using Channels = std::vector<Channel>;
 
     struct Point {
         float inputTime{ 0.0f };
@@ -29,16 +30,16 @@ struct GltfAnimation : interfaces::Animation {
     };
     using Samplers = std::vector<Sampler>;
 
-    NodeMap* nodes{nullptr};
-    ChannelsMap channelsMap;
+    RootNodes rootNodes;
+    Channels channels;
     Samplers samplers;
-    float dur{0};
+    float totalTime{0};
 
     bool change(float time, float changetime) override;
     bool update(float time) override;
-    float duration() const override {return dur;}
+    float duration() const override;
 
-    GltfAnimation(NodeMap* nodes, const ChannelsMap& channelsMap, const Samplers& samplers, float duration);
+    GltfAnimation(const RootNodes& rootNodes, const Channels& channels, const Samplers& samplers, float duration);
 };
 
 using GltfAnimations = std::vector<GltfAnimation>;

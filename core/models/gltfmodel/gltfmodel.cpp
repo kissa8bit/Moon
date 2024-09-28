@@ -68,7 +68,7 @@ void GltfModel::loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffe
     for(auto& instance: instances){
         uint32_t indexStart = 0;
         for (const auto& nodeIndex: gltfModel.scenes[isValid(gltfModel.defaultScene) ? gltfModel.defaultScene : 0].nodes) {
-            loadNode(gltfModel, instance.nodes, nullptr, nodeIndex, indexStart);
+            instance.rootNodes.push_back(loadNode(gltfModel, instance.nodes, nullptr, nodeIndex, indexStart));
         }
     }
 
@@ -87,8 +87,8 @@ void GltfModel::loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffe
     for(auto& instance : instances){
         for (auto& [_, node] : instance.nodes) {
             node->mesh.createDeviceBuffer(device);
-            node->update();
         }
+        updateRootNodes(instance.rootNodes);
     }
 
     utils::createDeviceBuffer(device, device.device(), commandBuffer, vertexBuffer.size() * sizeof(interfaces::Vertex), vertexBuffer.data(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertexCache, vertices);

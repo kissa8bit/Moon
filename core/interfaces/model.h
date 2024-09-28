@@ -54,6 +54,8 @@ struct Material {
 
     VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
 
+    Material() = default;
+    Material(const utils::Texture* empty);
     void createDescriptorSet(VkDevice device, utils::vkDefault::DescriptorPool& descriptorPool, const utils::vkDefault::DescriptorSetLayout& descriptorSetLayout);
 };
 
@@ -80,7 +82,7 @@ struct MaterialBlock {
 };
 
 struct MeshBlock {
-    static constexpr auto maxJoints = 128u;
+    static constexpr auto maxJoints = 256u;
     float jointcount{ 0 };
     alignas(16) math::Matrix<float, 4, 4> matrix{ 1.0f };
     alignas(16) math::Matrix<float, 4, 4> jointMatrix[maxJoints]{};

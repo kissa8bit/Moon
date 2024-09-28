@@ -26,17 +26,20 @@ struct LoadBuffer {
 
     template <typename T = type>
     math::Vector<float, 2> loadVec2(size_t vertex) const {
-        return math::Vector<float, 2>(((const T*)buffer)[vertex * stride + 0], ((const T*)buffer)[vertex * stride + 1]);
+        auto data = (const T*)buffer + vertex * stride;
+        return math::Vector<float, 2>(data[0], data[1]);
     }
 
     template <typename T = type>
     math::Vector<float, 3> loadVec3(size_t vertex) const {
-        return math::Vector<float, 3>(loadVec2<T>(vertex), ((const T*)buffer)[vertex * stride + 2]);
+        auto data = (const T*)buffer + vertex * stride;
+        return math::Vector<float, 3>(loadVec2<T>(vertex), data[2]);
     }
 
     template <typename T = type>
     math::Vector<float, 4> loadVec4(size_t vertex) const {
-        return math::Vector<float, 4>(loadVec3<T>(vertex), ((const T*)buffer)[vertex * stride + 3]);
+        auto data = (const T*)buffer + vertex * stride;
+        return math::Vector<float, 4>(loadVec3<T>(vertex), data[3]);
     }
 };
 

@@ -67,13 +67,13 @@ void Mesh::renderBB(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayo
 
 void Mesh::render(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t& primitiveCount) const {
     for (const auto& primitive : primitives) {
-        auto descriptors = descriptorSets;
-        descriptors.push_back(descriptorSet);
-        descriptors.push_back(primitive.material->descriptorSet);
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, descriptors.size(), descriptors.data(), 0, NULL);
-
         if (!CHECK_M(primitive.material, std::string("[ Mesh::render ] material is nullptr"))) continue;
         const auto& material = *primitive.material;
+
+        auto descriptors = descriptorSets;
+        descriptors.push_back(descriptorSet);
+        descriptors.push_back(material.descriptorSet);
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, descriptors.size(), descriptors.data(), 0, NULL);
 
         interfaces::MaterialBlock materialBlock(material, primitiveCount++);
         vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(materialBlock), &materialBlock);
@@ -127,6 +127,16 @@ utils::vkDefault::DescriptorSetLayout Model::createMaterialDescriptorSetLayout(V
         binding.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(binding.size()), 1));
         binding.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(binding.size()), 1));
     return utils::vkDefault::DescriptorSetLayout(device, binding);
+}
+
+Material::Material(const utils::Texture* emptyTexture) {
+    baseColor = emptyTexture;
+    metallicRoughness = emptyTexture;
+    normal = emptyTexture;
+    occlusion = emptyTexture;
+    emissive = emptyTexture;
+    extensions.specularGlossiness = emptyTexture;
+    extensions.diffuse = emptyTexture;
 }
 
 void Material::createDescriptorSet(VkDevice device, utils::vkDefault::DescriptorPool& descriptorPool, const utils::vkDefault::DescriptorSetLayout& descriptorSetLayout) {
