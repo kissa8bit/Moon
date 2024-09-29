@@ -7,12 +7,18 @@
 
 namespace moon::models {
 
+struct Node;
+
+using NodeMap = std::unordered_map<uint32_t, std::unique_ptr<Node>>;
+using RootNodes = std::vector<Node*>;
+using ChildrenNodes = std::vector<Node*>;
+
 struct Node {
     GltfMesh mesh;
 
     Node* parent{ nullptr };
     Skin* skin{ nullptr };
-    std::vector<Node*> children;
+    ChildrenNodes children;
 
     math::Matrix<float, 4, 4> matrix{ 1.0f };
     math::Matrix<float, 4, 4> global{ 1.0f };
@@ -44,15 +50,14 @@ struct Node {
     void updateMesh(bool recursive = false) {
         mesh.uniformBlock.matrix = transpose(matrix);
         for (size_t i = 0; i < mesh.uniformBlock.jointcount; i++) {
-            mesh.uniformBlock.jointMatrix[i] = transpose(inverse(matrix) * skin->joints[i]->matrix * skin->inverseBindMatrices[i]);
+            if(!CHECK_M(skin, "[ Node::updateMesh ] skin pointer must be valed")) continue;
+            const auto& joint = (*skin)[i];
+            mesh.uniformBlock.jointMatrix[i] = transpose(inverse(matrix) * joint.jointedNode->matrix * joint.inverseBindMatrices);
         }
         mesh.uniformBuffer.copy(&mesh.uniformBlock);
         if(recursive) for (auto child : children) child->updateMesh(recursive);
     }
 };
-
-using NodeMap = std::unordered_map<uint32_t, std::unique_ptr<Node>>;
-using RootNodes = std::vector<Node*>;
 
 inline void updateRootNodes(const RootNodes& rootNodes, bool recursive = true) {
     for (const auto& node : rootNodes) {

@@ -9,11 +9,12 @@ namespace moon::models {
 
 struct Node;
 
-struct Skin {
-    std::vector<math::Matrix<float, 4, 4>> inverseBindMatrices;
-    std::vector<Node*> joints;
+struct Joint {
+    math::Matrix<float, 4, 4> inverseBindMatrices{1.0f};
+    Node* jointedNode{nullptr};
 };
 
+using Skin = std::vector<Joint>;
 using Skins = std::vector<Skin>;
 
 }

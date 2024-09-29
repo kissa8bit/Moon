@@ -7,26 +7,20 @@ void GltfModel::loadSkins(const tinygltf::Model& gltfModel) {
     for (auto& instance : instances) {
         instance.skins.reserve(gltfModel.skins.size());
         for (const tinygltf::Skin& source : gltfModel.skins) {
-            auto& skin = instance.skins.emplace_back();
+            const auto accessorsIndex = source.inverseBindMatrices;
+            if (isInvalid(accessorsIndex)) continue;
+            const GltfBufferExtractor extract(gltfModel, accessorsIndex);
+            if (!CHECK_M(source.joints.size() == extract.count, "[ GltfModel::loadSkins ] : joints and inverseBindMatrices must be same size")) continue;
 
+            auto& skin = instance.skins.emplace_back();
             for (const auto& jointIndex : source.joints) {
                 const auto nodeByIndex = instance.nodes.find(jointIndex);
                 if (nodeByIndex == instance.nodes.end()) continue;
 
                 const auto& [_, node] = *nodeByIndex;
-                skin.joints.push_back(node.get());
+                const auto matrix = math::transpose(*((const math::Matrix<float, 4, 4>*)extract.data + skin.size()));
+                skin.push_back({ matrix, node.get()});
             }
-
-            const auto accessorsIndex = source.inverseBindMatrices;
-            if (isInvalid(accessorsIndex)) continue;
-            const GltfBufferExtractor extract(gltfModel, accessorsIndex);
-
-            auto& matrices = skin.inverseBindMatrices;
-            matrices.resize(extract.count);
-            std::memcpy((void*)matrices.data(), extract.data, extract.count * sizeof(math::Matrix<float, 4, 4>));
-            std::transform(matrices.begin(), matrices.end(), matrices.begin(), [](const auto& matrix) {
-                return math::transpose(matrix);
-            });
         }
 
         for (const auto& [index, node] : instance.nodes) {
@@ -34,7 +28,7 @@ void GltfModel::loadSkins(const tinygltf::Model& gltfModel) {
             if (isInvalid(skinIndex)) continue;
 
             node->skin = &instance.skins.at(skinIndex);
-            node->mesh.uniformBlock.jointcount = std::min((uint32_t)node->skin->joints.size(), interfaces::MeshBlock::maxJoints);
+            node->mesh.uniformBlock.jointcount = std::min((uint32_t)node->skin->size(), interfaces::MeshBlock::maxJoints);
         }
     }
 }
