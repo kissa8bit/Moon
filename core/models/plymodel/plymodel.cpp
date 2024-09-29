@@ -104,7 +104,7 @@ void PlyModel::loadFromFile(const utils::PhysicalDevice& physicalDevice, VkComma
     material().extensions.diffuse.texture = &textures.back();
 
     mesh.primitives.push_back(
-        interfaces::Primitive(0, indexCount, vertexCount, &material(), bb)
+        interfaces::Primitive({0, indexCount}, {0, vertexCount}, &material(), bb)
     );
 
     const auto& device = physicalDevice.device();

@@ -78,11 +78,11 @@ void Mesh::render(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout
         interfaces::MaterialBlock materialBlock(material, primitiveCount++);
         vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(materialBlock), &materialBlock);
 
-        if (primitive.indexCount > 0) {
-            vkCmdDrawIndexed(commandBuffer, primitive.indexCount, 1, primitive.firstIndex, 0, 0);
+        if (primitive.index.range.count > 0) {
+            vkCmdDrawIndexed(commandBuffer, primitive.index.range.count, 1, primitive.index.range.first, 0, 0);
         }
         else {
-            vkCmdDraw(commandBuffer, primitive.vertexCount, 1, 0, 0);
+            vkCmdDraw(commandBuffer, primitive.vertex.range.count, 1, primitive.vertex.range.first, 0);
         }
     }
 }

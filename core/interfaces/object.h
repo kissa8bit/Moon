@@ -27,13 +27,11 @@ protected:
     bool enable{true};
     bool enableShadow{true};
 
-    uint32_t firstPrimitive{0};
-    uint32_t primitiveCount{0};
+    struct{ Range range{}; } primitive;
+    struct { Range range{}; } instance;
 
     uint8_t pipelineBitMask{ 0 };
     Model* pModel{nullptr};
-    uint32_t firstInstance{0};
-    uint32_t instanceCount{1};
 
     utils::vkDefault::DescriptorSetLayout descriptorSetLayout;
     utils::vkDefault::DescriptorPool descriptorPool;
@@ -42,7 +40,7 @@ protected:
 public:
     Object() = default;
     Object(uint8_t pipelineBitMask);
-    Object(uint8_t pipelineBitMask, Model* model, uint32_t firstInstance = 0, uint32_t instanceCount = 1);
+    Object(uint8_t pipelineBitMask, Model* model, const Range& instanceRange = {0,1});
 
     Model* model();
     uint32_t getInstanceNumber(uint32_t imageNumber) const;
@@ -54,13 +52,8 @@ public:
     bool outlining() const;
 
     uint8_t& pipelineFlagBits();
-
-    bool comparePrimitive(uint32_t primitive);
-    void setFirstPrimitive(uint32_t firstPrimitive);
-    void setPrimitiveCount(uint32_t primitiveCount);
-    uint32_t getFirstPrimitive() const;
-    uint32_t getPrimitiveCount() const;
-
+    Range& primitiveRange();
+    bool comparePrimitive(uint32_t primitiveIndex) const;
     const VkDescriptorSet& getDescriptorSet(uint32_t i) const;
 
     virtual ~Object() {};

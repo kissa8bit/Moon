@@ -92,16 +92,23 @@ struct MeshBlock {
     }
 };
 
+struct Range {
+    uint32_t first{ 0 };
+    uint32_t count{ 0 };
+
+    uint32_t last() const {return first + count;}
+    void setLast(uint32_t last) { count = last - first; }
+};
+
 struct Primitive {
-    uint32_t firstIndex{ 0 };
-    uint32_t indexCount{ 0 };
-    uint32_t vertexCount{ 0 };
+    struct { Range range{}; } index;
+    struct { Range range{}; } vertex;
     const interfaces::Material* material{ nullptr };
     interfaces::BoundingBox bb;
 
     Primitive() = default;
-    Primitive(uint32_t firstIndex, uint32_t indexCount, uint32_t vertexCount, const interfaces::Material* material, interfaces::BoundingBox bb)
-        : firstIndex(firstIndex), indexCount(indexCount), vertexCount(vertexCount), material(material), bb(bb)
+    Primitive(const Range& indexRange, const Range vertexRange, const interfaces::Material* material, interfaces::BoundingBox bb)
+        : index({indexRange}), vertex({vertexRange}), material(material), bb(bb)
     {}
 };
 

@@ -14,7 +14,7 @@ BaseObject::BaseObject(uint8_t pipelineBitMask, void* hostData, size_t hostDataS
 {}
 
 BaseObject::BaseObject(uint8_t pipelineBitMask, void* hostData, size_t hostDataSize, interfaces::Model* model, uint32_t firstInstance, uint32_t instanceCount)
-    : Object(pipelineBitMask, model, firstInstance, instanceCount), uniformBuffer(hostData, hostDataSize)
+    : Object(pipelineBitMask, model, {firstInstance, instanceCount}), uniformBuffer(hostData, hostDataSize)
 {}
 
 void BaseObject::update(uint32_t frameNumber, VkCommandBuffer commandBuffer) {

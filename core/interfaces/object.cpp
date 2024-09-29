@@ -28,8 +28,8 @@ Object::Object(uint8_t pipelineBitMask)
     : pipelineBitMask(pipelineBitMask)
 {}
 
-Object::Object(uint8_t pipelineBitMask, Model* model, uint32_t firstInstance, uint32_t instanceCount)
-    : pipelineBitMask(pipelineBitMask), pModel(model), firstInstance(firstInstance), instanceCount(instanceCount)
+Object::Object(uint8_t pipelineBitMask, Model* model, const Range& instanceRange)
+    : pipelineBitMask(pipelineBitMask), pModel(model), instance({ instanceRange })
 {}
 
 Model* Object::model() {
@@ -37,31 +37,17 @@ Model* Object::model() {
 }
 
 uint32_t Object::getInstanceNumber(uint32_t imageNumber) const {
-    return firstInstance + (instanceCount > imageNumber ? imageNumber : 0);
+    return instance.range.first + (instance.range.first > imageNumber ? imageNumber : 0);
 }
 
 uint8_t& Object::pipelineFlagBits() {
     return pipelineBitMask;
 }
 
-void Object::setFirstPrimitive(uint32_t infirstPrimitive) {
-    firstPrimitive = infirstPrimitive;
-}
+Range& Object::primitiveRange() { return primitive.range;}
 
-void Object::setPrimitiveCount(uint32_t inprimitiveCount) {
-    primitiveCount = inprimitiveCount;
-}
-
-bool Object::comparePrimitive(uint32_t primitive) {
-    return !(primitive < firstPrimitive) && (primitive < firstPrimitive + primitiveCount);
-}
-
-uint32_t Object::getFirstPrimitive() const {
-    return firstPrimitive;
-}
-
-uint32_t Object::getPrimitiveCount() const {
-    return primitiveCount;
+bool Object::comparePrimitive(uint32_t primitiveIndex) const {
+    return !(primitiveIndex < primitive.range.first) && (primitiveIndex < primitive.range.last());
 }
 
 const VkDescriptorSet& Object::getDescriptorSet(uint32_t i) const {

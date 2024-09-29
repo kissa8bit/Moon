@@ -26,7 +26,7 @@ struct GltfMesh : public interfaces::Mesh {
             uint32_t vertexCount = posAccessor.count;
 
             primitives.emplace_back(
-                interfaces::Primitive(firstIndex, indexCount, vertexCount, material, { toVector3f(posAccessor.minValues), toVector3f(posAccessor.maxValues) })
+                interfaces::Primitive({firstIndex, indexCount}, {0, vertexCount}, material, { toVector3f(posAccessor.minValues), toVector3f(posAccessor.maxValues) })
             );
             firstIndex += indexCount;
         }

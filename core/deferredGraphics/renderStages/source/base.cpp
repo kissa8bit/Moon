@@ -191,9 +191,9 @@ void Graphics::Base::render(uint32_t frameNumber, VkCommandBuffer commandBuffers
 
         const utils::vkDefault::DescriptorSets descriptors = {descriptorSets[frameNumber], object->getDescriptorSet(frameNumber)};
 
-        object->setFirstPrimitive(primitiveCount);
+        object->primitiveRange().first = primitiveCount;
         model->render(object->getInstanceNumber(frameNumber), commandBuffers, pipelineLayoutMap.at(pipelineFlagBits), descriptors, primitiveCount);
-        object->setPrimitiveCount(primitiveCount - object->getFirstPrimitive());
+        object->primitiveRange().setLast(primitiveCount);
     }
 }
 
