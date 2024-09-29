@@ -135,7 +135,7 @@ struct Vertex {
 class Animation {
 public:
     virtual ~Animation() {};
-    virtual bool change(float time, float changetime) = 0;
+    virtual void setChangeTime(float changetime) = 0;
     virtual bool update(float time) = 0;
     virtual float duration() const = 0;
 };

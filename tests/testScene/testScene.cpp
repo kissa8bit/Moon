@@ -122,12 +122,6 @@ void testScene::makeGui() {
         ImGui::TreePop();
     }
 
-    if (ImGui::TreeNodeEx("Animation", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::SetNextItemWidth(150.0f);
-        ImGui::SliderFloat("animation speed", &animationSpeed, 0.0f, 5.0f);
-        ImGui::TreePop();
-    }
-
     if(ImGui::TreeNodeEx("Screenshot", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen)) {
         moon::tests::gui::makeScreenshot("Make screenshot", app);
         ImGui::TreePop();
@@ -170,6 +164,26 @@ void testScene::makeGui() {
         ImGui::TreePop();
     }
 #endif
+
+    if (ImGui::TreeNodeEx("Animation", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::SetNextItemWidth(150.0f);
+        ImGui::SliderFloat("animation speed", &animationSpeed, 0.0f, 5.0f);
+
+        ImGui::SetNextItemWidth(150.0f);
+        static float changeTime = 0.5f;
+        ImGui::SliderFloat("change animation time", &changeTime, 0.0f, 1.0f);
+
+        if (controledObject && controledObject->animationControl.size() > 0) {
+            static const char* animationsList[] = { "-1", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+            int selected = controledObject->animationControl.current() + 1;
+            ImGui::SetNextItemWidth(150.0f);
+            if (ImGui::Combo("animations list", &selected, animationsList, std::min(IM_ARRAYSIZE(animationsList), (int)controledObject->animationControl.size() + 1))) {
+                controledObject->animationControl.set(selected - 1, changeTime);
+            }
+        }
+
+        ImGui::TreePop();
+    }
 
     if (controledObject && ImGui::TreeNodeEx(std::string("Object : " + controledObject.name).c_str(), ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen))
     {
@@ -214,22 +228,6 @@ void testScene::makeGui() {
                 ImGui::Text("materials : "); ImGui::SameLine(); ImGui::Separator();
                 if(moon::tests::gui::setPlyMaterial(model)){
                     requestUpdate();
-                }
-            ImGui::EndGroup();
-        }
-
-        if(controledObject->animationControl.size() > 0){
-            ImGui::BeginGroup();
-                ImGui::Text("animations : "); ImGui::SameLine(); ImGui::Separator();
-                ImGui::SetNextItemWidth(150.0f);
-                static float changeTime = 0.5f;
-                ImGui::SliderFloat("change animation time", &changeTime, 0.0f, 1.0f);
-
-                static const char* animationsList[] = {"-1", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"};
-                int selected = controledObject->animationControl.current() + 1;
-                ImGui::SetNextItemWidth(150.0f);
-                if (ImGui::Combo("animations list", &selected, animationsList, std::min(IM_ARRAYSIZE(animationsList), (int) controledObject->animationControl.size() + 1))) {
-                    controledObject->animationControl.set(selected - 1, changeTime);
                 }
             ImGui::EndGroup();
         }
@@ -295,6 +293,7 @@ void testScene::createModels()
     models["octopus"] = MAKE_GLTF(modelPath / "glb/octopus.glb", resourceCount);
     models["SimpleSkin"] = MAKE_GLTF(glTFSamples / "SimpleSkin/glTF/SimpleSkin.gltf", resourceCount);
     models["RiggedFigure"] = MAKE_GLTF(glTFSamples / "RiggedFigure/glTF-Binary/RiggedFigure.glb", resourceCount);
+    models["InterpolationTest"] = MAKE_GLTF(glTFSamples / "InterpolationTest/glTF-Binary/InterpolationTest.glb", resourceCount);
     models["RecursiveSkeletons"] = MAKE_GLTF(glTFSamples / "RecursiveSkeletons/glTF-Binary/RecursiveSkeletons.glb", resourceCount);
 
     models["box"] = MAKE_GLTF(glTFSamples / "Box/glTF-Binary/Box.glb");
@@ -371,6 +370,10 @@ void testScene::createObjects()
     objects["RiggedFigure"] = std::make_shared<moon::transformational::Object>(models["RiggedFigure"].get());
     objects["RiggedFigure"]->scale(1.0f).rotate(moon::math::radians(90.0f), { 1.0f,0.0f,0.0f }).rotate(moon::math::radians(90.0f), { 0.0f,0.0f,1.0f }).translate(moon::math::Vector<float, 3>(-32.0f, -5.0f, 10.0f));
     objects["RiggedFigure"]->animationControl.set(0);
+
+    objects["InterpolationTest"] = std::make_shared<moon::transformational::Object>(models["InterpolationTest"].get());
+    objects["InterpolationTest"]->scale(0.5f).rotate(moon::math::radians(90.0f), { 1.0f,0.0f,0.0f }).rotate(moon::math::radians(90.0f), { 0.0f,0.0f,1.0f }).translate(moon::math::Vector<float, 3>(-32.0f, 0.0f, 13.0f));
+    objects["InterpolationTest"]->animationControl.set(0);
 
     objects["AlphaBlendModeTest"] = std::make_shared<moon::transformational::Object>(models["AlphaBlendModeTest"].get());
     objects["AlphaBlendModeTest"]->rotate(moon::math::radians(90.0f), { 1.0f,0.0f,0.0f }).rotate(moon::math::radians(-90.0f), { 0.0f,0.0f,1.0f }).translate({-24.0f, 3.25f, 12.2f}).scale({0.3f,0.3f, 0.3f});

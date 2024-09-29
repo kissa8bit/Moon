@@ -19,8 +19,9 @@ struct GltfAnimation : interfaces::Animation {
     using Channels = std::vector<Channel>;
 
     struct Point {
+        using OutputData = std::vector<math::Vector<float, 4>>;
         float inputTime{ 0.0f };
-        math::Vector<float, 4> outputData{ 0.0f };
+        OutputData outputData;
     };
     using Points = std::vector<Point>;
 
@@ -34,8 +35,9 @@ struct GltfAnimation : interfaces::Animation {
     Channels channels;
     Samplers samplers;
     float totalTime{0};
+    float changeTime{0};
 
-    bool change(float time, float changetime) override;
+    void setChangeTime(float changeTime) override;
     bool update(float time) override;
     float duration() const override;
 

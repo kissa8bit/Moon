@@ -191,6 +191,9 @@ void Object::AnimationControl::set(int index, float changeTime) {
             animIndex = index;
             startOffset = changeTime;
             time = 0;
+            if (animIndex > -1) {
+                animations.at(animIndex)->setChangeTime(changeTime);
+            }
         }
     }
 }
@@ -206,13 +209,10 @@ bool Object::AnimationControl::update(size_t frameNumber, float dtime) {
         if (!animation) return false;
 
         time += dtime;
-        if (!animation->change(time, startOffset)) {
-            float animationTime = time - startOffset;
-            if (animationTime > animation->duration()) {
-                time = startOffset;
-            }
-            return animation->update(animationTime);
+        if (time > animation->duration()) {
+            time = startOffset;
         }
+        return animation->update(time);
     }
     return false;
 }
