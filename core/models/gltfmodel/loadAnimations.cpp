@@ -6,45 +6,29 @@ namespace moon::models {
 
 namespace {
 
-template<typename Type>
-GltfAnimation::Sampler makeSampler(
-    GltfAnimation::Sampler::InterpolationType interpolation,
-    size_t count,
-    size_t outputSize,
-    const float* inputData,
-    const Type* outputData,
-    float& duration)
-{
-    GltfAnimation::Sampler sampler{};
-    sampler.interpolation = interpolation;
-    for (size_t i = 0; i < count; ++i) {
-        auto& point = sampler.points.emplace_back(GltfAnimation::Point{inputData[i], {}});
-        point.outputData.resize(outputSize);
-        for (size_t j = 0; j < outputSize; ++j) {
-            point.outputData[j] = outputData[i * outputSize + j];
-        }
-        duration = std::max(point.inputTime, duration);
-    }
-    return sampler;
+template<typename type>
+math::Quaternion<type> quatFromVec(const math::Vector<type, 4>& vec) {
+    return normalize(math::Quaternion<float>(vec[3], vec.dvec()));
 }
 
 class Linear {
     using OutputData = GltfAnimation::Point::OutputData;
 
     static void translate(Node* node, const OutputData& x0, const OutputData& x1, float t) {
-        node->translation = mix(x0.at(0), x1.at(0), t).dvec();
+        node->translation = mix(x0.at(value), x1.at(value), t).dvec();
     }
 
     static void scale(Node* node, const OutputData& x0, const OutputData& x1, float t) {
-        node->scale = mix(x0.at(0), x1.at(0), t).dvec();
+        node->scale = mix(x0.at(value), x1.at(value), t).dvec();
     }
 
     static void rotate(Node* node, const OutputData& x0, const OutputData& x1, float t) {
-        node->rotation = slerp(normalize(math::Quaternion<float>(x0.at(0)[3], x0.at(0).dvec())), normalize(math::Quaternion<float>(x1.at(0)[3], x1.at(0).dvec())), t);
+        node->rotation = slerp(quatFromVec(x0.at(value)), quatFromVec(x1.at(value)), t);
     }
 
 public:
     using signature = void (*)(Node*, const OutputData&, const OutputData&, float);
+    static constexpr size_t value = 0;
 
     static signature update(GltfAnimation::Channel::PathType path) {
         static const std::unordered_map<GltfAnimation::Channel::PathType, signature> update = {
@@ -60,19 +44,68 @@ class Step {
     using OutputData = GltfAnimation::Point::OutputData;
 
     static void translate(Node* node, const OutputData& x0) {
-        node->translation = x0.at(0).dvec();
+        node->translation = x0.at(value).dvec();
     }
 
     static void scale(Node* node, const OutputData& x0) {
-        node->scale = x0.at(0).dvec();
+        node->scale = x0.at(value).dvec();
     }
 
     static void rotate(Node* node, const OutputData& x0) {
-        node->rotation = math::Quaternion<float>(x0.at(0)[3], x0.at(0).dvec());
+        node->rotation = quatFromVec(x0.at(value));
     }
 
 public:
     using signature = void (*)(Node*, const OutputData&);
+    static constexpr size_t value = 0;
+
+    static signature update(GltfAnimation::Channel::PathType path) {
+        static const std::unordered_map<GltfAnimation::Channel::PathType, signature> update = {
+            {GltfAnimation::Channel::PathType::ROTATION, rotate},
+            {GltfAnimation::Channel::PathType::TRANSLATION, translate},
+            {GltfAnimation::Channel::PathType::SCALE, scale}
+        };
+        return update.at(path);
+    }
+};
+
+class Cubic {
+    using OutputData = GltfAnimation::Point::OutputData;
+
+    static math::Vector<float, 4> splineInterpolation(const OutputData& x0, const OutputData& x1, float t0, float t1, float t) {
+        const float t2 = t * t, t3 = t2 * t, delta = t1 - t0;
+        math::Vector<float, 4> result{ 0.0f };
+        for (uint32_t i = 0; i < 4; i++) {
+            const float p0 = x0.at(value)[i], d0 = delta * x0.at(tangent.a)[i];
+            const float p1 = x1.at(value)[i], d1 = delta* x1.at(tangent.b)[i];
+            result[i] =
+                (2.0f * t3 - 3.0f * t2 + 1.0f) * p0 +
+                (-2.0f * t3 + 3.0f * t2) * p1 +
+                (t3 - 2.0f * t2 + t) * d1 +
+                (t3 - t2) * d0;
+        }
+        return result;
+    }
+
+    static void translate(Node* node, const OutputData& x0, const OutputData& x1, float t0, float t1, float t) {
+        const auto v = splineInterpolation(x0, x1, t0, t1, t);
+        node->translation = v.dvec();
+    }
+
+    static void scale(Node* node, const OutputData& x0, const OutputData& x1, float t0, float t1, float t) {
+        const auto v = splineInterpolation(x0, x1, t0, t1, t);
+        node->scale = v.dvec();
+    }
+
+    static void rotate(Node* node, const OutputData& x0, const OutputData& x1, float t0, float t1, float t) {
+        const auto v = splineInterpolation(x0, x1, t0, t1, t);
+        node->rotation = quatFromVec(v);
+    }
+
+public:
+    using signature = void (*)(Node*, const OutputData&, const OutputData&, float, float, float);
+    static constexpr struct { size_t a; size_t b; } tangent = { 0, 2 };
+    static constexpr size_t value = 1;
 
     static signature update(GltfAnimation::Channel::PathType path) {
         static const std::unordered_map<GltfAnimation::Channel::PathType, signature> update = {
@@ -87,21 +120,32 @@ public:
 class Change {
     using OutputData = GltfAnimation::Point::OutputData;
 
-    static void translate(Node* node, const OutputData& x, float t) {
-        node->translation = mix(node->translation, math::Vector<float, 3>(x.at(0).dvec()), t);
+    static size_t getValue(GltfAnimation::Sampler::InterpolationType interpolation) {
+        static const std::unordered_map<GltfAnimation::Sampler::InterpolationType, size_t> value = {
+            {GltfAnimation::Sampler::InterpolationType::CUBICSPLINE, Cubic::value},
+            {GltfAnimation::Sampler::InterpolationType::LINEAR, Linear::value},
+            {GltfAnimation::Sampler::InterpolationType::STEP, Step::value}
+        };
+        return value.at(interpolation);
     }
 
-    static void scale(Node* node, const OutputData& x, float t) {
-        node->scale = mix(node->scale, math::Vector<float, 3>(x.at(0).dvec()), t);
+    static void translate(Node* node, GltfAnimation::Sampler::InterpolationType interpolation, const OutputData& x, float t) {
+        const auto value = getValue(interpolation);
+        node->translation = mix(node->translation, math::Vector<float, 3>(x.at(value).dvec()), t);
     }
 
-    static void rotate(Node* node, const OutputData& x, float t) {
-        math::Quaternion<float> q(x.at(0)[3], x.at(0).dvec());
-        node->rotation = normalize(slerp(node->rotation, q, t));
+    static void scale(Node* node, GltfAnimation::Sampler::InterpolationType interpolation, const OutputData& x, float t) {
+        const auto value = getValue(interpolation);
+        node->scale = mix(node->scale, math::Vector<float, 3>(x.at(value).dvec()), t);
+    }
+
+    static void rotate(Node* node, GltfAnimation::Sampler::InterpolationType interpolation, const OutputData& x, float t) {
+        const auto value = getValue(interpolation);
+        node->rotation = normalize(slerp(node->rotation, quatFromVec(x.at(value)), t));
     }
 
 public:
-    using signature = void (*)(Node*, const OutputData&, float);
+    using signature = void (*)(Node*, GltfAnimation::Sampler::InterpolationType, const OutputData&, float);
 
     static signature update(GltfAnimation::Channel::PathType path) {
         static const std::unordered_map<GltfAnimation::Channel::PathType, signature> update = {
@@ -112,6 +156,28 @@ public:
         return update.at(path);
     }
 };
+
+template<typename Type>
+GltfAnimation::Sampler makeSampler(
+    GltfAnimation::Sampler::InterpolationType interpolation,
+    size_t count,
+    size_t outputSize,
+    const float* inputData,
+    const Type* outputData,
+    float& duration)
+{
+    GltfAnimation::Sampler sampler{};
+    sampler.interpolation = interpolation;
+    for (size_t i = 0; i < count; ++i) {
+        auto& point = sampler.points.emplace_back(GltfAnimation::Point{ inputData[i], {} });
+        point.outputData.resize(outputSize);
+        for (size_t j = 0; j < outputSize; ++j) {
+            point.outputData[j] = outputData[i * outputSize + j];
+        }
+        duration = std::max(point.inputTime, duration);
+    }
+    return sampler;
+}
 
 }
 
@@ -186,8 +252,9 @@ bool GltfAnimation::update(float time){
         for (const auto& channel : channels) {
             if (channel.samplerIndex >= samplers.size()) continue;
             const auto& sampler = samplers[channel.samplerIndex];
+            if (sampler.points.size() == 0) continue;
             float t = time / changeTime;
-            Change::update(channel.path)(channel.node, sampler.points[0].outputData, t);
+            Change::update(channel.path)(channel.node, sampler.interpolation, sampler.points.at(0).outputData, t);
         }
         needUpdate |= true;
     } else {
@@ -202,7 +269,7 @@ bool GltfAnimation::update(float time){
                     switch (sampler.interpolation) {
                         case Sampler::InterpolationType::STEP: Step::update(channel.path)(channel.node, x0d); break;
                         case Sampler::InterpolationType::LINEAR: Linear::update(channel.path)(channel.node, x0d, x1d, t); break;
-                        case Sampler::InterpolationType::CUBICSPLINE: Linear::update(channel.path)(channel.node, x0d, x1d, t); break;
+                        case Sampler::InterpolationType::CUBICSPLINE: Cubic::update(channel.path)(channel.node, x0d, x1d, x0t, x1t, t); break;
                     }
                     needUpdate |= true;
                 }
