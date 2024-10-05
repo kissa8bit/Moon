@@ -72,13 +72,13 @@ void PlyModel::loadFromFile(const utils::PhysicalDevice& physicalDevice, VkComma
         }
         for (uint32_t i = 0; i < indexBuffer.size(); i += 3) {
             auto& vert0 = vertexBuffer[indexBuffer[i + 0]], & vert1 = vertexBuffer[indexBuffer[i + 1]], & vert2 = vertexBuffer[indexBuffer[i + 2]];
-            const auto n = normalize(cross(vert1.pos - vert0.pos, vert2.pos - vert1.pos));
+            const auto n = normalized(cross(vert1.pos - vert0.pos, vert2.pos - vert1.pos));
             vert0.normal += n; vert1.normal += n; vert2.normal += n;
         }
         for(auto& vert : vertexBuffer){
-            vert.normal = normalize(vert.normal);
-            bb.max = math::maximum(bb.max, vert.pos);
-            bb.min = math::minimum(bb.min, vert.pos);
+            vert.normal = normalized(vert.normal);
+            bb.max = math::max(bb.max, vert.pos);
+            bb.min = math::min(bb.min, vert.pos);
         }
     }
     if(normals){

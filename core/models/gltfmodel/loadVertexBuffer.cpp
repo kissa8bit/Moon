@@ -73,7 +73,7 @@ void GltfModel::loadVertexBuffer(const tinygltf::Model& gltfModel, const tinyglt
         for (uint32_t index = 0; index < vertexCount; index++) {
             interfaces::Vertex vert{};
             if (pos.buffer) vert.pos = pos.loadVec3(index);
-            if (norm.buffer) vert.normal = math::normalize(norm.loadVec3(index));
+            if (norm.buffer) vert.normal = math::normalized(norm.loadVec3(index));
             if (tex0.buffer) vert.uv0 = tex0.loadVec2(index);
             if (tex1.buffer) vert.uv1 = tex1.loadVec2(index);
             if (joint.buffer && joint.accessor) {

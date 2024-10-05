@@ -25,8 +25,8 @@ void calculateTangent(std::vector<interfaces::Vertex>& vertexBuffer, std::vector
         const auto duv2 = v2.uv0 - v0.uv0;
 
         const float det = 1.0f / (duv1[0] * duv2[1] - duv1[1] * duv2[0]);
-        const auto bitangent = normalize( det * (duv1[0] * dv2 - duv2[0] * dv1));
-        auto tangent = normalize(det * (duv2[1] * dv1 - duv1[1] * dv2));
+        const auto bitangent = normalized( det * (duv1[0] * dv2 - duv2[0] * dv1));
+        auto tangent = normalized(det * (duv2[1] * dv1 - duv1[1] * dv2));
 
         if(dot(cross(tangent, bitangent), v0.normal) < 0.0f){
             tangent = -1.0f * tangent;
@@ -34,8 +34,8 @@ void calculateTangent(std::vector<interfaces::Vertex>& vertexBuffer, std::vector
 
         for(uint32_t j = i; j < i + 3; j++){
             auto& v = vertexBuffer[indexBuffer[j]];
-            v.tangent = normalize(tangent - v.normal * dot(v.normal, tangent));
-            v.bitangent = normalize(cross(v.normal, v.tangent));
+            v.tangent = normalized(tangent - v.normal * dot(v.normal, tangent));
+            v.bitangent = normalized(cross(v.normal, v.tangent));
         }
     }
 }

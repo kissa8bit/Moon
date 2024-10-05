@@ -60,7 +60,7 @@ public:                                                                         
         return update();                                                                            \
     }                                                                                               \
     Name& Name::rotate(const float& ang, const moon::math::Vector<float, 3>& ax) {                  \
-        m_rotation = convert(ang, moon::math::Vector<float, 3>(normalize(ax))) * m_rotation;        \
+        m_rotation = convert(ang, moon::math::Vector<float, 3>(normalized(ax))) * m_rotation;        \
         return update();                                                                            \
     }                                                                                               \
     Name& Name::scale(const moon::math::Vector<float, 3>& scale) {                                  \
@@ -79,13 +79,13 @@ public:                                                                         
 #define DEFAULT_TRANSFORMATIONAL_ROTATE_XY_DEF(Name)                                                \
     Name& Name::rotateX(const float& ang) {                                                         \
         const moon::math::Vector<float, 3> ax(1.0f, 0.0f, 0.0f);                                    \
-        m_rotation = m_rotation * convert(ang, moon::math::Vector<float, 3>(normalize(ax)));        \
+        m_rotation = m_rotation * convert(ang, moon::math::Vector<float, 3>(normalized(ax)));        \
         return update();                                                                            \
     }                                                                                               \
                                                                                                     \
     Name& Name::rotateY(const float& ang) {                                                         \
         const moon::math::Vector<float, 3> ax(0.0f, 0.0f, 1.0f);                                    \
-        m_rotation = convert(ang, moon::math::Vector<float, 3>(normalize(ax))) * m_rotation;        \
+        m_rotation = convert(ang, moon::math::Vector<float, 3>(normalized(ax))) * m_rotation;        \
         return update();                                                                            \
     }
 

@@ -197,11 +197,11 @@ void testScene::makeGui() {
         ImGui::BeginGroup();
             ImGui::Text("scale : "); ImGui::SameLine(); ImGui::Separator();
             if (ImGui::Button("Align by max")) {
-                controledObject->scale({ moon::math::maximum(controledObject->scaling()) });
+                controledObject->scale({ controledObject->scaling().maxValue() });
             }
             ImGui::SameLine(0.0, 10.0);
             if (ImGui::Button("Align by min")) {
-                controledObject->scale({ moon::math::minimum(controledObject->scaling()) });
+                controledObject->scale({ controledObject->scaling().minValue() });
             }
             moon::tests::gui::scaleManipulator<0>(controledObject, "x_sc");
             moon::tests::gui::scaleManipulator<1>(controledObject, "y_sc");
@@ -266,8 +266,8 @@ void testScene::updateFrame(uint32_t frameNumber, float inFrameTime)
     static float globalTime = 0.0f;
     globalTime += animationTime;
 
-    skyboxObjects["stars"]->rotate(0.1f * animationTime, normalize(moon::math::Vector<float, 3>(1.0f, 1.0f, 1.0f)));
-    objects["helmet"]->rotate(0.5f * animationTime, normalize(moon::math::Vector<float, 3>(0.0f, 0.0f, 1.0f)));
+    skyboxObjects["stars"]->rotate(0.1f * animationTime, normalized(moon::math::Vector<float, 3>(1.0f, 1.0f, 1.0f)));
+    objects["helmet"]->rotate(0.5f * animationTime, normalized(moon::math::Vector<float, 3>(0.0f, 0.0f, 1.0f)));
     objects["helmet"]->translation() = moon::math::Quaternion(0.0f, {27.0f, -10.0f, 14.0f + 0.2f * std::sin(globalTime)});
     objects["helmet"]->update();
 
