@@ -243,8 +243,6 @@ void testScene::updateFrame(uint32_t frameNumber, float inFrameTime)
 
 #ifdef IMGUI_GRAPHICS
     ImGuiIO io = ImGui::GetIO();
-    if(!io.WantCaptureMouse)    mouseEvent();
-    if(!io.WantCaptureKeyboard) keyboardEvent();
 
     // Start the Dear ImGui frame
     ImGui_ImplVulkan_NewFrame();
@@ -257,6 +255,8 @@ void testScene::updateFrame(uint32_t frameNumber, float inFrameTime)
     }
     ImGui::End();
 
+    if (!io.WantCaptureMouse)    mouseEvent();
+    if (!io.WantCaptureKeyboard) keyboardEvent();
 #else
     mouseEvent();
     keyboardEvent();
@@ -271,7 +271,7 @@ void testScene::updateFrame(uint32_t frameNumber, float inFrameTime)
     objects["helmet"]->translation() = moon::math::Quaternion(0.0f, {27.0f, -10.0f, 14.0f + 0.2f * std::sin(globalTime)});
     objects["helmet"]->update();
 
-    std::for_each(std::execution::par, objects.begin(), objects.end(), [&frameNumber, &animationTime](auto& object) {
+    std::for_each(std::execution::par_unseq, objects.begin(), objects.end(), [frameNumber, animationTime](auto& object) {
         object.second->animationControl.update(frameNumber, animationTime);
     });
 }
@@ -515,28 +515,32 @@ void testScene::mouseEvent()
     uint32_t primitiveNumber = cursorInfo.number;
 
     const auto xy = window.mousePose();
-    if(mouse.control->pressed(GLFW_MOUSE_BUTTON_LEFT)){
+    if(mouse.control->pressed(GLFW_MOUSE_BUTTON_LEFT) || mouse.control->pressed(GLFW_MOUSE_BUTTON_RIGHT)){
         const auto delta = mouse.pose - xy;
         cameras["base"]->rotateX(sensitivity * delta[1]);
         cameras["base"]->rotateY(sensitivity * delta[0]);
-
+    }
+    if (mouse.control->pressed(GLFW_MOUSE_BUTTON_LEFT)) {
         const auto sizes = window.sizes();
         mouse.cursor->update(xy[0] / sizes[0], xy[1] / sizes[1]);
     }
     mouse.pose = xy;
 
     if(mouse.control->released(GLFW_MOUSE_BUTTON_LEFT)){
+        if (controledObject) controledObject->setOutlining(false);
+        bool hit = false;
         for(auto& [key, object]: objects){
             if(moon::interfaces::Object* pObject = *object.get(); pObject->comparePrimitive(primitiveNumber)){
-                if(controledObject){
-                    controledObject->setOutlining(false);
-                }
+                if(controledObject.ptr == object.get()) break;
                 controledObject.ptr = object.get();
                 controledObject.name = key;
                 controledObject->setOutlining(controledObject.outlighting.enable, 0.03f, controledObject.outlighting.color);
-                requestUpdate();
+                hit = true;
+                break;
             }
         }
+        if(!hit) controledObject = moon::tests::ControledObject();
+        requestUpdate();
     }
 
 #ifdef SECOND_VIEW_WINDOW

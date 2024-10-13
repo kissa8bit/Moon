@@ -29,8 +29,7 @@ Cursor::operator const CursorBuffer& () const {
     return cursorBuffer;
 }
 
-VkDescriptorBufferInfo Cursor::descriptorBufferInfo() const
-{
+VkDescriptorBufferInfo Cursor::descriptorBufferInfo() const {
     VkDescriptorBufferInfo bufferInfo{};
     bufferInfo.buffer = buffer;
     bufferInfo.offset = 0;

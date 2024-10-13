@@ -2,13 +2,11 @@
 
 namespace moon::math {
 
-template class Matrix<float, 2, 2>;
-template class Matrix<double, 2, 2>;
+#define MAT_TMEP(n) template class Matrix<float, n, n>; extern template class Matrix<double, n, n>;
 
-template class Matrix<float, 3, 3>;
-template class Matrix<double, 3, 3>;
-
-template class Matrix<float, 4, 4>;
-template class Matrix<double, 4, 4>;
+MAT_TMEP(2)
+MAT_TMEP(3)
+MAT_TMEP(4)
+#undef MAT_TMEP
 
 }

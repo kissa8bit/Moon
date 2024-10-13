@@ -2,13 +2,11 @@
 
 namespace moon::math {
 
-template class Vector<float, 2>;
-template class Vector<double, 2>;
+#define VEC_TMEP(n) extern template class Vector<float, n>; extern template class Vector<double, n>;
 
-template class Vector<float, 3>;
-template class Vector<double, 3>;
-
-template class Vector<float, 4>;
-template class Vector<double, 4>;
+VEC_TMEP(2)
+VEC_TMEP(3)
+VEC_TMEP(4)
+#undef VEC_EXT_TMEP
 
 }

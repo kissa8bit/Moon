@@ -1,8 +1,8 @@
 #ifndef MATRIX_H
 #define MATRIX_H
 
-#include <fstream>
 #include <limits>
+#include <cstdarg>
 #define _USE_MATH_DEFINES
 #include <math.h>
 
@@ -10,447 +10,148 @@
 
 namespace moon::math {
 
-template<typename type, uint32_t n, uint32_t m>
-class BaseMatrix {
+#define for_(ind, range) for (uint32_t ind = 0; ind < range; ind++)
+#define for_i_n for_(i, n)
+#define for_j_m for_(j, m)
+#define MAT_TEMP_N_M template<typename type, uint32_t n, uint32_t m>
+#define MAT_(ROWS, COLS) BaseMatrix<type, ROWS, COLS>
+#define MAT_N_M MAT_(n, m)
+#define MAT_M_N MAT_(m, n)
+#define MAT_EXPR(T, exp) T res{}; exp; return res;
+
+#define MAT_SCAL_OPERATOR_GENERATOR(op)                                                             \
+    BaseMatrix& operator op= (const type& c) { for_i_n mat[i] op= c; return *this; }                \
+    BaseMatrix operator op (const type& c) const { return BaseMatrix(*this) op= c; }                \
+    friend BaseMatrix operator op (const type& c, const BaseMatrix& a) { return a op c; }
+
+#define MAT_LIN_OPERATOR_GENERATOR(op)                                                              \
+    BaseMatrix& operator op= (const BaseMatrix& a) { for_i_n mat[i] op= a.mat[i]; return *this;}    \
+    BaseMatrix operator op (const BaseMatrix& a) const { return BaseMatrix(*this) op= a;}
+
+MAT_TEMP_N_M class BaseMatrix {
+public:
+    using Transposed = MAT_M_N;
+    using Reduced = BaseMatrix<type, n - 1, m - 1>;
+    using RowVector = BaseVector<type, m>;
+    using ColVector = BaseVector<type, n>;
+
 protected:
-    BaseVector<type, m> mat[n];
+    RowVector mat[n];
 
 public:
     BaseMatrix() = default;
-    BaseMatrix(const BaseMatrix<type,n,m>& other);
-    BaseMatrix<type,n,m>& operator=(const BaseMatrix<type,n,m>& other);
+    BaseMatrix(const BaseMatrix& a) { copy(a); }
+    BaseMatrix& operator=(const BaseMatrix& a) { copy(a); return *this; }
+    void copy(const BaseMatrix& a) { for_i_n mat[i] = a.mat[i]; }
 
-    BaseVector<type, m>& operator[](uint32_t i);
-    const BaseVector<type, m>& operator[](uint32_t i) const;
+    RowVector& operator[](uint32_t i) { return mat[i]; }
+    const RowVector& operator[](uint32_t i) const { return mat[i]; }
 
-    bool operator==(const BaseMatrix<type, n, m>& other) const;
-    bool operator!=(const BaseMatrix<type, n, m>& other) const;
+    bool operator!=(const BaseMatrix& a) const { MAT_EXPR(bool, for_i_n res |= mat[i] != a.mat[i]) }
+    bool operator==(const BaseMatrix& a) const { return !(*this != a); }
 
-    BaseMatrix<type, n, m> operator+(const BaseMatrix<type, n, m>& other) const;
-    BaseMatrix<type, n, m> operator-(const BaseMatrix<type, n, m>& other) const;
-    BaseVector<type, n> operator*(const BaseVector<type, m>& other) const;
-    BaseMatrix<type, n, m> operator/(const type& c) const;
+    BaseMatrix operator+() const { return *this; }
+    BaseMatrix operator-() const { MAT_EXPR(BaseMatrix, for_i_n res[i] = -mat[i]) }
 
-    BaseMatrix<type, n, m>& operator+=(const BaseMatrix<type, n, m>& other);
-    BaseMatrix<type, n, m>& operator-=(const BaseMatrix<type, n, m>& other);
+    ColVector operator*(const RowVector& rowVector) const {
+        MAT_EXPR(ColVector, for_i_n res[i] = mat[i].dot(rowVector))
+    }
 
-    BaseMatrix<type, n, m>& operator+=(const type& c);
-    BaseMatrix<type, n, m>& operator-=(const type& c);
-    BaseMatrix<type, n, m>& operator*=(const type& c);
-    BaseMatrix<type, n, m>& operator/=(const type& c);
+    Transposed transpose() const {
+        MAT_EXPR(Transposed, for_i_n for_j_m res[j][i] = mat[i][j])
+    }
 
-    BaseMatrix<type, n-1, m-1> extract(uint32_t i, uint32_t j) const;
+    Reduced extract(uint32_t idel, uint32_t jdel) const {
+        if(idel > n - 1 || jdel > m - 1) return Reduced();
+        MAT_EXPR(Reduced,
+            uint32_t i = 0; for_(ibase, n) { if (ibase == idel) continue;
+                uint32_t j = 0; for_(jbase, m) { if (jbase == jdel) continue;
+                    res[i][j] = mat[ibase][jbase]; j++; } i++;})
+    }
 
-    template<typename T, uint32_t M, uint32_t N> friend BaseMatrix<T,N,M> transpose(const BaseMatrix<T,N,M>& other);
+    MAT_SCAL_OPERATOR_GENERATOR(+)
+    MAT_SCAL_OPERATOR_GENERATOR(-)
+    MAT_SCAL_OPERATOR_GENERATOR(*)
+    MAT_SCAL_OPERATOR_GENERATOR(/)
 
-    template<typename T, uint32_t N, uint32_t M> friend BaseMatrix<T,N,M> operator+(const T& c, const BaseMatrix<T,N,M>& other);
-    template<typename T, uint32_t N, uint32_t M> friend BaseMatrix<T,N,M> operator-(const T& c, const BaseMatrix<T,N,M>& other);
-    template<typename T, uint32_t N, uint32_t M> friend BaseMatrix<T,N,M> operator*(const T& c, const BaseMatrix<T,N,M>& other);
-
-    template<typename T, uint32_t N, uint32_t M> friend BaseMatrix<T,N,M> operator+(const BaseMatrix<T,N,M>& other, const T& c);
-    template<typename T, uint32_t N, uint32_t M> friend BaseMatrix<T,N,M> operator-(const BaseMatrix<T,N,M>& other, const T& c);
-    template<typename T, uint32_t N, uint32_t M> friend BaseMatrix<T,N,M> operator*(const BaseMatrix<T,N,M>& other, const T& c);
-
-    template<typename T, uint32_t N, uint32_t M, uint32_t K> friend BaseMatrix<T,N,K> operator*(const BaseMatrix<T,N,M>& left, const BaseMatrix<T,M,K>& right);
-
-    template<typename T, uint32_t N, uint32_t M> friend std::ostream& operator<<(std::ostream& out, const BaseMatrix<T,N,M>& other);
+    MAT_LIN_OPERATOR_GENERATOR(+)
+    MAT_LIN_OPERATOR_GENERATOR(-)
 };
 
-template<typename type, uint32_t n, uint32_t m>
-BaseMatrix<type,n,m>::BaseMatrix(const BaseMatrix<type,n,m>& other) {
-    for(uint32_t i = 0; i < n; i++) {
-        mat[i] = other.mat[i];
-    }
+MAT_TEMP_N_M std::ostream& operator<<(std::ostream& out, const MAT_N_M& a) {
+    for_i_n std::cout << a[i] << '\n'; return out;
 }
 
-template<typename type, uint32_t n, uint32_t m>
-BaseMatrix<type,n,m>& BaseMatrix<type,n,m>::operator=(const BaseMatrix<type,n,m>& other) {
-    for(uint32_t i = 0; i < n; i++) {
-        mat[i] = other.mat[i];
-    }
-    return *this;
+MAT_TEMP_N_M MAT_M_N transpose(const MAT_N_M& a) {
+    return a.transpose();
 }
 
-template<typename type, uint32_t n, uint32_t m>
-BaseVector<type, m>& BaseMatrix<type,n,m>::operator[](uint32_t i) {
-    return mat[i];
+template<typename type, uint32_t n, uint32_t w, uint32_t m>
+MAT_N_M operator*(const MAT_(n, w)& l, const MAT_(w, m)& r) {
+    MAT_EXPR(MAT_N_M, for_(i, n) for_(k, m) for_(j, w) res[i][k] += l[i][j] * r[j][k])
 }
 
-template<typename type, uint32_t n, uint32_t m>
-const BaseVector<type, m>& BaseMatrix<type,n,m>::operator[](uint32_t i) const {
-    return mat[i];
-}
+#undef MAT_N_M
+#undef MAT_M_N
+#undef MAT_SCAL_OPERATOR_GENERATOR
+#undef MAT_LIN_OPERATOR_GENERATOR
 
-template<typename type, uint32_t n, uint32_t m>
-bool BaseMatrix<type,n,m>::operator==(const BaseMatrix<type, n, m>& other) const {
-    bool result = true;
-    for(uint32_t i = 0; i < n; i++) {
-        result &= (mat[i] == other.mat[i]);
-    }
-    return result;
-}
+MAT_TEMP_N_M class Matrix;
 
-template<typename type, uint32_t n, uint32_t m>
-bool BaseMatrix<type,n,m>::operator!=(const BaseMatrix<type, n, m>& other) const {
-    return !(*this == other);
-}
+#define MAT_N_N MAT_(n, n)
+#define MAT_TEMP_N template<typename type, uint32_t n>
 
-template<typename type, uint32_t n, uint32_t m>
-BaseMatrix<type, n, m> BaseMatrix<type,n,m>::operator+(const BaseMatrix<type, n, m>& other) const {
-    BaseMatrix<type,n,m> result(*this);
-    for(uint32_t i = 0; i < n; i++) {
-        result[i] += other.mat[i];
-    }
-    return result;
-}
-
-template<typename type, uint32_t n, uint32_t m>
-BaseMatrix<type, n, m> BaseMatrix<type,n,m>::operator-(const BaseMatrix<type, n, m>& other) const {
-    BaseMatrix<type,n,m> result(*this);
-    for(uint32_t i = 0; i < n; i++) {
-        result[i] -= other.mat[i];
-    }
-    return result;
-}
-
-template<typename type, uint32_t n, uint32_t m>
-BaseVector<type, n> BaseMatrix<type,n,m>::operator*(const BaseVector<type, m>& other) const {
-    BaseVector<type,n> result;
-    for(uint32_t i = 0; i < n; i++) {
-        result[i] = dot(mat[i], other);
-    }
-    return result;
-}
-
-template<typename type, uint32_t n, uint32_t m>
-BaseMatrix<type, n, m> BaseMatrix<type,n,m>::operator/(const type& c) const {
-    BaseMatrix<type,n,m> result(*this);
-    for(uint32_t i = 0; i < n; i++) {
-        result[i] /= c;
-    }
-    return result;
-}
-
-template<typename type, uint32_t n, uint32_t m>
-BaseMatrix<type, n, m>& BaseMatrix<type,n,m>::operator+=(const BaseMatrix<type, n, m>& other) {
-    for(uint32_t i = 0; i < n; i++) {
-        mat[i] += other.mat[i];
-    }
-    return *this;
-}
-
-template<typename type, uint32_t n, uint32_t m>
-BaseMatrix<type, n, m>& BaseMatrix<type,n,m>::operator-=(const BaseMatrix<type, n, m>& other) {
-    for(uint32_t i = 0; i < n; i++) {
-        mat[i] -= other.mat[i];
-    }
-    return *this;
-}
-
-template<typename type, uint32_t n, uint32_t m>
-BaseMatrix<type, n, m>& BaseMatrix<type,n,m>::operator+=(const type& c) {
-    for(uint32_t i = 0; i < n; i++) {
-        mat[i] += c;
-    }
-    return *this;
-}
-
-template<typename type, uint32_t n, uint32_t m>
-BaseMatrix<type, n, m>& BaseMatrix<type,n,m>::operator-=(const type& c) {
-    for(uint32_t i = 0; i < n; i++) {
-        mat[i] -= c;
-    }
-    return *this;
-}
-
-template<typename type, uint32_t n, uint32_t m>
-BaseMatrix<type, n, m>& BaseMatrix<type,n,m>::operator*=(const type& c) {
-    for(uint32_t i = 0; i < n; i++) {
-        mat[i] *= c;
-    }
-    return *this;
-}
-
-template<typename type, uint32_t n, uint32_t m>
-BaseMatrix<type, n, m>& BaseMatrix<type,n,m>::operator/=(const type& c) {
-    for(uint32_t i = 0; i < n; i++) {
-        mat[i] /= c;
-    }
-    return *this;
-}
-
-template<typename T, uint32_t N, uint32_t M> BaseMatrix<T,N,M> operator+(const T& c, const BaseMatrix<T,N,M>& other) {
-    BaseMatrix<T,N,M> result;
-    for(uint32_t i = 0; i < N; i++) {
-        result[i] = c + other[i];
-    }
-    return result;
-}
-
-template<typename T, uint32_t N, uint32_t M> BaseMatrix<T,N,M> operator-(const T& c, const BaseMatrix<T,N,M>& other) {
-    BaseMatrix<T,N,M> result;
-    for(uint32_t i = 0; i < N; i++) {
-        result[i] = c - other[i];
-    }
-    return result;
-}
-
-template<typename T, uint32_t N, uint32_t M> BaseMatrix<T,N,M> operator*(const T& c, const BaseMatrix<T,N,M>& other) {
-    BaseMatrix<T,N,M> result;
-    for(uint32_t i = 0; i < N; i++) {
-        result[i] = c * other[i];
-    }
-    return result;
-}
-
-template<typename T, uint32_t N, uint32_t M> BaseMatrix<T,N,M> operator+(const BaseMatrix<T,N,M>& other, const T& c) {
-    BaseMatrix<T,N,M> result(other);
-    for(uint32_t i = 0; i < N; i++) {
-        result[i] += c;
-    }
-    return result;
-}
-
-template<typename T, uint32_t N, uint32_t M> BaseMatrix<T,N,M> operator-(const BaseMatrix<T,N,M>& other, const T& c) {
-    BaseMatrix<T,N,M> result(other);
-    for(uint32_t i = 0; i < N; i++) {
-        result[i] -= c;
-    }
-    return result;
-}
-
-template<typename T, uint32_t N, uint32_t M> BaseMatrix<T,N,M> operator*(const BaseMatrix<T,N,M>& other, const T& c) {
-    BaseMatrix<T,N,M> result(other);
-    for(uint32_t i = 0; i < N; i++) {
-        result[i] *= c;
-    }
-    return result;
-}
-
-template<typename T, uint32_t N, uint32_t M, uint32_t K> BaseMatrix<T,N,K> operator*(const BaseMatrix<T,N,M>& left, const BaseMatrix<T,M,K>& right) {
-    BaseMatrix<T,N,K> result;
-    for(uint32_t i = 0; i < N; i++) {
-        for(uint32_t j = 0; j < M; j++) {
-            for(uint32_t k = 0; k < K; k++) {
-                result[i][k] += left[i][j] * right[j][k];
-            }
-        }
-    }
-    return result;
-}
-
-template<typename T, uint32_t N, uint32_t M> std::ostream& operator<<(std::ostream& out, const BaseMatrix<T,N,M>& other) {
-    for(uint32_t i = 0; i < N; i++) {
-        std::cout << other.mat[i] << '\n';
-    }
-    return out;
-}
-
-template<typename type, uint32_t n, uint32_t m>
-BaseMatrix<type, n-1, m-1> BaseMatrix<type,n,m>::extract(uint32_t i, uint32_t j) const {
-    BaseMatrix<type, n-1, m-1> result;
-    for(uint32_t it = 0, ie = 0; it < n; it++){
-        if(it != i){
-            for(uint32_t jt = 0, je = 0; jt < m; jt++){
-                if(jt != j){
-                    result[ie][je] = mat[it][jt];
-                    je++;
-                }
-            }
-            ie++;
-        }
-    }
-    return result;
-}
-
-template<typename T, uint32_t M, uint32_t N> BaseMatrix<T,N,M> transpose(const BaseMatrix<T,N,M>& other) {
-    BaseMatrix<T,M,N> result;
-    for(uint32_t i = 0; i < N; i++) {
-        for(uint32_t j = 0; j < M; j++) {
-            result[j][i] = other[i][j];
-        }
-    }
-    return result;
-}
-
-template<typename type, uint32_t n, uint32_t m> class Matrix;
-
-template<typename type>
-class Matrix<type, 2, 2> : public BaseMatrix<type, 2, 2>
+MAT_TEMP_N class Matrix<type, n, n> : public MAT_N_N
 {
-private:
-    static constexpr uint32_t n = 2;
-
 public:
-    Matrix(const Vector<type, n>& v0, const Vector<type, n>& v1) {
-        this->mat[0] = v0;
-        this->mat[1] = v1;
+    using RowVector = BaseVector<type, n>;
+
+    Matrix() = default;
+    Matrix(const type& mii) { for_i_n mat[i][i] = mii; }
+    Matrix(const RowVector vi, ...) {
+        std::va_list args; va_start(args, vi); for_i_n mat[i] = (i == 0 ? vi : va_arg(args, RowVector)); va_end(args);
     }
-    Matrix(
-        const type& m00, const type& m01,
-        const type& m10, const type& m11
-    ) {
-        this->mat[0] = Vector<type,n>{m00, m01};
-        this->mat[1] = Vector<type,n>{m10, m11};
+    Matrix(const type m00, const type mij, ...) {
+        mat[0][0] = m00;
+        std::va_list args;
+        va_start(args, mij);
+        for_(i, n){ for_(j, n) { if(i == 0 && j == 0) {continue;}; mat[i][j] = (i == 0 && j == 1 ? mij : va_arg(args, type)); }}
+        va_end(args);
     }
-    Matrix(const BaseMatrix<type,n,n>& other) {
-        for(uint32_t i = 0; i < n; i++){
-            this->mat[i] = other[i];
-        }
-    }
-    Matrix<type,n,n>& operator=(const BaseMatrix<type,n,n>& other) {
-        for(uint32_t i = 0; i < n; i++){
-            this->mat[i] = other[i];
-        }
-        return *this;
-    }
+    Matrix(const MAT_N_N& a) : MAT_N_N(a) {}
+    Matrix& operator=(const MAT_N_N& a) { this->copy(a); return *this; }
 };
 
-template<typename type>
-class Matrix<type, 3, 3> : public BaseMatrix<type, 3, 3>
-{
-private:
-    static constexpr uint32_t n = 3;
+#define MAT_TEMP template<typename type>
+#define MAT_sign(i) ((i) % 2 ? type(-1) : type(1))
 
-public:
-    Matrix() : BaseMatrix<type,n,n>() {}
-    Matrix(const Vector<type, n>& v0, const Vector<type, n>& v1, const Vector<type, n>& v2) {
-        this->mat[0] = v0;
-        this->mat[1] = v1;
-        this->mat[2] = v2;
-    }
-    Matrix(const type& m) {
-        this->mat[0] = Vector<type,n>{m, 0.0f, 0.0f};
-        this->mat[1] = Vector<type,n>{0.0f, m, 0.0f};
-        this->mat[2] = Vector<type,n>{0.0f, 0.0f, m};
-    }
-    Matrix(
-        const type& m00, const type& m01, const type& m02,
-        const type& m10, const type& m11, const type& m12,
-        const type& m20, const type& m21, const type& m22
-    ) {
-        this->mat[0] = Vector<type,n>{m00, m01, m02};
-        this->mat[1] = Vector<type,n>{m10, m11, m12};
-        this->mat[2] = Vector<type,n>{m20, m21, m22};
-    }
-    Matrix(const BaseMatrix<type,n,n>& other) {
-        for(uint32_t i = 0; i < n; i++){
-            this->mat[i] = other[i];
-        }
-    }
-    Matrix<type,n,n>& operator=(const BaseMatrix<type,n,n>& other) {
-        for(uint32_t i = 0; i < n; i++){
-            this->mat[i] = other[i];
-        }
-        return *this;
-    }
-};
-
-template<typename type>
-class Matrix<type, 4, 4> : public BaseMatrix<type, 4, 4>
-{
-private:
-    static constexpr uint32_t n = 4;
-
-public:
-    Matrix() : BaseMatrix<type,n,n>() {}
-    Matrix(std::ifstream& file) {
-        for(uint32_t i = 0; i < n; i++){
-            for(uint32_t j = 0; j < n; j++){
-                if(file.peek()!=EOF){
-                    file >> this->mat[i][j];
-                } else {
-                    this->mat[i][j] = type(0);
-                }
-            }
-        }
-    }
-    Matrix(const type& m) {
-        this->mat[0] = Vector<type,n>{m, 0.0f, 0.0f, 0.0f};
-        this->mat[1] = Vector<type,n>{0.0f, m, 0.0f, 0.0f};
-        this->mat[2] = Vector<type,n>{0.0f, 0.0f, m, 0.0f};
-        this->mat[3] = Vector<type,n>{0.0f, 0.0f, 0.0f, m};
-    }
-    Matrix(const Vector<type, n>& v0, const Vector<type, n>& v1, const Vector<type, n>& v2, const Vector<type, n>& v3) {
-        this->mat[0] = v0;
-        this->mat[1] = v1;
-        this->mat[2] = v2;
-        this->mat[3] = v3;
-    }
-    Matrix(
-        const type& m00, const type& m01, const type& m02, const type& m03,
-        const type& m10, const type& m11, const type& m12, const type& m13,
-        const type& m20, const type& m21, const type& m22, const type& m23,
-        const type& m30, const type& m31, const type& m32, const type& m33
-    ) {
-        this->mat[0] = Vector<type,n>{m00, m01, m02, m03};
-        this->mat[1] = Vector<type,n>{m10, m11, m12, m13};
-        this->mat[2] = Vector<type,n>{m20, m21, m22, m23};
-        this->mat[3] = Vector<type,n>{m30, m31, m32, m33};
-    }
-    Matrix(const BaseMatrix<type,n,n>& other) {
-        for(uint32_t i = 0; i < n; i++){
-            this->mat[i] = other[i];
-        }
-    }
-    Matrix<type,n,n>& operator=(const BaseMatrix<type,n,n>& other) {
-        for(uint32_t i = 0; i < n; i++){
-            this->mat[i] = other[i];
-        }
-        return *this;
-    }
-};
-
-template<typename type>
-type det(const Matrix<type,2,2>& m) {
-    return  m[0][0] * m[1][1] - m[1][0] * m[0][1];
+MAT_TEMP type det(const MAT_(2,2)& m) {
+    return m[0][0] * m[1][1] - m[1][0] * m[0][1];
 }
 
-template<typename type, uint32_t n>
-type det(const Matrix<type,n,n>& m) {
-    type result = type(0);
-    for(uint32_t i = 0; i < n; i++){
-        result += (i % 2 ? -1.0f : 1.0f) * m[0][i] * det(Matrix<type,n-1,n-1>(m.extract(0,i)));
-    }
-    return  result;
+MAT_TEMP_N type det(const MAT_N_N& m) {
+    MAT_EXPR(type, for_i_n res += MAT_sign(i) * m[0][i] * det(m.extract(0,i)))
 }
 
-template<typename type, uint32_t n>
-Matrix<type,n,n> inverse(const Matrix<type,n,n>& m) {
-    Matrix<type,n,n> result;
-    for(uint32_t i = 0; i < n; i++){
-        for(uint32_t j = 0; j < n; j++){
-            result[i][j] = ((i + j) % 2 ? -1.0f : 1.0f) * det(Matrix<type,n-1,n-1>(m.extract(i,j)));
-        }
-    }
-    return transpose(result) / det(m);
+MAT_TEMP_N MAT_N_N inverse(const MAT_N_N& m) {
+    MAT_EXPR(MAT_N_N, const auto invd = type(1) / det(m); for_i_n for_(j, n) res[j][i] = invd * MAT_sign(i + j) * det(m.extract(i,j)))
 }
 
-template<typename type>
-Matrix<type,4,4> translate(Vector<type,3> tr) {
-    Matrix<float,4,4> m{1.0f};
-    m[0][3] += tr[0];
-    m[1][3] += tr[1];
-    m[2][3] += tr[2];
-    return m;
+#define MAT_4 Matrix<type, 4, 4>
+#define VEC_3 Vector<type, 3>
+
+MAT_TEMP MAT_4 translate(const VEC_3& v) {
+    MAT_4 m{1.0f}; for_(i, 3) m[i][3] += v[i]; return m;
 }
 
-template<typename type>
-Matrix<type,4,4> scale(Vector<type,3> sc) {
-    Matrix<float,4,4> m{1.0f};
-    m[0][0] *= sc[0];
-    m[1][1] *= sc[1];
-    m[2][2] *= sc[2];
-    return m;
+MAT_TEMP MAT_4 scale(const VEC_3& v) {
+    MAT_4 m{1.0f}; for_(i, 3) m[i][i] *= v[i]; return m;
 }
 
-template<typename type>
-Matrix<type,4,4> perspective(const type& fovy, const type& aspect, const type& n = std::numeric_limits<type>::min(), const type& f = std::numeric_limits<type>::max()) {
-    const type a = type(1) / std::tan(fovy / type(2));
-
-    Matrix<type,4,4> m(0.0f);
-    m[0][0] = a / aspect;
-    m[1][1] = - a;
+MAT_TEMP MAT_4 perspective(const type& fovy, const type& aspect, const type& n = std::numeric_limits<type>::min(), const type& f = std::numeric_limits<type>::max()) {
+    MAT_4 m;
+    m[1][1] = - type(1) / std::tan(fovy / type(2));
+    m[0][0] = - m[1][1] / aspect;
     m[2][2] = f == std::numeric_limits<type>::max() ? - type(1) : (f + n) / (n - f);
     m[2][3] = type(2) * n * (f == std::numeric_limits<type>::max() ? - type(1) : f / (n - f));
     m[3][2] = - type(1);
@@ -458,9 +159,8 @@ Matrix<type,4,4> perspective(const type& fovy, const type& aspect, const type& n
     return m;
 }
 
-template<typename type>
-Matrix<type,4,4> orthographic(const type left, const type right, const type bottom, const type top, const type n, const type f) {
-    Matrix<type,4,4> m(0.0f);
+MAT_TEMP MAT_4 orthographic(const type left, const type right, const type bottom, const type top, const type n, const type f) {
+    MAT_4 m;
     m[0][0] = type(2) / (right - left);
     m[1][1] = - type(2) / (top - bottom);
     m[2][2] = - type(2) / (f - n);
@@ -473,24 +173,33 @@ Matrix<type,4,4> orthographic(const type left, const type right, const type bott
     return m;
 }
 
-template<typename type>
-Matrix<type,4,4> orthographic(const type& width, const type& height, const type& n, const type& f) {
+MAT_TEMP MAT_4 orthographic(const type& width, const type& height, const type& n, const type& f) {
     return orthographic(- width / type(2), width / type(2), - height / type(2), height / type(2), n, f);
 }
 
-template<typename type>
-type radians(const type& angle) {
+MAT_TEMP type radians(const type& angle) {
     return type(M_PI) * angle / type(180);
 }
 
-extern template class Matrix<float, 2, 2>;
-extern template class Matrix<double, 2, 2>;
+#define MAT_EXT_TMEP(n) extern template class Matrix<float, n, n>; extern template class Matrix<double, n, n>;
 
-extern template class Matrix<float, 3, 3>;
-extern template class Matrix<double, 3, 3>;
+MAT_EXT_TMEP(2)
+MAT_EXT_TMEP(3)
+MAT_EXT_TMEP(4)
+#undef MAT_EXT_TMEP
 
-extern template class Matrix<float, 4, 4>;
-extern template class Matrix<double, 4, 4>;
+#undef for_
+#undef for_i_n
+#undef for_j_m
+#undef MAT_
+#undef MAT_N_N
+#undef MAT_TEMP_N_M
+#undef MAT_TEMP_N
+#undef MAT_TEMP
+#undef MAT_EXPR
+#undef MAT_sign
+#undef MAT_4
+#undef VEC_3
 
 }
 #endif // MATRIX_H

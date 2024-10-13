@@ -145,13 +145,12 @@ VkResult GraphicsManager::createSyncObjects(){
 }
 
 VkResult GraphicsManager::checkNextFrame(){
-    VkResult result = VK_SUCCESS;
-
-    CHECK(result = vkWaitForFences(activeDevice->device(), 1, fences[resourceIndex], VK_TRUE, UINT64_MAX));
-    CHECK(result = vkResetFences(activeDevice->device(), 1, fences[resourceIndex]));
-    CHECK(result = vkAcquireNextImageKHR(activeDevice->device(), swapChainKHR, UINT64_MAX, availableSemaphores[resourceIndex], VK_NULL_HANDLE, &imageIndex));
-
-    return result;
+#define GM_CNF_RET(expr) if (auto result = CHECK(expr); result) return result;
+    GM_CNF_RET(vkWaitForFences(activeDevice->device(), 1, fences[resourceIndex], VK_TRUE, UINT64_MAX))
+    GM_CNF_RET(vkResetFences(activeDevice->device(), 1, fences[resourceIndex]))
+    GM_CNF_RET(vkAcquireNextImageKHR(activeDevice->device(), swapChainKHR, UINT64_MAX, availableSemaphores[resourceIndex], VK_NULL_HANDLE, &imageIndex))
+    return VK_SUCCESS;
+#undef GM_CNF_RET
 }
 
 VkResult GraphicsManager::drawFrame(){

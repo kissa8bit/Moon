@@ -192,14 +192,12 @@ VEC(N) mix(const VEC(N)& l, const VEC(N)& r, const T& t){
 
 #undef VEC
 
-extern template class Vector<float, 2>;
-extern template class Vector<double, 2>;
+#define VEC_EXT_TMEP(n) extern template class Vector<float, n>; extern template class Vector<double, n>;
 
-extern template class Vector<float, 3>;
-extern template class Vector<double, 3>;
-
-extern template class Vector<float, 4>;
-extern template class Vector<double, 4>;
+VEC_EXT_TMEP(2)
+VEC_EXT_TMEP(3)
+VEC_EXT_TMEP(4)
+#undef VEC_EXT_TMEP
 
 }
 #endif // VECTOR_H
