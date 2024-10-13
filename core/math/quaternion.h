@@ -5,347 +5,153 @@
 
 namespace moon::math {
 
-template<typename type>
-class Quaternion
+#define VEC_(n) Vector<type, n>
+#define VEC_3 VEC_(3)
+#define VEC_4 VEC_(4)
+#define MAT_(n) Matrix<type, n, n>
+#define MAT_3 MAT_(3)
+#define MAT_4 MAT_(4)
+#define QUAT_TEMP template<typename type>
+#define QUAT Quaternion<type>
+
+#define QUAT_LIN_OPERATOR_GENERATOR(op)                                                     \
+    Quaternion& operator op= (const Quaternion& q) { data op= q.data; return *this; }       \
+    Quaternion operator op (const Quaternion& q) const { return Quaternion(*this) op= q; }
+
+#define QUAT_SCAL_OPERATOR_GENERATOR(op)                                                    \
+    Quaternion& operator op= (const type& c) { data op= c; return *this; }                  \
+    Quaternion operator op (const type& c) const {  return Quaternion(*this) op= c; }       \
+    friend Quaternion operator op (const type& c, const Quaternion& q) { return q op c; }
+
+QUAT_TEMP class Quaternion
 {
 private:
-    type s;
-    type x;
-    type y;
-    type z;
+    union { VEC_4 data; struct { type s, x, y, z;}; };
 
 public:
-    Quaternion();
-    Quaternion(const Quaternion<type>& other);
-    Quaternion(const type& s,const type& x,const type& y,const type& z);
-    Quaternion(const type& s,const Vector<type, 3>& v);
-    Quaternion<type>& operator=(const Quaternion<type>& other);
-    ~Quaternion() = default;
+    Quaternion() : s(type(1)), x(type(0)), y(type(0)), z(type(0)) {}
+    Quaternion(const type& s, const type& x, const type& y, const type& z) : s(s), x(x), y(y), z(z) {}
+    Quaternion(const type& s, const VEC_3& v) : s(s), x(v[0]), y(v[1]), z(v[2]) {}
+    Quaternion(const Quaternion& q) : data(q.data) {}
+    Quaternion(const VEC_4& v) : data(v) {}
+    Quaternion& operator=(const Quaternion& q) { data = q.data; return *this; }
 
-    type                re() const;
-    Vector<type, 3>     im() const;
+    type re() const { return s; }
+    VEC_3 im() const { return VEC_3(x, y, z); }
+    const VEC_4& vec4() const { return data; }
 
-    bool                operator==(const Quaternion<type>& other) const;
-    bool                operator!=(const Quaternion<type>& other) const;
-    Quaternion<type>    operator+ (const Quaternion<type>& other) const;
-    Quaternion<type>    operator- (const Quaternion<type>& other) const;
-    Quaternion<type>    operator* (const Quaternion<type>& other) const;
-    Quaternion<type>&   operator+=(const Quaternion<type>& other);
-    Quaternion<type>&   operator-=(const Quaternion<type>& other);
-    Quaternion<type>&   operator*=(const Quaternion<type>& other);
+    bool operator==(const Quaternion& q) const { return data == q.data; }
+    bool operator!=(const Quaternion& q) const { return !(*this == q); }
 
-    Quaternion<type>&   normalize();
-    Quaternion<type>&   conjugate();
-    Quaternion<type>&   invert();
+    QUAT_LIN_OPERATOR_GENERATOR(+)
+    QUAT_LIN_OPERATOR_GENERATOR(-)
+    QUAT_SCAL_OPERATOR_GENERATOR(+)
+    QUAT_SCAL_OPERATOR_GENERATOR(-)
+    QUAT_SCAL_OPERATOR_GENERATOR(*)
+    QUAT_SCAL_OPERATOR_GENERATOR(/)
 
-    template<typename T> friend Quaternion<T>   normalize(const Quaternion<T>& quat);
-    template<typename T> friend Quaternion<T>   conjugate(const Quaternion<T>& quat);
-    template<typename T> friend Quaternion<T>   invert(const Quaternion<T>& quat);
+    Quaternion& operator*=(const Quaternion& q) { return *this = *this * q; }
+    Quaternion operator*(const Quaternion& q) const {
+        return Quaternion(
+            s * q.s - (x * q.x + y * q.y + z * q.z),
+            s * q.x + x * q.s + (y * q.z - z * q.y),
+            s * q.y + y * q.s + (z * q.x - x * q.z),
+            s * q.z + z * q.s + (x * q.y - y * q.x));
+    }
 
-    template<typename T> friend Quaternion<T> operator* (const T& c, const Quaternion<T>& quat);
-    template<typename T> friend std::ostream& operator<< (std::ostream & out, const Quaternion<T>& quat);
-
-    template<typename T> friend Quaternion<T> convert(const Matrix<T,3,3>& O3);
-    template<typename T> friend Matrix<T,3,3> convert(const Quaternion<T>& quat);
-    template<typename T> friend Matrix<T,4,4> convert4x4(const Quaternion<T>& quat);
-
-    template<typename T> friend Quaternion<T> convert(const T& yaw, const T& pitch, const T& roll);
-    template<typename T> friend Quaternion<T> convert(const T& angle, const Vector<T,3>& axis);
-
-    template<typename T> friend Vector<T,3> convertToEulerAngles(const Quaternion<T>& quat);
-    template<typename T> friend Quaternion<T> convertToAnglesAndAxis(const Quaternion<T>& quat);
-
-    template<typename T> friend Quaternion<T> slerp(const Quaternion<T>& quat1, const Quaternion<T>& quat2, const T& t);
+    type norm() const { return data.norm(); }
+    Quaternion& normalize() { data.normalize(); return *this; }
+    Quaternion normalized() const { return Quaternion(*this).normalize(); }
+    Quaternion& conjugate() { x = -x; y = -y; z = -z; return *this; }
+    Quaternion conjugated() const { return Quaternion(*this).conjugate(); }
+    Quaternion& invert() { return (type(1) / dot(data, data)) * conjugate(); }
+    Quaternion inverted() const { return Quaternion(*this).inverted(); }
 };
 
+QUAT_TEMP QUAT normalize(const QUAT& q) { return q.normalized(); }
+QUAT_TEMP QUAT conjugate(const QUAT& q) { return q.conjugated(); }
+QUAT_TEMP QUAT invert(const QUAT& q) { return q.inverted(); }
 
-template<typename type>
-Quaternion<type>::Quaternion():
-    s(static_cast<type>(0)),
-    x(static_cast<type>(0)),
-    y(static_cast<type>(0)),
-    z(static_cast<type>(0))
-{}
+QUAT_TEMP QUAT slerp(const QUAT& x, const QUAT& y, const type& t) {
+    const type cosTheta = dot(x.vec4(), y.vec4());
+    QUAT z = cosTheta < type(0) ? type(-1) * y : y;
 
-template<typename type>
-Quaternion<type>::Quaternion(const Quaternion<type>& other):
-    s(other.s),
-    x(other.x),
-    y(other.y),
-    z(other.z)
-{}
+    if (cosTheta > static_cast<type>(1) - std::numeric_limits<type>::epsilon()) {
+        return normalize(QUAT(mix(x.vec4(), z.vec4(), t)));
+    }
 
-template<typename type>
-Quaternion<type>::Quaternion(const type& s,const type& x,const type& y,const type& z):
-    s(s),
-    x(x),
-    y(y),
-    z(z)
-{}
-
-template<typename type>
-Quaternion<type>::Quaternion(const type& s, const Vector<type, 3>& v):
-    s(s),
-    x(static_cast<type>(v[0])),
-    y(static_cast<type>(v[1])),
-    z(static_cast<type>(v[2]))
-{}
-
-template<typename type>
-Quaternion<type>& Quaternion<type>::operator=(const Quaternion<type>& other)
-{
-    s = other.s;
-    x = other.x;
-    y = other.y;
-    z = other.z;
-    return *this;
+    const type angle = std::acos(cosTheta);
+    return normalize(std::sin((static_cast<type>(1) - t) * angle) / std::sin(angle) * x + std::sin(t * angle) / std::sin(angle) * z);
 }
 
-template<typename type>
-type                Quaternion<type>::re()const
-{
-    return s;
+QUAT_TEMP std::ostream& operator<< (std::ostream& out, const QUAT& q) {
+    return out << q.vec4();
 }
 
-template<typename type>
-Vector<type, 3>    Quaternion<type>::im()const
-{
-    return Vector<type, 3>(x,y,z);
+QUAT_TEMP QUAT convert(const MAT_3& O3) {
+    const type s = std::sqrt(type(1) + O3[0][0] + O3[1][1] + O3[2][2]) / type(2), s4 = type(4) * s;
+    auto diff = [&O3, &s4](uint32 i, uint32 j){return (O3[i][j] - O3[j][i]) / s4;};
+    return QUAT(s, diff(2, 1), diff(0, 2), diff(1, 0));
 }
 
-template<typename type>
-bool                Quaternion<type>::operator==(const Quaternion<type>& other)const
-{
-    return x==other.x&&y==other.y&&z==other.z&&s==other.s;
+QUAT_TEMP MAT_3 convert(const QUAT& q) {
+    const type& s = q.vec4()[0], & x = q.vec4()[1], & y = q.vec4()[2], & z = q.vec4()[3];
+    MAT_3 I(1), R;
+    R[0][0] = -(y * y + z * z); R[0][1] = (x * y - z * s);  R[0][2] = (x * z + y * s);
+    R[1][0] = (x * y + z * s);  R[1][1] = -(x * x + z * z); R[1][2] = (y * z - x * s);
+    R[2][0] = (x * z - y * s);  R[2][1] = (y * z + x * s);  R[2][2] = -(x * x + y * y);
+    return I + type(2) * R;
 }
 
-template<typename type>
-bool                Quaternion<type>::operator!=(const Quaternion<type>& other)const
-{
-    return !(x==other.x&&y==other.y&&z==other.z&&s==other.s);
+QUAT_TEMP MAT_4 convert4x4(const QUAT& q) {
+    const MAT_3 R = convert(q);
+    return MAT_4(VEC_4(R[0], type(0)), VEC_4(R[1], type(0)), VEC_4(R[2], type(0)), VEC_4(VEC_3(type(0)), type(1)));
 }
 
-template<typename type>
-Quaternion<type>    Quaternion<type>::operator+(const Quaternion<type>& other)const
+QUAT_TEMP QUAT convert(const type& yaw, const type& pitch, const type& roll)
 {
-    return Quaternion<type>(s+other.s,x+other.x,y+other.y,z+other.z);
+#define QUAT_CONVERT_DEF_COS_SIN(cos, sin, ang) type cos = std::cos(ang * type(0.5)), sin = std::sin(ang * type(0.5));
+    QUAT_CONVERT_DEF_COS_SIN(cosy, siny, yaw)
+    QUAT_CONVERT_DEF_COS_SIN(cosp, sinp, pitch)
+    QUAT_CONVERT_DEF_COS_SIN(cosr, sinr, roll)
+#undef QUAT_CONVERT_DEF_COS_SIN
+
+    return QUAT(cosy * cosp * cosr + siny * sinp * sinr, sinr * cosp * cosy - cosr * sinp * siny,
+        cosr * sinp * cosy + sinr * cosp * siny, cosr * cosp * siny - sinr * sinp * cosy);
 }
 
-template<typename type>
-Quaternion<type>    Quaternion<type>::operator-(const Quaternion<type>& other)const
-{
-    return Quaternion<type>(s-other.s,x-other.x,y-other.y,z-other.z);
+QUAT_TEMP QUAT convert(const type& angle, const VEC_3& axis) {
+    type a05 = angle * type(0.5); return QUAT(std::cos(a05), std::sin(a05) * axis);
 }
 
-template<typename type>
-Quaternion<type>    Quaternion<type>::operator*(const Quaternion<type>& other)const
-{
-    return Quaternion<type>(
-        s*other.s - (x*other.x + y*other.y + z*other.z),
-        s*other.x + other.s*x + (y*other.z-z*other.y),
-        s*other.y + other.s*y + (z*other.x-x*other.z),
-        s*other.z + other.s*z + (x*other.y-y*other.x)
+QUAT_TEMP VEC_3 convertToEulerAngles(const QUAT& q) {
+    const type& s = q.vec4()[0], & x = q.vec4()[1], & y = q.vec4()[2], & z = q.vec4()[3];
+    return VEC_3(
+        std::atan((s * x + y * z) * type(2) / (type(1)-(x * x + y * y) * type(2))),
+        std::asin((s * y - x * z) * type(2)),
+        std::atan((s * z + y * x) * type(2) / (type(1)-(z * z + y * y) * type(2)))
     );
 }
 
-template<typename type>
-Quaternion<type>&   Quaternion<type>::operator+=(const Quaternion<type>& other)
-{
-    s += other.s;
-    x += other.x;
-    y += other.y;
-    z += other.z;
-    return *this;
+QUAT_TEMP QUAT convertToAnglesAndAxis(const QUAT& q) {
+    return QUAT(std::acos(q.im()) * type(2), q.im().normalized());
 }
 
-template<typename type>
-Quaternion<type>&   Quaternion<type>::operator-=(const Quaternion<type>& other)
-{
-    s -= other.s;
-    x -= other.x;
-    y -= other.y;
-    z -= other.z;
-    return *this;
-}
-
-template<typename type>
-Quaternion<type>&   Quaternion<type>::operator*=(const Quaternion<type>& other)
-{
-    Quaternion<type> copy(*this);
-    *this = copy*other;
-
-    return *this;
-}
-
-template<typename T>
-std::ostream& operator<< (std::ostream & out, const Quaternion<T>& quat)
-{
-    out<<quat.s<<'\t'<<quat.x<<'\t'<<quat.y<<'\t'<<quat.z;
-    return out;
-}
-
-template<typename T>
-Quaternion<T> operator* (const T& c,const Quaternion<T>& quat)
-{
-    return Quaternion<T>(c*quat.s,c*quat.x,c*quat.y,c*quat.z);
-}
-
-template<typename type>
-Quaternion<type>&   Quaternion<type>::normalize()
-{
-    type norma = s*s+x*x+y*y+z*z;
-    norma = std::sqrt(norma);
-    s /= norma;
-    x /= norma;
-    y /= norma;
-    z /= norma;
-    return *this;
-}
-
-template<typename type>
-Quaternion<type>&   Quaternion<type>::conjugate()
-{
-    x = -x;
-    y = -y;
-    z = -z;
-    return *this;
-}
-
-template<typename type>
-Quaternion<type>&   Quaternion<type>::invert()
-{
-    Quaternion<type> quat(*this);
-    Quaternion<type> ivNorma = quat*this->conjugate();
-    ivNorma.s = std::sqrt(ivNorma.s);
-    *this = ivNorma*(*this);
-    return *this;
-}
-
-
-template<typename T>
-Quaternion<T>   normalize(const Quaternion<T>& quat)
-{
-    T norma = quat.s*quat.s+quat.x*quat.x+quat.y*quat.y+quat.z*quat.z;
-    norma = std::sqrt(norma);
-    return Quaternion<T>(quat.s/norma,quat.x/norma,quat.y/norma,quat.z/norma);
-}
-
-template<typename T>
-Quaternion<T>   conjugate(const Quaternion<T>& quat)
-{
-    return Quaternion<T>(quat.s,-quat.x,-quat.y,-quat.z);
-}
-
-template<typename T>
-Quaternion<T>   invert(const Quaternion<T>& quat)
-{
-    Quaternion<T> ivNorma = quat*conjugate(quat);
-    ivNorma.s = std::sqrt(ivNorma.s);
-    return ivNorma*conjugate(quat);
-}
-
-template<typename T>
-Quaternion<T> convert(const Matrix<T,3,3>& O3)
-{
-    Quaternion<T> quat;
-
-    quat.s = std::sqrt(1.0f+O3[0][0]+O3[1][1]+O3[2][2])/2.0f;
-
-    quat.z = (O3[1][0]-O3[0][1])/(T(4)*quat.s);
-    quat.y = (O3[0][2]-O3[2][0])/(T(4)*quat.s);
-    quat.x = (O3[2][1]-O3[1][2])/(T(4)*quat.s);
-
-    return quat;
-}
-
-template<typename T>
-Matrix<T,3,3> convert(const Quaternion<T>& quat)
-{
-    Matrix<T,3,3> R;
-
-    R[0][0] = T(1) - T(2)*(quat.y*quat.y + quat.z*quat.z);      R[0][1] = T(2)*(quat.x*quat.y - quat.z*quat.s);         R[0][2] = T(2)*(quat.x*quat.z + quat.y*quat.s);
-    R[1][0] = T(2)*(quat.x*quat.y + quat.z*quat.s);             R[1][1] = T(1) - T(2)*(quat.x*quat.x + quat.z*quat.z);  R[1][2] = T(2)*(quat.y*quat.z - quat.x*quat.s);
-    R[2][0] = T(2)*(quat.x*quat.z - quat.y*quat.s);             R[2][1] = T(2)*(quat.y*quat.z + quat.x*quat.s);         R[2][2] = T(1) - T(2)*(quat.x*quat.x + quat.y*quat.y);
-
-    return R;
-}
-
-template<typename T>
-Matrix<T,4,4> convert4x4(const Quaternion<T>& quat)
-{
-    Matrix<T,4,4> R{0.0f};
-
-    R[0][0] = T(1) - T(2)*(quat.y*quat.y + quat.z*quat.z);      R[0][1] = T(2)*(quat.x*quat.y - quat.z*quat.s);         R[0][2] = T(2)*(quat.x*quat.z + quat.y*quat.s);
-    R[1][0] = T(2)*(quat.x*quat.y + quat.z*quat.s);             R[1][1] = T(1) - T(2)*(quat.x*quat.x + quat.z*quat.z);  R[1][2] = T(2)*(quat.y*quat.z - quat.x*quat.s);
-    R[2][0] = T(2)*(quat.x*quat.z - quat.y*quat.s);             R[2][1] = T(2)*(quat.y*quat.z + quat.x*quat.s);         R[2][2] = T(1) - T(2)*(quat.x*quat.x + quat.y*quat.y);
-    R[3][3] = T(1);
-
-    return R;
-}
-
-template<typename T>
-Quaternion<T> convert(const T& yaw, const T& pitch, const T& roll)
-{
-    T cosy = std::cos(yaw*T(0.5));
-    T siny = std::sin(yaw*T(0.5));
-    T cosp = std::cos(pitch*T(0.5));
-    T sinp = std::sin(pitch*T(0.5));
-    T cosr = std::cos(roll*T(0.5));
-    T sinr = std::sin(roll*T(0.5));
-
-    T s = cosy*cosp*cosr + siny*sinp*sinr;
-    T x = sinr*cosp*cosy - cosr*sinp*siny;
-    T y = cosr*sinp*cosy + sinr*cosp*siny;
-    T z = cosr*cosp*siny - sinr*sinp*cosy;
-
-    return Quaternion<T>(s,x,y,z);
-}
-
-template<typename T>
-Quaternion<T> convert(const T& angle, const Vector<T,3>& axis)
-{
-    return Quaternion<T>(std::cos(angle*T(0.5)),std::sin(angle*T(0.5))*Vector<T,3>(axis[0],axis[1],axis[2]));
-}
-
-template<typename T>
-Vector<T,3> convertToEulerAngles(const Quaternion<T>& quat)
-{
-    return  Vector<T,3>(std::atan((quat.s*quat.x+quat.y*quat.z)*T(2)/(T(1)-(quat.x*quat.x+quat.y*quat.y)*T(2))),
-                            std::asin((quat.s*quat.y-quat.x*quat.z)*T(2)),
-                            std::atan((quat.s*quat.z+quat.y*quat.x)*T(2)/(T(1)-(quat.z*quat.z+quat.y*quat.y)*T(2))));
-}
-
-template<typename T>
-Quaternion<T> convertToAnglesAndAxis(const Quaternion<T>& quat)
-{
-    return Quaternion<T>(   std::acos(quat.s)*T(2),
-                            Vector<T,3>(quat.x,quat.y,quat.z)/std::sqrt(T(1)-quat.s*quat.s));
-}
-
-template<typename T>
-Quaternion<T> slerp(const Quaternion<T>& x, const Quaternion<T>& y, const T& t) {
-    auto mix = [&t](const T& a, const T& b) {
-        return a + t * (b - a);
-    };
-
-    const T cosTheta = x.s * y.s + x.x * y.x + x.y * y.y + x.z * y.z;
-    Quaternion<T> z = cosTheta < 0.0f ? (-1.0f) * y : y;
-
-    if (cosTheta > static_cast<T>(1) - std::numeric_limits<T>::epsilon()) {
-        return normalize(Quaternion<T>(mix(x.s, z.s), mix(x.x, z.x), mix(x.y, z.y), mix(x.z, z.z)));
-    }
-
-    const T angle = std::acos(cosTheta);
-    return normalize(std::sin((static_cast<T>(1) - t) * angle) / std::sin(angle) * x + std::sin(t * angle) / std::sin(angle) * z);
-}
-
-template<typename type>
-Matrix<type,4,4> rotate(Quaternion<type> qu){
-    return convert4x4(qu);
-}
+QUAT_TEMP MAT_4 rotate(const QUAT& qu){ return convert4x4(qu); }
 
 extern template class Quaternion<float>;
 extern template class Quaternion<double>;
+
+#undef VEC_
+#undef VEC_3
+#undef VEC_4
+#undef MAT_
+#undef MAT_3
+#undef MAT_4
+#undef QUAT_TEMP
+#undef QUAT
+#undef QUAT_LIN_OPERATOR_GENERATOR
+#undef QUAT_SCAL_OPERATOR_GENERATOR
 
 }
 #endif // QUATERNION_H
