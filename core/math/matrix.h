@@ -111,21 +111,10 @@ public:
     Matrix(const RowVector vi, ...) {
         std::va_list args; va_start(args, vi); for_i_n mat[i] = (i == 0 ? vi : va_arg(args, RowVector)); va_end(args);
     }
-    // doesn't work
-    Matrix(const type m00, const type mij, ...) {
-        mat[0][0] = m00;
-        std::va_list args;
-        va_start(args, mij);
-        for_(i, n) {
-            for_(j, n) {
-                if(i == 0 && j == 0) {continue;}
-                mat[i][j] = ((i == 0 && j == 1) ? mij : va_arg(args, type));
-            }
-        }
-        va_end(args);
-    }
     Matrix(const MAT_N_N& a) : MAT_N_N(a) {}
     Matrix& operator=(const MAT_N_N& a) { this->copy(a); return *this; }
+
+    static Matrix identity() {return Matrix(type(1));}
 };
 
 #define MAT_TEMP template<typename type>

@@ -138,6 +138,7 @@ template<typename type, uint32_t n> class Vector;
 #define VECTOR_CTR_GENERATOR(n)                                                                         \
     Vector() = default;                                                                                 \
     Vector(const Reduced& v, const type& s) : BaseVector<type, n>(v, s) {}                              \
+    Vector(const type& x) : BaseVector<type, n>(Reduced(x), x) {}                                       \
     Vector(const Vector& v) : BaseVector<type, n>(v.x0, v.x1) {}                                        \
     Vector& operator=(const Vector& v) { x0 = v.dvec(); x1 = v.last(); return *this; }                  \
     Vector(const BaseVector<type, n>& v) : BaseVector<type, n>(v) {}                                    \
@@ -150,8 +151,6 @@ public:
     using Reduced = type;
 
     VECTOR_CTR_GENERATOR(2)
-
-    Vector(const type& x) : BaseVector<type, 2>(x, x) {}
 };
 
 template<typename type>
@@ -162,8 +161,7 @@ public:
 
     VECTOR_CTR_GENERATOR(3)
 
-    Vector(const type& x0, const type& x1, const type& x2) : BaseVector<type, 3>({ x0, x1 }, x2) {}
-    Vector(const type& x) : BaseVector<type, 3>({ x, x }, x) {}
+    Vector(const type& x0, const type& x1, const type& x2) : BaseVector<type, 3>(Reduced(x0, x1 ), x2) {}
 };
 
 template<typename type>
@@ -174,8 +172,7 @@ public:
 
     VECTOR_CTR_GENERATOR(4)
 
-    Vector(const type& x0, const type& x1, const type& x2, const type& x3) : BaseVector<type, 4>({{ x0, x1 }, x2}, x3) {}
-    Vector(const type& x) : BaseVector<type, 4>({{ x, x }, x}, x) {}
+    Vector(const type& x0, const type& x1, const type& x2, const type& x3) : BaseVector<type, 4>(Reduced( x0, x1 , x2), x3) {}
 };
 
 #undef VECTOR_CTR_GENERATOR

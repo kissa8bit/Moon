@@ -3,6 +3,8 @@
 
 #include "matrix.h"
 
+#include <array>
+
 namespace moon::math {
 
 #define VEC_(n) Vector<type, n>
@@ -39,6 +41,8 @@ public:
     type re() const { return s; }
     VEC_3 im() const { return VEC_3(x, y, z); }
     const VEC_4& vec4() const { return data; }
+    std::array<type, 3> xyz() const { return std::array<type, 3>{x, y, z}; }
+    std::array<type, 4> sxyz() const { return std::array<type, 4>{s,x,y,z}; }
 
     bool operator==(const Quaternion& q) const { return data == q.data; }
     bool operator!=(const Quaternion& q) const { return !(*this == q); }
@@ -95,12 +99,13 @@ QUAT_TEMP QUAT convert(const MAT_3& O3) {
 }
 
 QUAT_TEMP MAT_3 convert(const QUAT& q) {
-    const type& s = q.vec4()[0], & x = q.vec4()[1], & y = q.vec4()[2], & z = q.vec4()[3];
-    MAT_3 I(1), R;
-    R[0][0] = -(y * y + z * z); R[0][1] = (x * y - z * s);  R[0][2] = (x * z + y * s);
-    R[1][0] = (x * y + z * s);  R[1][1] = -(x * x + z * z); R[1][2] = (y * z - x * s);
-    R[2][0] = (x * z - y * s);  R[2][1] = (y * z + x * s);  R[2][2] = -(x * x + y * y);
-    return I + type(2) * R;
+    const auto [s, x, y, z] = q.sxyz();
+    MAT_3 R(
+        VEC_3(- y * y - z * z, x * y - z * s, x * z + y * s),
+        VEC_3(x * y + z * s, - x * x - z * z, y * z - x * s),
+        VEC_3(x * z - y * s, y * z + x * s, - x * x - y * y)
+    );
+    return MAT_3::identity() + type(2) * R;
 }
 
 QUAT_TEMP MAT_4 convert4x4(const QUAT& q) {
@@ -125,11 +130,11 @@ QUAT_TEMP QUAT convert(const type& angle, const VEC_3& axis) {
 }
 
 QUAT_TEMP VEC_3 convertToEulerAngles(const QUAT& q) {
-    const type& s = q.vec4()[0], & x = q.vec4()[1], & y = q.vec4()[2], & z = q.vec4()[3];
+    const auto [s, x, y, z] = q.sxyz();
     return VEC_3(
-        std::atan((s * x + y * z) * type(2) / (type(1)-(x * x + y * y) * type(2))),
+        std::atan((s * x + y * z) * type(2) / (type(1) - (x * x + y * y) * type(2))),
         std::asin((s * y - x * z) * type(2)),
-        std::atan((s * z + y * x) * type(2) / (type(1)-(z * z + y * y) * type(2)))
+        std::atan((s * z + y * x) * type(2) / (type(1) - (z * z + y * y) * type(2)))
     );
 }
 
