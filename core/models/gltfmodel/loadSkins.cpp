@@ -18,7 +18,7 @@ void GltfModel::loadSkins(const tinygltf::Model& gltfModel) {
                 if (nodeByIndex == instance.nodes.end()) continue;
 
                 const auto& [_, node] = *nodeByIndex;
-                const auto matrix = math::transpose(*((const math::Matrix<float, 4, 4>*)extract.data + skin.size()));
+                const auto matrix = math::transpose(*((const math::mat4*)extract.data + skin.size()));
                 skin.push_back({ matrix, node.get()});
             }
         }

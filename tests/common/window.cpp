@@ -2,9 +2,11 @@
 
 #include <stb_image.h>
 
+#include "linearAlgebra.h"
+
 namespace moon::tests {
 
-Window::Window(const math::Vector<uint32_t, 2>& extent, const std::filesystem::path& iconName)
+Window::Window(const math::vec2u& extent, const std::filesystem::path& iconName)
 	: extent(extent)
 {
     glfwInit();
@@ -31,7 +33,7 @@ Window::operator GLFWwindow* () const {
 	return window;
 }
 
-math::Vector<uint32_t, 2> Window::sizes() const {
+math::vec2u Window::sizes() const {
 	return extent;
 }
 
@@ -47,7 +49,7 @@ void Window::resize() {
         glfwGetFramebufferSize(window, &width, &height);
         glfwWaitEvents();
     }
-    extent = math::Vector<uint32_t, 2>(width, height);
+    extent = math::vec2u(width, height);
 
     resizeFlag = false;
 }
@@ -64,7 +66,7 @@ bool Window::isClosed() const {
     return glfwWindowShouldClose(window);
 }
 
-math::Vector<double, 2> Window::mousePose() const {
+math::vec2d Window::mousePose() const {
 	double x = 0, y = 0;
 	glfwGetCursorPos(window, &x, &y);
 	return { x,y };

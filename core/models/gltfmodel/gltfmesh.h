@@ -3,7 +3,8 @@
 
 #include <vector>
 
-#include "matrix.h"
+#include "linearAlgebra.h"
+
 #include "operations.h"
 #include "buffer.h"
 #include "gltfutils.h"

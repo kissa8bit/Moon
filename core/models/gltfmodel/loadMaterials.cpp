@@ -1,6 +1,8 @@
 #include "gltfmodel.h"
 #include "gltfutils.h"
 
+#include "linearAlgebra.h"
+
 namespace moon::models {
 
 namespace {
@@ -25,7 +27,7 @@ public:
         }
 
         if (factor.size() >= 4) {
-            textureParameters.factor = math::Vector<float, 4>(factor[0], factor[1], factor[2], factor[3]);
+            textureParameters.factor = math::vec4(factor[0], factor[1], factor[2], factor[3]);
         }
 
         return textureParameters;

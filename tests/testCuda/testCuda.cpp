@@ -302,7 +302,7 @@ void testCuda::mouseEvent(float frameTime)
 
         graphics->clearFrame();
     }
-    mousePos = {x,y};
+    mousePos = moon::math::vec2d(x, y);
 }
 
 void testCuda::keyboardEvent(float frameTime)

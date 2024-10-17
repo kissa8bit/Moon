@@ -1,7 +1,6 @@
 #include "cameras.h"
 
 #include "operations.h"
-#include "dualQuaternion.h"
 #include "device.h"
 
 #include <cstring>
@@ -36,13 +35,13 @@ Camera::Camera(const float& angle, const float& aspect, const float& near, const
 }
 
 Camera& Camera::update() {
-    math::Matrix<float,4,4> transformMatrix = convert(convert(m_rotation, m_translation));
-    buffer.view = transpose(inverse(math::Matrix<float,4,4>(m_globalTransformation * transformMatrix)));
+    math::mat4 transformMatrix = convert(convert(m_rotation, m_translation));
+    buffer.view = transpose(inverse(math::mat4(m_globalTransformation * transformMatrix)));
     utils::raiseFlags(pCamera->buffers());
     return *this;
 }
 
-Camera& Camera::setProjMatrix(const math::Matrix<float,4,4> & proj) {
+Camera& Camera::setProjMatrix(const math::mat4& proj) {
     buffer.proj = transpose(proj);
     utils::raiseFlags(pCamera->buffers());
     return *this;
@@ -52,8 +51,8 @@ DEFAULT_TRANSFORMATIONAL_DEFINITION(Camera)
 DEFAULT_TRANSFORMATIONAL_GETTERS_DEFINITION(Camera)
 DEFAULT_TRANSFORMATIONAL_ROTATE_XY_DEF(Camera)
 
-math::Matrix<float,4,4> Camera::getProjMatrix()  const { return transpose(buffer.proj);}
-math::Matrix<float,4,4> Camera::getViewMatrix()  const { return transpose(buffer.view);}
+math::mat4 Camera::getProjMatrix()  const { return transpose(buffer.proj);}
+math::mat4 Camera::getViewMatrix()  const { return transpose(buffer.view);}
 
 Camera::operator interfaces::Camera* () const {
     return pCamera.get();

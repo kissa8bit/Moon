@@ -6,7 +6,8 @@
 #include "attachments.h"
 #include "buffer.h"
 #include "texture.h"
-#include "vector.h"
+
+#include "linearAlgebra.h"
 
 #include <stdint.h>
 #include <random>

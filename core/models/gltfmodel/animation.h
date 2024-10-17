@@ -4,9 +4,10 @@
 #include <vector>
 #include <limits>
 
-#include "vector.h"
 #include "model.h"
 #include "node.h"
+
+#include "linearAlgebra.h"
 
 namespace moon::models {
 
@@ -19,7 +20,7 @@ struct GltfAnimation : interfaces::Animation {
     using Channels = std::vector<Channel>;
 
     struct Point {
-        using OutputData = std::vector<math::Vector<float, 4>>;
+        using OutputData = std::vector<math::vec4>;
         float inputTime{ 0.0f };
         OutputData outputData;
     };

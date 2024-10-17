@@ -1,14 +1,15 @@
 #ifndef CONTROLED_OBJ_H
 #define CONTROLED_OBJ_H
 
-#include "vector.h"
+#include "linearAlgebra.h"
+
 #include "objects.h"
 
 namespace moon::tests {
 
 struct Outlighting {
     bool enable{ true };
-    moon::math::Vector<float, 4> color{ 1.0f };
+    moon::math::vec4 color{ 1.0f };
 };
 
 struct ControledObject {

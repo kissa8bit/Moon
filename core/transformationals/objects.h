@@ -7,12 +7,12 @@
 #include <optional>
 
 #include "transformational.h"
-#include "quaternion.h"
 #include "texture.h"
 #include "buffer.h"
 #include "object.h"
-#include "matrix.h"
 #include "model.h"
+
+#include "linearAlgebra.h"
 
 namespace moon::interfaces {
 
@@ -53,15 +53,15 @@ class Object : public Transformational
 private:
     struct {
         struct ColorLinearProperties {
-            alignas(16) math::Vector<float, 4> constant{0.0f};
-            alignas(16) math::Vector<float, 4> factor{1.0f};
+            alignas(16) math::vec4 constant{0.0f};
+            alignas(16) math::vec4 factor{1.0f};
         };
         struct Outlining {
-            alignas(16) math::Vector<float, 4> color{ 0.0f };
+            alignas(16) math::vec4 color{ 0.0f };
             alignas(4) float width{ 0.0f };
         };
 
-        alignas(16) math::Matrix<float, 4, 4> modelMatrix;
+        alignas(16) math::mat4 modelMatrix;
         ColorLinearProperties base;
         ColorLinearProperties bloom;
         Outlining outlining;
@@ -79,9 +79,9 @@ public:
     DEFAULT_TRANSFORMATIONAL_OVERRIDE(Object)
     DEFAULT_TRANSFORMATIONAL_GETTERS()
 
-    Object& setOutlining(const bool& enable, const float& width = 0, const math::Vector<float, 4>& color = { 0.0f });
-    Object& setBase(std::optional<math::Vector<float,4>> constant = std::nullopt, std::optional<math::Vector<float, 4>> factor = std::nullopt);
-    Object& setBloom(std::optional<math::Vector<float, 4>> constant = std::nullopt, std::optional<math::Vector<float, 4>> factor = std::nullopt);
+    Object& setOutlining(const bool& enable, const float& width = 0, const math::vec4& color = { 0.0f });
+    Object& setBase(std::optional<math::vec4> constant = std::nullopt, std::optional<math::vec4> factor = std::nullopt);
+    Object& setBloom(std::optional<math::vec4> constant = std::nullopt, std::optional<math::vec4> factor = std::nullopt);
 
     class AnimationControl {
     private:

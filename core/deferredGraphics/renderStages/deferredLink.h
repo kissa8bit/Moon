@@ -6,8 +6,9 @@
 
 #include "linkable.h"
 #include "attachments.h"
-#include "vector.h"
 #include "vkdefault.h"
+
+#include "linearAlgebra.h"
 
 namespace moon::deferredGraphics {
 

@@ -4,9 +4,7 @@
 #include <vector>
 #include <tuple>
 
-#include "vector.h"
-#include "matrix.h"
-#include "quaternion.h"
+#include "linearAlgebra.h"
 
 #include "tinyGLTF.h"
 
@@ -22,8 +20,8 @@ void convert(math::Vector<T1, n>& dst,const std::vector<T2>& src) {
 }
 
 template <typename T>
-math::Vector<float, 3> toVector3f(const std::vector<T>& src) {
-    math::Vector<float, 3> dst;
+math::vec3 toVector3f(const std::vector<T>& src) {
+    math::vec3 dst;
     convert(dst, src);
     return dst;
 }

@@ -161,7 +161,7 @@ public:
 
     VECTOR_CTR_GENERATOR(3)
 
-    Vector(const type& x0, const type& x1, const type& x2) : BaseVector<type, 3>(Reduced(x0, x1 ), x2) {}
+    Vector(const type& x0, const type& x1, const type& x2) : BaseVector<type, 3>(Reduced(x0, x1), x2) {}
 };
 
 template<typename type>
@@ -172,7 +172,7 @@ public:
 
     VECTOR_CTR_GENERATOR(4)
 
-    Vector(const type& x0, const type& x1, const type& x2, const type& x3) : BaseVector<type, 4>(Reduced( x0, x1 , x2), x3) {}
+    Vector(const type& x0, const type& x1, const type& x2, const type& x3) : BaseVector<type, 4>(Reduced(x0, x1, x2), x3) {}
 };
 
 #undef VECTOR_CTR_GENERATOR

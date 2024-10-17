@@ -3,7 +3,8 @@
 
 #include "gltfmesh.h"
 #include "skin.h"
-#include "quaternion.h"
+
+#include "linearAlgebra.h"
 
 namespace moon::models {
 
@@ -20,11 +21,11 @@ struct Node {
     Skin* skin{ nullptr };
     ChildrenNodes children;
 
-    math::Matrix<float, 4, 4> matrix{ 1.0f };
-    math::Matrix<float, 4, 4> global{ 1.0f };
-    math::Vector<float, 3> translation{ 0.0f };
-    math::Vector<float, 3> scale{ 1.0f };
-    math::Quaternion<float> rotation{ 1.0f, 0.0f, 0.0f, 0.0f };
+    math::mat4 matrix{ 1.0f };
+    math::mat4 global{ 1.0f };
+    math::vec3 translation{ 0.0f };
+    math::vec3 scale{ 1.0f };
+    math::quat rotation{ 1.0f, 0.0f, 0.0f, 0.0f };
 
     Node(const tinygltf::Node& gltfNode, const tinygltf::Model& gltfModel, const interfaces::Materials& materials, Node* parent, uint32_t& indexStart)
         : parent(parent)
@@ -38,12 +39,12 @@ struct Node {
         }
     }
 
-    moon::math::Matrix<float, 4, 4> localMatrix() const {
+    moon::math::mat4 localMatrix() const {
         return math::translate(translation) * math::rotate(rotation) * math::scale(scale) * global;
     }
 
     void updateMatrix(bool recursive = false) {
-        matrix = (parent ? parent->matrix : math::Matrix<float, 4, 4>(1.0f)) * localMatrix();
+        matrix = (parent ? parent->matrix : math::mat4::identity()) * localMatrix();
         if (recursive) for (auto child : children) child->updateMatrix(recursive);
     }
 

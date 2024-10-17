@@ -5,8 +5,8 @@
 #include <vector>
 #include <limits>
 
-#include "vector.h"
-#include "matrix.h"
+#include "linearAlgebra.h"
+
 #include "vkdefault.h"
 #include "texture.h"
 #include "device.h"
@@ -14,11 +14,11 @@
 namespace moon::interfaces {
 
 struct BoundingBox{
-    alignas(16) math::Vector<float,3> min{std::numeric_limits<float>::max()};
-    alignas(16) math::Vector<float,3> max{0.0f};
+    alignas(16) math::vec3 min{std::numeric_limits<float>::max()};
+    alignas(16) math::vec3 max{0.0f};
 
     BoundingBox() = default;
-    BoundingBox(math::Vector<float,3> min, math::Vector<float,3> max);
+    BoundingBox(math::vec3 min, math::vec3 max);
 };
 
 struct Material {
@@ -30,7 +30,7 @@ struct Material {
 
     struct TextureParameters {
         const utils::Texture* texture{ nullptr };
-        math::Vector<float, 4> factor{ 1.0f };
+        math::vec4 factor{ 1.0f };
         int8_t coordSet{ -1 };
 
         TextureParameters() = default;
@@ -62,10 +62,10 @@ struct Material {
 using Materials = std::vector<Material>;
 
 struct MaterialBlock {
-    math::Vector<float,4> baseColorFactor{0.0f};
-    math::Vector<float,4> emissiveFactor{0.0f};
-    math::Vector<float,4> diffuseFactor{0.0f};
-    math::Vector<float,4> specularFactor{0.0f};
+    math::vec4  baseColorFactor{0.0f};
+    math::vec4  emissiveFactor{0.0f};
+    math::vec4  diffuseFactor{0.0f};
+    math::vec4  specularFactor{0.0f};
     float       workflow{0.0f};
     int         colorTextureSet{-1};
     int         physicalDescriptorTextureSet{-1};
@@ -84,11 +84,11 @@ struct MaterialBlock {
 struct MeshBlock {
     static constexpr auto maxJoints = 256u;
     float jointcount{ 0 };
-    alignas(16) math::Matrix<float, 4, 4> matrix{ 1.0f };
-    alignas(16) math::Matrix<float, 4, 4> jointMatrix[maxJoints]{};
+    alignas(16) math::mat4 matrix{ 1.0f };
+    alignas(16) math::mat4 jointMatrix[maxJoints]{};
 
     size_t size() const {
-        return 4 * sizeof(float) + (jointcount + 1) * sizeof(math::Matrix<float, 4, 4>);
+        return 4 * sizeof(float) + (jointcount + 1) * sizeof(math::mat4);
     }
 };
 
@@ -126,14 +126,14 @@ struct Mesh {
 };
 
 struct Vertex {
-    alignas(16) math::Vector<float, 3> pos{ 0.0f };
-    alignas(16) math::Vector<float, 3> normal{ 0.0f };
-    alignas(8)  math::Vector<float, 2> uv0{ 0.0f };
-    alignas(8)  math::Vector<float, 2> uv1{ 0.0f };
-    alignas(16) math::Vector<float, 4> joint0{ 0.0f };
-    alignas(16) math::Vector<float, 4> weight0{ 1.0f, 0.0f, 0.0f, 0.0f };
-    alignas(16) math::Vector<float, 3> tangent{ 0.0f };
-    alignas(16) math::Vector<float, 3> bitangent{ 0.0f };
+    alignas(16) math::vec3 pos{ 0.0f };
+    alignas(16) math::vec3 normal{ 0.0f };
+    alignas(8)  math::vec2 uv0{ 0.0f };
+    alignas(8)  math::vec2 uv1{ 0.0f };
+    alignas(16) math::vec4 joint0{ 0.0f };
+    alignas(16) math::vec4 weight0{ 1.0f, 0.0f, 0.0f, 0.0f };
+    alignas(16) math::vec3 tangent{ 0.0f };
+    alignas(16) math::vec3 bitangent{ 0.0f };
 
     static VkVertexInputBindingDescription getBindingDescription();
     static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();

@@ -3,14 +3,14 @@
 
 #include <vector>
 
-#include "matrix.h"
+#include "linearAlgebra.h"
 
 namespace moon::models {
 
 struct Node;
 
 struct Joint {
-    math::Matrix<float, 4, 4> inverseBindMatrices{1.0f};
+    math::mat4 inverseBindMatrices = math::mat4::identity();
     Node* jointedNode{nullptr};
 };
 

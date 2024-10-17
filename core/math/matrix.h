@@ -172,10 +172,6 @@ MAT_TEMP MAT_4 orthographic(const type& width, const type& height, const type& n
     return orthographic(- width / type(2), width / type(2), - height / type(2), height / type(2), n, f);
 }
 
-MAT_TEMP type radians(const type& angle) {
-    return type(M_PI) * angle / type(180);
-}
-
 #define MAT_EXT_TMEP(n) extern template class Matrix<float, n, n>; extern template class Matrix<double, n, n>;
 
 MAT_EXT_TMEP(2)

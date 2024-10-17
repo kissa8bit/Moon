@@ -5,8 +5,9 @@
 
 #include "camera.h"
 #include "transformational.h"
-#include "quaternion.h"
 #include "buffer.h"
+
+#include "linearAlgebra.h"
 
 namespace moon::interfaces {
 
@@ -31,8 +32,8 @@ class Camera : public Transformational
 {
 private:
     struct {
-        alignas(16) math::Matrix<float, 4, 4> view{ 1.0f };
-        alignas(16) math::Matrix<float, 4, 4> proj{ 1.0f };
+        alignas(16) math::mat4 view{ 1.0f };
+        alignas(16) math::mat4 proj{ 1.0f };
     } buffer;
 
     DEFAULT_TRANSFORMATIONAL()
@@ -48,8 +49,8 @@ public:
     DEFAULT_TRANSFORMATIONAL_ROTATE_XY_DECL(Camera)
 
     Camera& setProjMatrix(const math::Matrix<float,4,4> & proj);
-    math::Matrix<float,4,4> getProjMatrix()  const;
-    math::Matrix<float,4,4> getViewMatrix()  const;
+    math::mat4 getProjMatrix() const;
+    math::mat4 getViewMatrix() const;
 
     operator interfaces::Camera*() const;
 };

@@ -3,7 +3,8 @@
 #include "vkdefault.h"
 #include "object.h"
 #include "model.h"
-#include "vector.h"
+
+#include "linearAlgebra.h"
 
 namespace moon::deferredGraphics {
 

@@ -9,13 +9,15 @@
 #include <fstream>
 #include <vector>
 
+#include "linearAlgebra.h"
+
 namespace moon::models {
 
 PlyModel::PlyModel(
     const std::filesystem::path& filename,
-    const math::Vector<float, 4>& baseColorFactor,
-    const math::Vector<float, 4>& diffuseFactor,
-    const math::Vector<float, 4>& specularFactor,
+    const math::vec4& baseColorFactor,
+    const math::vec4& diffuseFactor,
+    const math::vec4& specularFactor,
     const float metallicFactor,
     const float roughnessFactor,
     const const interfaces::Material::PbrWorkflow workflow) : filename(filename)
@@ -66,7 +68,7 @@ void PlyModel::loadFromFile(const utils::PhysicalDevice& physicalDevice, VkComma
         std::memcpy(indexBuffer.data(), faces->buffer.get_const(), faces->buffer.size_bytes());
     }
     if(verts){
-        const auto buffer = (const math::Vector<float, 3>*)verts->buffer.get();
+        const auto buffer = (const math::vec3*)verts->buffer.get();
         for (size_t i = 0; i < vertexBuffer.size(); ++i) {
             vertexBuffer[i].pos = buffer[i];
         }
@@ -82,13 +84,13 @@ void PlyModel::loadFromFile(const utils::PhysicalDevice& physicalDevice, VkComma
         }
     }
     if(normals){
-        const auto buffer = (const math::Vector<float, 3>*)normals->buffer.get();
+        const auto buffer = (const math::vec3*)normals->buffer.get();
         for (size_t index = 0; index < vertexBuffer.size(); ++index) {
             vertexBuffer[index].normal = buffer[index];
         }
     }
     if(texcoords){
-        const auto buffer = (const math::Vector<float, 2>*)texcoords->buffer.get();
+        const auto buffer = (const math::vec2*)texcoords->buffer.get();
         for (size_t index = 0; index < vertexBuffer.size(); ++index) {
             vertexBuffer[index].uv0 = buffer[index];
         }

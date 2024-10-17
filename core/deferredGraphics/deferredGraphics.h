@@ -7,8 +7,9 @@
 
 #include "cursor.h"
 #include "buffer.h"
-#include "vector.h"
 #include "pipelineNode.h"
+
+#include "linearAlgebra.h"
 
 #include "graphics.h"
 #include "layersCombiner.h"
@@ -55,7 +56,7 @@ public:
 struct Parameters {
     std::filesystem::path       shadersPath;
     std::filesystem::path       workflowsShadersPath;
-    math::Vector<uint32_t, 2>   extent{0};
+    math::vec2u                 extent{0};
     VkSampleCountFlagBits       MSAASamples{ VK_SAMPLE_COUNT_1_BIT };
     utils::Cursor*              cursor{ nullptr };
     interfaces::Camera*         cameraObject{ nullptr };

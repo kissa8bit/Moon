@@ -8,9 +8,9 @@
 
 #include "model.h"
 #include "buffer.h"
-#include "matrix.h"
-#include "quaternion.h"
 #include "vkdefault.h"
+
+#include "linearAlgebra.h"
 
 #include "gltfmodel/instance.h"
 #include "gltfmodel/tinyGLTF.h"

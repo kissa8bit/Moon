@@ -1,7 +1,6 @@
 #include "lights.h"
 
 #include "operations.h"
-#include "dualQuaternion.h"
 #include "device.h"
 
 #include <cstring>
@@ -85,7 +84,7 @@ utils::Buffers& SpotLight::buffers() {
 
 namespace moon::transformational {
 
-Light::Light(const math::Vector<float,4>& color, const math::Matrix<float,4,4> & projection, bool enableShadow, bool enableScattering, interfaces::SpotLight::Type type)
+Light::Light(const math::vec4& color, const math::mat4& projection, bool enableShadow, bool enableScattering, interfaces::SpotLight::Type type)
     : type(type)
 {
     buffer.color = color;
@@ -94,7 +93,7 @@ Light::Light(const math::Vector<float,4>& color, const math::Matrix<float,4,4> &
     pLight = std::make_unique<interfaces::SpotLight>(pipelineBitMask, &buffer, sizeof(buffer), enableShadow, enableScattering);
 }
 
-Light::Light(const std::filesystem::path& texturePath, const math::Matrix<float,4,4> & projection, bool enableShadow, bool enableScattering, interfaces::SpotLight::Type type):
+Light::Light(const std::filesystem::path& texturePath, const math::mat4& projection, bool enableShadow, bool enableScattering, interfaces::SpotLight::Type type):
     type(type)
 {
     buffer.proj = transpose(projection);
@@ -103,9 +102,9 @@ Light::Light(const std::filesystem::path& texturePath, const math::Matrix<float,
 }
 
 Light& Light::update() {
-    math::Matrix<float,4,4> transformMatrix = convert(convert(m_rotation, m_translation));
-    buffer.view = transpose(inverse(math::Matrix<float, 4, 4>(m_globalTransformation * transformMatrix * math::scale(m_scaling))));
-    buffer.props = moon::math::Vector<float, 4>(static_cast<float>(type), lightPowerFactor, lightDropFactor, 0.0f);
+    math::mat4 transformMatrix = convert(convert(m_rotation, m_translation));
+    buffer.view = transpose(inverse(math::mat4(m_globalTransformation * transformMatrix * math::scale(m_scaling))));
+    buffer.props = moon::math::vec4(static_cast<float>(type), lightPowerFactor, lightDropFactor, 0.0f);
     utils::raiseFlags(pLight->buffers());
     return *this;
 }
@@ -114,12 +113,12 @@ DEFAULT_TRANSFORMATIONAL_DEFINITION(Light)
 DEFAULT_TRANSFORMATIONAL_GETTERS_DEFINITION(Light)
 DEFAULT_TRANSFORMATIONAL_ROTATE_XY_DEF(Light)
 
-Light& Light::setProjectionMatrix(const math::Matrix<float,4,4>& projection)  {
+Light& Light::setProjectionMatrix(const math::mat4& projection)  {
     buffer.proj = transpose(projection);
     return update();
 }
 
-Light& Light::setColor(const math::Vector<float,4> &color){
+Light& Light::setColor(const math::vec4& color){
     buffer.color = color;
     return update();
 }
@@ -138,37 +137,37 @@ Light::operator interfaces::Light* () const {
     return pLight.get();
 }
 
-IsotropicLight::IsotropicLight(const math::Vector<float,4>& color, float radius, bool enableShadow, bool enableScattering) {
+IsotropicLight::IsotropicLight(const math::vec4& color, float radius, bool enableShadow, bool enableScattering) {
     const auto proj = math::perspective(math::radians(91.0f), 1.0f, 0.1f, radius);
 
     lights.reserve(6);
 
     add(&lights.emplace_back(std::make_unique<Light>(color, proj, enableShadow, enableScattering, interfaces::SpotLight::Type::square))
-        ->rotate(math::radians(90.0f), math::Vector<float, 3>(1.0f, 0.0f, 0.0f)));
+        ->rotate(math::radians(90.0f), math::vec3(1.0f, 0.0f, 0.0f)));
 
     add(&lights.emplace_back(std::make_unique<Light>(color, proj, enableShadow, enableScattering, interfaces::SpotLight::Type::square))
-        ->rotate(math::radians(-90.0f), math::Vector<float, 3>(1.0f, 0.0f, 0.0f)));
+        ->rotate(math::radians(-90.0f), math::vec3(1.0f, 0.0f, 0.0f)));
 
     add(&lights.emplace_back(std::make_unique<Light>(color, proj, enableShadow, enableScattering, interfaces::SpotLight::Type::square))
-        ->rotate(math::radians(0.0f), math::Vector<float, 3>(0.0f, 1.0f, 0.0f)));
+        ->rotate(math::radians(0.0f), math::vec3(0.0f, 1.0f, 0.0f)));
 
     add(&lights.emplace_back(std::make_unique<Light>(color, proj, enableShadow, enableScattering, interfaces::SpotLight::Type::square))
-        ->rotate(math::radians(90.0f), math::Vector<float, 3>(0.0f, 1.0f, 0.0f)));
+        ->rotate(math::radians(90.0f), math::vec3(0.0f, 1.0f, 0.0f)));
 
     add(&lights.emplace_back(std::make_unique<Light>(color, proj, enableShadow, enableScattering, interfaces::SpotLight::Type::square))
-        ->rotate(math::radians(-90.0f), math::Vector<float, 3>(0.0f, 1.0f, 0.0f)));
+        ->rotate(math::radians(-90.0f), math::vec3(0.0f, 1.0f, 0.0f)));
 
     add(&lights.emplace_back(std::make_unique<Light>(color, proj, enableShadow, enableScattering, interfaces::SpotLight::Type::square))
-        ->rotate(math::radians(180.0f), math::Vector<float, 3>(1.0f, 0.0f, 0.0f)));
+        ->rotate(math::radians(180.0f), math::vec3(1.0f, 0.0f, 0.0f)));
 
     // colors for debug if color = {0, 0, 0, 0}
     if(dot(color, color) == 0.0f && lights.size() == 6) {
-        lights.at(0)->setColor(math::Vector<float,4>(1.0f,0.0f,0.0f,1.0f));
-        lights.at(1)->setColor(math::Vector<float,4>(0.0f,1.0f,0.0f,1.0f));
-        lights.at(2)->setColor(math::Vector<float,4>(0.0f,0.0f,1.0f,1.0f));
-        lights.at(3)->setColor(math::Vector<float,4>(0.3f,0.6f,0.9f,1.0f));
-        lights.at(4)->setColor(math::Vector<float,4>(0.6f,0.9f,0.3f,1.0f));
-        lights.at(5)->setColor(math::Vector<float,4>(0.9f,0.3f,0.6f,1.0f));
+        lights.at(0)->setColor(math::vec4(1.0f,0.0f,0.0f,1.0f));
+        lights.at(1)->setColor(math::vec4(0.0f,1.0f,0.0f,1.0f));
+        lights.at(2)->setColor(math::vec4(0.0f,0.0f,1.0f,1.0f));
+        lights.at(3)->setColor(math::vec4(0.3f,0.6f,0.9f,1.0f));
+        lights.at(4)->setColor(math::vec4(0.6f,0.9f,0.3f,1.0f));
+        lights.at(5)->setColor(math::vec4(0.9f,0.3f,0.6f,1.0f));
     }
 }
 
@@ -178,11 +177,11 @@ IsotropicLight::IsotropicLight(const math::Vector<float,4>& color, float radius,
     }                               \
     return *this;
 
-IsotropicLight& IsotropicLight::setProjectionMatrix(const math::Matrix<float,4,4>& val){
+IsotropicLight& IsotropicLight::setProjectionMatrix(const math::mat4& val){
     GENERATE_SETTER(setProjectionMatrix)
 }
 
-IsotropicLight& IsotropicLight::setColor(const math::Vector<float,4>& val){
+IsotropicLight& IsotropicLight::setColor(const math::vec4& val){
     GENERATE_SETTER(setColor)
 }
 

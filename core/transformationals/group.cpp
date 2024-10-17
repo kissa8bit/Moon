@@ -1,11 +1,10 @@
 #include "group.h"
-#include "dualQuaternion.h"
 
 namespace moon::transformational {
 
 Group& Group::update() {
-    moon::math::Matrix<float, 4, 4> transformMatrix = convert(convert(m_rotation, m_translation));
-    moon::math::Matrix<float, 4, 4> modelMatrix = m_globalTransformation * transformMatrix * moon::math::scale(m_scaling);
+    math::mat4 transformMatrix = convert(convert(m_rotation, m_translation));
+    math::mat4 modelMatrix = m_globalTransformation * transformMatrix * moon::math::scale(m_scaling);
     for (auto& object : objects) {
         object->setGlobalTransform(modelMatrix);
     }

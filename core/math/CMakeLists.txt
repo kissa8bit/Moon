@@ -13,6 +13,7 @@ set(HEADERS
     dualQuaternion.h
     vector.h
     matrix.h
+    linearAlgebra.h
 )
 
 set(SOURCES

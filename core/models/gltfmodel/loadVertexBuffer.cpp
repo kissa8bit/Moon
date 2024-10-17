@@ -2,6 +2,8 @@
 #include "gltfutils.h"
 #include "operations.h"
 
+#include "linearAlgebra.h"
+
 namespace moon::models {
 
 namespace {
@@ -25,21 +27,21 @@ struct LoadBuffer {
     }
 
     template <typename T = type>
-    math::Vector<float, 2> loadVec2(size_t vertex) const {
+    math::vec2 loadVec2(size_t vertex) const {
         auto data = (const T*)buffer + vertex * stride;
-        return math::Vector<float, 2>(data[0], data[1]);
+        return math::vec2(data[0], data[1]);
     }
 
     template <typename T = type>
-    math::Vector<float, 3> loadVec3(size_t vertex) const {
+    math::vec3 loadVec3(size_t vertex) const {
         auto data = (const T*)buffer + vertex * stride;
-        return math::Vector<float, 3>(loadVec2<T>(vertex), data[2]);
+        return math::vec3(loadVec2<T>(vertex), data[2]);
     }
 
     template <typename T = type>
-    math::Vector<float, 4> loadVec4(size_t vertex) const {
+    math::vec4 loadVec4(size_t vertex) const {
         auto data = (const T*)buffer + vertex * stride;
-        return math::Vector<float, 4>(loadVec3<T>(vertex), data[3]);
+        return math::vec4(loadVec3<T>(vertex), data[3]);
     }
 };
 

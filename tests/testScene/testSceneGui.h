@@ -14,7 +14,7 @@ namespace moon::tests::gui {
 
 #define MOVE_VEC_DEF                                \
     static float move = 0.0f;                       \
-    moon::math::Vector<float, 3> moveVec(0.0f);     \
+    moon::math::vec3 moveVec(0.0f);                 \
     moveVec[ax] = 1.0f;                             \
     move = 0.0f;
 
@@ -118,14 +118,14 @@ void rotationmManipulator(transformational::Object& obj, const moon::transformat
     if (quat qu(rotation[0], rotation[1], rotation[2], rotation[3]);
         ImGui::gizmo3D("", qu, camdir, size, imguiGizmo::mode3Axes | imguiGizmo::sphereAtOrigin))
     {
-        obj.rotation() = moon::math::Quaternion<float>(qu.w, qu.x, qu.y, qu.z);
+        obj.rotation() = moon::math::quat(qu.w, qu.x, qu.y, qu.z);
         obj.update();
     }
 }
 
 bool setColors(moon::transformational::Object* obecjt, float width = 300.0f) {
-    static moon::math::Vector<float, 4> constColor = { 0.0f };
-    static moon::math::Vector<float, 4> colorFactor = { 1.0f };
+    static moon::math::vec4 constColor = { 0.0f };
+    static moon::math::vec4 colorFactor = { 1.0f };
     ImGui::SetNextItemWidth(width);
     ImGui::ColorEdit4("const color", (float*)&constColor, ImGuiColorEditFlags_NoDragDrop);
     ImGui::SetNextItemWidth(width);

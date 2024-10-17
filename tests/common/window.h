@@ -4,7 +4,7 @@
 #include <filesystem>
 #include <glfw3.h>
 
-#include "vector.h"
+#include "linearAlgebra.h"
 
 namespace moon::tests {
 
@@ -13,17 +13,17 @@ static bool resizeFlag = false;
 class Window
 {
 private:
-    math::Vector<uint32_t, 2> extent{ 0 };
+    math::vec2u extent{ 0 };
     GLFWwindow* window{ nullptr };
 
 public:
     Window() = default;
-    Window(const math::Vector<uint32_t, 2>& extent, const std::filesystem::path& iconName = "");
+    Window(const math::vec2u& extent, const std::filesystem::path& iconName = "");
     ~Window();
 
     operator GLFWwindow*() const;
-    math::Vector<uint32_t, 2> sizes() const;
-    math::Vector<double, 2> mousePose() const;
+    math::vec2u sizes() const;
+    math::vec2d mousePose() const;
     float aspectRatio() const;
     bool isClosed() const;
 

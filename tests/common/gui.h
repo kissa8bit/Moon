@@ -20,7 +20,7 @@ void makeScreenshot(const char* name, const moon::graphicsManager::GraphicsManag
 
 void fpsPlot(float currentFrameFPS, uint32_t points = 100);
 
-void printQuaternion(const moon::math::Quaternion<float>& quaternion);
+void printQuaternion(const moon::math::quat& quaternion);
 
 void setPoseInWindow(std::shared_ptr<moon::graphicsManager::GraphicsInterface> graphics);
 

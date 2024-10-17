@@ -3,7 +3,8 @@
 
 #include "cursor.h"
 #include "controller.h"
-#include "vector.h"
+
+#include "linearAlgebra.h"
 
 #include <memory>
 #include <glfw3.h>
@@ -11,7 +12,7 @@
 namespace moon::tests {
 
 struct Mouse {
-    math::Vector<double, 2> pose{ 0.0 };
+    math::vec2d pose{ 0.0 };
     std::shared_ptr<controller> control{ nullptr };
     std::shared_ptr<utils::Cursor> cursor{ nullptr };
 

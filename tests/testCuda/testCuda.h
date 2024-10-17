@@ -9,7 +9,8 @@
 #include "scene.h"
 #include "window.h"
 #include "controller.h"
-#include "vector.h"
+
+#include "linearAlgebra.h"
 
 #define IMGUI_GRAPHICS
 
@@ -24,7 +25,7 @@ class testCuda : public scene
 {
 private:
     std::filesystem::path ExternalPath;
-    moon::math::Vector<double,2> mousePos{0.0};
+    moon::math::vec2d mousePos{0.0};
 
     float blitFactor = 1.0f;
 

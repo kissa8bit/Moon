@@ -7,7 +7,7 @@
 
 namespace moon::tests::gui {
 
-void printQuaternion(const moon::math::Quaternion<float>& quaternion) {
+void printQuaternion(const moon::math::quat& quaternion) {
     float* rotation = (float*)&quaternion;
     ImGui::BeginGroup();
         ImGui::Text("rot_s : %s", std::to_string(rotation[0]).c_str());

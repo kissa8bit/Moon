@@ -2,13 +2,15 @@
 #include "gltfutils.h"
 #include "node.h"
 
+#include "linearAlgebra.h"
+
 namespace moon::models {
 
 namespace {
 
 template<typename type>
 math::Quaternion<type> quatFromVec(const math::Vector<type, 4>& vec) {
-    return normalize(math::Quaternion<float>(vec[3], vec.dvec()));
+    return normalize(math::Quaternion<type>(vec[3], vec.dvec()));
 }
 
 class Linear {
@@ -72,9 +74,9 @@ public:
 class Cubic {
     using OutputData = GltfAnimation::Point::OutputData;
 
-    static math::Vector<float, 4> splineInterpolation(const OutputData& x0, const OutputData& x1, float t0, float t1, float t) {
+    static math::vec4 splineInterpolation(const OutputData& x0, const OutputData& x1, float t0, float t1, float t) {
         const float t2 = t * t, t3 = t2 * t, delta = t1 - t0;
-        math::Vector<float, 4> result{ 0.0f };
+        math::vec4 result{ 0.0f };
         for (uint32_t i = 0; i < 4; i++) {
             const float p0 = x0.at(value)[i], d0 = delta * x0.at(tangent.a)[i];
             const float p1 = x1.at(value)[i], d1 = delta* x1.at(tangent.b)[i];
@@ -131,12 +133,12 @@ class Change {
 
     static void translate(Node* node, GltfAnimation::Sampler::InterpolationType interpolation, const OutputData& x, float t) {
         const auto value = getValue(interpolation);
-        node->translation = mix(node->translation, math::Vector<float, 3>(x.at(value).dvec()), t);
+        node->translation = mix(node->translation, math::vec3(x.at(value).dvec()), t);
     }
 
     static void scale(Node* node, GltfAnimation::Sampler::InterpolationType interpolation, const OutputData& x, float t) {
         const auto value = getValue(interpolation);
-        node->scale = mix(node->scale, math::Vector<float, 3>(x.at(value).dvec()), t);
+        node->scale = mix(node->scale, math::vec3(x.at(value).dvec()), t);
     }
 
     static void rotate(Node* node, GltfAnimation::Sampler::InterpolationType interpolation, const OutputData& x, float t) {

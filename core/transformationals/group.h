@@ -4,7 +4,8 @@
 #include <unordered_set>
 
 #include "transformational.h"
-#include "quaternion.h"
+
+#include "linearAlgebra.h"
 
 namespace moon::transformational {
 

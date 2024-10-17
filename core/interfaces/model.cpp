@@ -2,9 +2,11 @@
 #include "vkdefault.h"
 #include "operations.h"
 
+#include "linearAlgebra.h"
+
 namespace moon::interfaces {
 
-BoundingBox::BoundingBox(math::Vector<float,3> min, math::Vector<float,3> max) : min(min), max(max) {};
+BoundingBox::BoundingBox(math::vec3 min, math::vec3 max) : min(min), max(max) {};
 
 MaterialBlock::MaterialBlock(const Material& material, uint32_t primitive) : primitive(primitive) {
     emissiveFactor = material.emissive.factor;

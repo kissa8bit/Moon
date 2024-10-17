@@ -2,7 +2,6 @@
 
 #include "operations.h"
 #include "model.h"
-#include "dualQuaternion.h"
 #include "device.h"
 
 #include <cstring>
@@ -133,7 +132,7 @@ Object::Object(const utils::Paths& texturePaths, const float& mipLevel) {
 }
 
 Object& Object::update() {
-    math::Matrix<float,4,4> transformMatrix = convert(convert(m_rotation, m_translation));
+    math::mat4 transformMatrix = convert(convert(m_rotation, m_translation));
     buffer.modelMatrix = transpose(m_globalTransformation * transformMatrix * math::scale(m_scaling));
     utils::raiseFlags(pObject->buffers());
     return *this;
@@ -142,7 +141,7 @@ Object& Object::update() {
 DEFAULT_TRANSFORMATIONAL_DEFINITION(Object)
 DEFAULT_TRANSFORMATIONAL_GETTERS_DEFINITION(Object)
 
-Object& Object::setBase(std::optional<math::Vector<float, 4>> constant, std::optional<math::Vector<float, 4>> factor) {
+Object& Object::setBase(std::optional<math::vec4> constant, std::optional<math::vec4> factor) {
     if (constant.has_value()) {
         buffer.base.constant = constant.value();
     }
@@ -153,14 +152,14 @@ Object& Object::setBase(std::optional<math::Vector<float, 4>> constant, std::opt
     return *this;
 }
 
-Object& Object::setBloom(std::optional<math::Vector<float, 4>> constant, std::optional<math::Vector<float, 4>> factor) {
+Object& Object::setBloom(std::optional<math::vec4> constant, std::optional<math::vec4> factor) {
     buffer.bloom.constant = constant.value_or(buffer.bloom.constant);
     buffer.bloom.factor = factor.value_or(buffer.bloom.factor);
     utils::raiseFlags(pObject->buffers());
     return *this;
 }
 
-Object& Object::setOutlining(const bool& enable, const float& width, const math::Vector<float, 4>& color) {
+Object& Object::setOutlining(const bool& enable, const float& width, const math::vec4& color) {
     buffer.outlining.width = width > 0.0f ? width : buffer.outlining.width;
     buffer.outlining.color = math::dot(color, color) > 0.0f ? color : buffer.outlining.color;
     utils::raiseFlags(pObject->buffers());

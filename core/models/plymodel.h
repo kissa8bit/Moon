@@ -3,8 +3,9 @@
 
 #include "model.h"
 #include "buffer.h"
-#include "matrix.h"
 #include "vkdefault.h"
+
+#include "linearAlgebra.h"
 
 #include <filesystem>
 #include <vector>
@@ -23,9 +24,9 @@ private:
 
 public:
     PlyModel(const std::filesystem::path& filename,
-             const math::Vector<float, 4>& baseColorFactor = math::Vector<float, 4>(1.0f),
-             const math::Vector<float, 4>& diffuseFactor = math::Vector<float, 4>(1.0f),
-             const math::Vector<float, 4>& specularFactor = math::Vector<float, 4>(1.0f),
+             const math::vec4& baseColorFactor = math::vec4(1.0f),
+             const math::vec4& diffuseFactor = math::vec4(1.0f),
+             const math::vec4& specularFactor = math::vec4(1.0f),
              const float metallicFactor = 0.0f,
              const float roughnessFactor = 0.0f,
              const interfaces::Material::PbrWorkflow workflow = interfaces::Material::PbrWorkflow::METALLIC_ROUGHNESS);

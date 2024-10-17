@@ -2,13 +2,14 @@
 #define LINKABLE_H
 
 #include <vulkan.h>
-#include "vector.h"
+
+#include "linearAlgebra.h"
 
 namespace moon::graphicsManager {
 
 struct PositionInWindow {
-    moon::math::Vector<float, 2> offset{ 0.0f, 0.0f };
-    moon::math::Vector<float, 2> size{ 1.0f, 1.0f };
+    math::vec2 offset{ 0.0f, 0.0f };
+    math::vec2 size{ 1.0f, 1.0f };
 };
 
 class Linkable{
