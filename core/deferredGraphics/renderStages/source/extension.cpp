@@ -98,12 +98,6 @@ void Graphics::OutliningExtension::render(uint32_t frameNumber, VkCommandBuffer 
         if (!model) continue;
         if (!(object->getEnable() && (interfaces::ObjectType::base & pipelineFlagBits))) continue;
 
-        VkDeviceSize offsets = 0;
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, model->vertexBuffer(), &offsets);
-        if (auto indexBuffer = *model->indexBuffer(); indexBuffer != VK_NULL_HANDLE) {
-            vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-        }
-
         utils::vkDefault::DescriptorSets descriptorSets = { parent.descriptorSets[frameNumber], object->getDescriptorSet(frameNumber) };
 
         uint32_t primirives = 0;

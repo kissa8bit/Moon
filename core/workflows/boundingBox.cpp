@@ -53,22 +53,12 @@ void BoundingBoxGraphics::BoundingBox::create(const workflows::ShaderNames& shad
     bindings.push_back(utils::vkDefault::bufferVertexLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
 
     descriptorSetLayout = utils::vkDefault::DescriptorSetLayout(device, bindings);
-
     objectDescriptorSetLayout = interfaces::Object::createBaseDescriptorSetLayout(device);
     primitiveDescriptorSetLayout = interfaces::Model::createMeshDescriptorSetLayout(device);
 
     const auto vertShader = utils::vkDefault::VertrxShaderModule(device, parameters.shadersPath / shadersNames.at(workflows::ShaderType::Vertex));
     const auto fragShader = utils::vkDefault::FragmentShaderModule(device, parameters.shadersPath / shadersNames.at(workflows::ShaderType::Fragment));
     const std::vector<VkPipelineShaderStageCreateInfo> shaderStages = { vertShader, fragShader };
-
-    auto bindingDescription = interfaces::Vertex::getBindingDescription();
-    auto attributeDescriptions = interfaces::Vertex::getAttributeDescriptions();
-    VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
-    vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexBindingDescriptionCount = 1;
-    vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
-    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-    vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
     VkViewport viewport = utils::vkDefault::viewport({0,0}, parameters.imageInfo.Extent);
     VkRect2D scissor = utils::vkDefault::scissor({0,0}, parameters.imageInfo.Extent);
@@ -77,6 +67,7 @@ void BoundingBoxGraphics::BoundingBox::create(const workflows::ShaderNames& shad
     VkPipelineRasterizationStateCreateInfo rasterizer = utils::vkDefault::rasterizationState(VK_FRONT_FACE_COUNTER_CLOCKWISE);
     VkPipelineMultisampleStateCreateInfo multisampling = utils::vkDefault::multisampleState();
     VkPipelineDepthStencilStateCreateInfo depthStencil = utils::vkDefault::depthStencilDisable();
+    VkPipelineVertexInputStateCreateInfo vertexInputInfo = utils::vkDefault::vertexInputState();
 
     rasterizer.polygonMode = VK_POLYGON_MODE_LINE;
     rasterizer.cullMode = VK_CULL_MODE_NONE;
@@ -179,19 +170,15 @@ void BoundingBoxGraphics::updateCommandBuffer(uint32_t frameNumber){
 }
 
 void BoundingBoxGraphics::BoundingBox::render(uint32_t frameNumber, VkCommandBuffer commandBuffers){
+    if (!objects) return;
+
+    vkCmdBindPipeline(commandBuffers, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
     for(const auto& object: *objects){
-        if(VkDeviceSize offsets = 0; (interfaces::ObjectType::base & object->pipelineFlagBits()) && object->getEnable()){
-            vkCmdBindPipeline(commandBuffers, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-
-            auto model = object->model();
-            vkCmdBindVertexBuffers(commandBuffers, 0, 1, model->vertexBuffer(), &offsets);
-            if (model->indexBuffer() != VK_NULL_HANDLE){
-                vkCmdBindIndexBuffer(commandBuffers, *model->indexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+        if(object && object->getEnable()){
+            if (auto model = object->model(); model) {
+                utils::vkDefault::DescriptorSets descriptors = { descriptorSets[frameNumber], object->getDescriptorSet(frameNumber) };
+                model->renderBB(object->getInstanceNumber(frameNumber), commandBuffers, pipelineLayout, descriptors);
             }
-
-            utils::vkDefault::DescriptorSets descriptors = {descriptorSets[frameNumber], object->getDescriptorSet(frameNumber)};
-
-            model->renderBB(object->getInstanceNumber(frameNumber), commandBuffers, pipelineLayout, descriptors);
         }
     }
 }

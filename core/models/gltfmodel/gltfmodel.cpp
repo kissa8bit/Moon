@@ -135,6 +135,12 @@ void GltfModel::create(const utils::PhysicalDevice& device, VkCommandPool comman
 }
 
 void GltfModel::render(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t &primitiveCount) const {
+    VkDeviceSize offsets = 0;
+    vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertices, &offsets);
+    if (VkBuffer(indices) != VK_NULL_HANDLE) {
+        vkCmdBindIndexBuffer(commandBuffer, indices, 0, VK_INDEX_TYPE_UINT32);
+    }
+
     for (auto& [_, node] : instances.at(instanceNumber).nodes) {
         if (!CHECK_M(node.get(), std::string("[ GltfModel::render ] node is nullptr"))) continue;
         node->mesh.render(commandBuffer, pipelineLayout, descriptorSets, primitiveCount);

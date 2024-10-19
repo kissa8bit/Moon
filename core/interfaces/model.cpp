@@ -107,14 +107,6 @@ std::vector<VkVertexInputAttributeDescription> Vertex::getAttributeDescriptions(
     return attributeDescriptions;
 }
 
-const VkBuffer* Model::vertexBuffer() const {
-    return vertices;
-}
-
-const VkBuffer* Model::indexBuffer() const {
-    return indices;
-}
-
 utils::vkDefault::DescriptorSetLayout Model::createMeshDescriptorSetLayout(VkDevice device) {
     std::vector<VkDescriptorSetLayoutBinding> binding;
         binding.push_back(utils::vkDefault::bufferVertexLayoutBinding(static_cast<uint32_t>(binding.size()), 1));

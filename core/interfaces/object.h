@@ -39,8 +39,9 @@ protected:
 
 public:
     Object() = default;
-    Object(uint8_t pipelineBitMask);
-    Object(uint8_t pipelineBitMask, Model* model, const Range& instanceRange = {0,1});
+    Object(uint8_t pipelineBitMask, Model* model = nullptr, const Range& instanceRange = {0,1});
+
+    virtual ~Object() = default;
 
     Model* model();
     uint32_t getInstanceNumber(uint32_t imageNumber) const;
@@ -56,7 +57,6 @@ public:
     bool comparePrimitive(uint32_t primitiveIndex) const;
     const VkDescriptorSet& getDescriptorSet(uint32_t i) const;
 
-    virtual ~Object() {};
     virtual utils::Buffers& buffers() = 0;
     virtual void create(const utils::PhysicalDevice& device, VkCommandPool commandPool, uint32_t imageCount) = 0;
     virtual void update(uint32_t frameNumber, VkCommandBuffer commandBuffer) = 0;

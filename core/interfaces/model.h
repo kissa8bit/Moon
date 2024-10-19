@@ -158,12 +158,10 @@ protected:
     interfaces::Materials materials;
 
 public:
-    virtual ~Model(){};
+    virtual ~Model() = default;
 
     virtual std::vector<Animation*> animations(uint32_t instanceNumber) = 0;
 
-    virtual const VkBuffer* vertexBuffer() const;
-    virtual const VkBuffer* indexBuffer() const;
     virtual void create(const utils::PhysicalDevice& device, VkCommandPool commandPool) = 0;
     virtual void render(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t& primitiveCount) const = 0;
     virtual void renderBB(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets) const = 0;

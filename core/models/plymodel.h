@@ -12,7 +12,7 @@
 
 namespace moon::models {
 
-class PlyModel : public interfaces::Model{
+class PlyModel : public interfaces::Model {
 private:
     std::filesystem::path filename;
     utils::Buffer vertexCache, indexCache;

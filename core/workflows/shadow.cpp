@@ -162,17 +162,12 @@ void ShadowGraphics::render(uint32_t frameNumber, VkCommandBuffer commandBuffer,
 
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shadow.pipeline);
     for(const auto& object: *shadow.objects){
-        if(VkDeviceSize offsets = 0; (interfaces::ObjectType::base & object->pipelineFlagBits()) && object->getEnable() && object->getEnableShadow()){
-            auto model = object->model();
-            vkCmdBindVertexBuffers(commandBuffer, 0, 1, model->vertexBuffer(), &offsets);
-            if (auto indexBuffer = *model->indexBuffer(); indexBuffer != VK_NULL_HANDLE) {
-                vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+        if(object && (interfaces::ObjectType::base & object->pipelineFlagBits()) && object->getEnable() && object->getEnableShadow()){
+            if (auto model = object->model(); model) {
+                uint32_t primitives = 0;
+                utils::vkDefault::DescriptorSets descriptorSets = { lightSource->getDescriptorSet(frameNumber), object->getDescriptorSet(frameNumber) };
+                model->render(object->getInstanceNumber(frameNumber), commandBuffer, shadow.pipelineLayout, descriptorSets, primitives);
             }
-
-            utils::vkDefault::DescriptorSets descriptorSets = {lightSource->getDescriptorSet(frameNumber), object->getDescriptorSet(frameNumber)};
-
-            uint32_t primitives = 0;
-            model->render(object->getInstanceNumber(frameNumber), commandBuffer, shadow.pipelineLayout, descriptorSets, primitives);
         }
     }
 

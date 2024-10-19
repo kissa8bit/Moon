@@ -24,10 +24,6 @@ bool Object::outlining() const {
     return (pipelineBitMask & interfaces::ObjectProperty::outlining);
 }
 
-Object::Object(uint8_t pipelineBitMask)
-    : pipelineBitMask(pipelineBitMask)
-{}
-
 Object::Object(uint8_t pipelineBitMask, Model* model, const Range& instanceRange)
     : pipelineBitMask(pipelineBitMask), pModel(model), instance({ instanceRange })
 {}

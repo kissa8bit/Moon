@@ -183,12 +183,6 @@ void Graphics::Base::render(uint32_t frameNumber, VkCommandBuffer commandBuffers
 
         vkCmdBindPipeline(commandBuffers, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineMap.at(pipelineFlagBits));
 
-        VkDeviceSize offsets = 0;
-        vkCmdBindVertexBuffers(commandBuffers, 0, 1, model->vertexBuffer(), &offsets);
-        if (auto indexBuffer = *model->indexBuffer(); indexBuffer != VK_NULL_HANDLE){
-            vkCmdBindIndexBuffer(commandBuffers, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-        }
-
         const utils::vkDefault::DescriptorSets descriptors = {descriptorSets[frameNumber], object->getDescriptorSet(frameNumber)};
 
         object->primitiveRange().first = primitiveCount;

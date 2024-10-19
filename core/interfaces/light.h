@@ -29,7 +29,7 @@ public:
 
     Light(uint8_t pipelineBitMask, bool enableShadow, bool enableScattering);
 
-    virtual ~Light(){};
+    virtual ~Light() = default;
 
     void setEnableShadow(bool enable);
     void setEnableScattering(bool enable);
