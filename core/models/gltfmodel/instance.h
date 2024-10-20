@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "node.h"
-#include "skin.h"
+#include "gltfskeleton.h"
 #include "animation.h"
 
 namespace moon::models {
@@ -12,7 +12,7 @@ namespace moon::models {
 struct Instance {
     NodeMap nodes;
     RootNodes rootNodes;
-    Skins skins;
+    GltfSkeletons skeletons;
     GltfAnimations animations;
 
     Instance() = default;
@@ -25,8 +25,19 @@ struct Instance {
     }
     void swap(Instance& other) noexcept {
         std::swap(nodes, other.nodes);
-        std::swap(skins, other.skins);
+        std::swap(rootNodes, other.rootNodes);
+        std::swap(skeletons, other.skeletons);
         std::swap(animations, other.animations);
+    }
+
+    Node* loadNode(const tinygltf::Model& gltfModel, uint32_t nodeIndex, Node* parent) {
+        nodes[nodeIndex] = std::make_unique<Node>(gltfModel.nodes[nodeIndex], parent);
+        Node* node = nodes[nodeIndex].get();
+
+        for (const auto& child : gltfModel.nodes[nodeIndex].children) {
+            nodes[nodeIndex]->children.push_back(loadNode(gltfModel, child, node));
+        }
+        return node;
     }
 };
 

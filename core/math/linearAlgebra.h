@@ -12,6 +12,15 @@ template<typename type> type radians(const type& angle) {
     return type(M_PI) * angle / type(180);
 }
 
+template<typename type>
+struct BoundingBox {
+    alignas(16) math::Vector<type, 3> min{ std::numeric_limits<type>::max() };
+    alignas(16) math::Vector<type, 3> max{ std::numeric_limits<type>::lowest() };
+
+    BoundingBox() = default;
+    BoundingBox(math::Vector<type, 3> min, math::Vector<type, 3> max) : min(min), max(max) {};
+};
+
 using vec2 = Vector<float, 2>;
 using vec3 = Vector<float, 3>;
 using vec4 = Vector<float, 4>;
@@ -34,6 +43,9 @@ using mat4d = Matrix<double, 4, 4>;
 
 using quat = Quaternion<float>;
 using quatd = Quaternion<double>;
+
+using box = BoundingBox<float>;
+using boxd = BoundingBox<double>;
 
 }
 

@@ -13,14 +13,6 @@
 
 namespace moon::interfaces {
 
-struct BoundingBox{
-    alignas(16) math::vec3 min{std::numeric_limits<float>::max()};
-    alignas(16) math::vec3 max{0.0f};
-
-    BoundingBox() = default;
-    BoundingBox(math::vec3 min, math::vec3 max);
-};
-
 struct Material {
     enum AlphaMode{ ALPHAMODE_OPAQUE, ALPHAMODE_MASK, ALPHAMODE_BLEND };
     enum PbrWorkflow { METALLIC_ROUGHNESS, SPECULAR_GLOSSINESS };
@@ -81,17 +73,6 @@ struct MaterialBlock {
     MaterialBlock(const Material& material, uint32_t primitive);
 };
 
-struct MeshBlock {
-    static constexpr auto maxJoints = 256u;
-    float jointcount{ 0 };
-    alignas(16) math::mat4 matrix{ 1.0f };
-    alignas(16) math::mat4 jointMatrix[maxJoints]{};
-
-    size_t size() const {
-        return 4 * sizeof(float) + (jointcount + 1) * sizeof(math::mat4);
-    }
-};
-
 struct Range {
     uint32_t first{ 0 };
     uint32_t count{ 0 };
@@ -104,23 +85,30 @@ struct Primitive {
     struct { Range range{}; } index;
     struct { Range range{}; } vertex;
     const interfaces::Material* material{ nullptr };
-    interfaces::BoundingBox bb;
+    math::box bb;
 
     Primitive() = default;
-    Primitive(const Range& indexRange, const Range vertexRange, const interfaces::Material* material, interfaces::BoundingBox bb)
+    Primitive(const Range& indexRange, const Range vertexRange, const interfaces::Material* material, math::box bb)
         : index({indexRange}), vertex({vertexRange}), material(material), bb(bb)
     {}
 };
 
-struct Mesh {
-    utils::Buffer uniformBuffer;
-    interfaces::MeshBlock uniformBlock;
-
-    std::vector<Primitive> primitives;
+struct Skeleton {
+    utils::Buffer deviceBuffer;
+    struct Buffer {
+        static constexpr auto maxJoints = 256u;
+        alignas(16) math::mat4 matrix{math::mat4::identity()};
+        alignas(16) math::mat4 jointMatrix[maxJoints]{};
+    } hostBuffer;
     VkDescriptorSet descriptorSet{ VK_NULL_HANDLE };
 
     bool empty() const;
     void createDescriptorSet(VkDevice device, utils::vkDefault::DescriptorPool& descriptorPool, const utils::vkDefault::DescriptorSetLayout& descriptorSetLayout);
+};
+
+struct Mesh {
+    std::vector<Primitive> primitives;
+
     void render(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t& primitiveCount) const;
     void renderBB(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets) const;
 };
@@ -130,7 +118,7 @@ struct Vertex {
     alignas(16) math::vec3 normal{ 0.0f };
     alignas(8)  math::vec2 uv0{ 0.0f };
     alignas(8)  math::vec2 uv1{ 0.0f };
-    alignas(16) math::vec4 joint0{ 0.0f };
+    alignas(16) math::vec4 joint0{ -1.0f };
     alignas(16) math::vec4 weight0{ 1.0f, 0.0f, 0.0f, 0.0f };
     alignas(16) math::vec3 tangent{ 0.0f };
     alignas(16) math::vec3 bitangent{ 0.0f };

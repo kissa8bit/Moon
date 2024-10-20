@@ -18,7 +18,6 @@ include_directories(${INCLUDE_DIRS})
 
 set(SOURCES
     gltfmodel/loadSkins.cpp
-    gltfmodel/loadNode.cpp
     gltfmodel/loadVertexBuffer.cpp
     gltfmodel/loadAnimations.cpp
     gltfmodel/loadTextures.cpp
@@ -33,6 +32,7 @@ set(HEADERS
     gltfmodel/gltfmesh.h
     gltfmodel/skin.h
     gltfmodel/node.h
+    gltfmodel/gltfskeleton.h
     gltfmodel.h
     plymodel.h
 )

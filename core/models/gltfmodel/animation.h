@@ -6,6 +6,7 @@
 
 #include "model.h"
 #include "node.h"
+#include "gltfskeleton.h"
 
 #include "linearAlgebra.h"
 
@@ -32,7 +33,9 @@ struct GltfAnimation : interfaces::Animation {
     };
     using Samplers = std::vector<Sampler>;
 
-    RootNodes rootNodes;
+    const RootNodes* rootNodes{ nullptr };
+    const NodeMap* nodeMap{ nullptr };
+    GltfSkeletons* skeletons{ nullptr };
     Channels channels;
     Samplers samplers;
     float totalTime{0};
@@ -42,7 +45,7 @@ struct GltfAnimation : interfaces::Animation {
     bool update(float time) override;
     float duration() const override;
 
-    GltfAnimation(const RootNodes& rootNodes, const Channels& channels, const Samplers& samplers, float duration);
+    GltfAnimation(const RootNodes* rootNodes, const NodeMap* nodeMap, GltfSkeletons* skeletons, const Channels& channels, const Samplers& samplers, float duration);
 };
 
 using GltfAnimations = std::vector<GltfAnimation>;

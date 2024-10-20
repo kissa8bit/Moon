@@ -34,18 +34,18 @@ PlyModel::PlyModel(
 
 interfaces::Material& PlyModel::material() {return materials.back();}
 const interfaces::Material& PlyModel::material() const { return materials.back(); }
-interfaces::BoundingBox PlyModel::boundingBox() const { return mesh.primitives.empty() ? interfaces::BoundingBox() : mesh.primitives.back().bb; }
+math::box PlyModel::boundingBox() const { return mesh.primitives.empty() ? math::box() : mesh.primitives.back().bb; }
 
 void PlyModel::destroyCache() {
     vertexCache = utils::Buffer();
     indexCache = utils::Buffer();
 }
 
-void PlyModel::loadFromFile(const utils::PhysicalDevice& physicalDevice, VkCommandBuffer commandBuffer) {
+bool PlyModel::loadFromFile(const utils::PhysicalDevice& physicalDevice, VkCommandBuffer commandBuffer) {
     std::ifstream file_stream(filename, std::ios::binary);
     tinyply::PlyFile file;
 
-    if(!CHECK_M(file.parse_header(file_stream), "[ PlyModel::loadFromFile ] : fail to parse header")) return;
+    if(!CHECK_M(file.parse_header(file_stream), "[ PlyModel::loadFromFile ] : fail to parse header")) return false;
 
     std::shared_ptr<tinyply::PlyData> verts, normals, texcoords, faces, tripstrip;
     try { verts = file.request_properties_from_element("vertex", { "x", "y", "z" });} catch (const std::exception&) {}
@@ -54,7 +54,7 @@ void PlyModel::loadFromFile(const utils::PhysicalDevice& physicalDevice, VkComma
     try { faces = file.request_properties_from_element("face", { "vertex_indices" }, 3);} catch (const std::exception&) {}
     try { tripstrip = file.request_properties_from_element("tristrips", { "vertex_indices" }, 0); } catch (const std::exception&) {}
 
-    if (!CHECK_M(!tripstrip.get(), "[ PlyModel::loadFromFile ] : tripstrip unsupported")) return;
+    if (!CHECK_M(!tripstrip.get(), "[ PlyModel::loadFromFile ] : tripstrip unsupported")) return false;
 
     file.read(file_stream);
 
@@ -62,7 +62,7 @@ void PlyModel::loadFromFile(const utils::PhysicalDevice& physicalDevice, VkComma
     uint32_t indexCount = faces ? 3 * faces->count : 0;
     std::vector<uint32_t> indexBuffer(indexCount);
     std::vector<interfaces::Vertex> vertexBuffer(verts ? verts->count : 0, interfaces::Vertex());
-    interfaces::BoundingBox bb;
+    math::box bb;
 
     if (faces) {
         std::memcpy(indexBuffer.data(), faces->buffer.get_const(), faces->buffer.size_bytes());
@@ -115,10 +115,11 @@ void PlyModel::loadFromFile(const utils::PhysicalDevice& physicalDevice, VkComma
         utils::createDeviceBuffer(physicalDevice, device, commandBuffer, indexBuffer.size() * sizeof(uint32_t), indexBuffer.data(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indexCache, indices);
     }
 
-    interfaces::MeshBlock uniformBlock{};
-    mesh.uniformBuffer = utils::vkDefault::Buffer(physicalDevice, device, mesh.uniformBlock.size(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    utils::Memory::instance().nameMemory(mesh.uniformBuffer, std::string(__FILE__) + " in line " + std::to_string(__LINE__) + ", plyModel::loadFromFile, uniformBuffer");
-    mesh.uniformBuffer.copy(&uniformBlock);
+    skeleton.deviceBuffer = utils::vkDefault::Buffer(physicalDevice, device, sizeof(math::mat4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    utils::Memory::instance().nameMemory(skeleton.deviceBuffer, std::string(__FILE__) + " in line " + std::to_string(__LINE__) + ", plyModel::loadFromFile, uniformBuffer");
+    skeleton.deviceBuffer.copy(&skeleton.hostBuffer);
+
+    return true;
 }
 
 void PlyModel::createDescriptors(VkDevice device) {
@@ -126,20 +127,21 @@ void PlyModel::createDescriptors(VkDevice device) {
     materialDescriptorSetLayout = interfaces::Model::createMaterialDescriptorSetLayout(device);
     descriptorPool = utils::vkDefault::DescriptorPool(device, { &materialDescriptorSetLayout, &meshDescriptorSetLayout }, 1);
 
-    mesh.createDescriptorSet(device, descriptorPool, meshDescriptorSetLayout);
+    skeleton.createDescriptorSet(device, descriptorPool, meshDescriptorSetLayout);
     material().createDescriptorSet(device, descriptorPool, materialDescriptorSetLayout);
 }
 
 void PlyModel::create(const utils::PhysicalDevice& device, VkCommandPool commandPool)
 {
     if(
-        CHECK_M(VkPhysicalDevice(device), std::string("[ PlyModel::create ] VkPhysicalDevice is VK_NULL_HANDLE")) &&
-        CHECK_M(VkDevice(device.device()), std::string("[ PlyModel::create ] VkDevice is VK_NULL_HANDLE")) &&
-        CHECK_M(commandPool, std::string("[ PlyModel::create ] VkCommandPool is VK_NULL_HANDLE"))
+        CHECK_M(VkPhysicalDevice(device), "[ PlyModel::create ] VkPhysicalDevice is VK_NULL_HANDLE") &&
+        CHECK_M(VkDevice(device.device()), "[ PlyModel::create ] VkDevice is VK_NULL_HANDLE") &&
+        CHECK_M(commandPool, "[ PlyModel::create ] VkCommandPool is VK_NULL_HANDLE")
     ) {
         utils::singleCommandBuffer::Scoped commandBuffer(device.device(), device.device()(0, 0), commandPool);
-        loadFromFile(device, commandBuffer);
-        createDescriptors(device.device());
+        if (loadFromFile(device, commandBuffer)) {
+            createDescriptors(device.device());
+        }
     }
     destroyCache();
 }
@@ -150,7 +152,9 @@ void PlyModel::render(uint32_t, VkCommandBuffer commandBuffer, VkPipelineLayout 
     if (VkBuffer(indices) != VK_NULL_HANDLE) {
         vkCmdBindIndexBuffer(commandBuffer, indices, 0, VK_INDEX_TYPE_UINT32);
     }
-    mesh.render(commandBuffer, pipelineLayout, descriptorSets, primitiveCount);
+    auto descriptors = descriptorSets;
+    descriptors.push_back(skeleton.descriptorSet);
+    mesh.render(commandBuffer, pipelineLayout, descriptors, primitiveCount);
 }
 
 void PlyModel::renderBB(uint32_t, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets) const {

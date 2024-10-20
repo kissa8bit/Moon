@@ -7,11 +7,9 @@
 
 namespace moon::models {
 
-struct Node;
-
 struct Joint {
-    math::mat4 inverseBindMatrices = math::mat4::identity();
-    Node* jointedNode{nullptr};
+    math::mat4 inverseBindMatrices{ math::mat4::identity() };
+    NodeId jointedNodeId{ invalidNodeId };
 };
 
 using Skin = std::vector<Joint>;

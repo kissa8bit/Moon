@@ -10,6 +10,14 @@
 
 namespace moon::models {
 
+struct Node;
+
+using NodeId = uint32_t;
+const static NodeId invalidNodeId = std::numeric_limits<uint32_t>::max();
+using NodeMap = std::unordered_map<NodeId, std::unique_ptr<Node>>;
+using RootNodes = std::vector<Node*>;
+using ChildrenNodes = std::vector<Node*>;
+
 template <typename T1, size_t n, typename T2>
 void convert(math::Vector<T1, n>& dst,const std::vector<T2>& src) {
     if (src.size() == n) {

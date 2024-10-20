@@ -55,10 +55,6 @@ void pushBackIndex(const type* data, size_t count, uint32_t vertexStart, std::ve
 }
 
 void GltfModel::loadVertexBuffer(const tinygltf::Model& gltfModel, const tinygltf::Node& node, std::vector<uint32_t>& indexBuffer, std::vector<interfaces::Vertex>& vertexBuffer) {
-    for (const auto& children: node.children) {
-        loadVertexBuffer(gltfModel, gltfModel.nodes[children], indexBuffer, vertexBuffer);
-    }
-
     if (isInvalid(node.mesh)) return;
 
     const tinygltf::Mesh& mesh = gltfModel.meshes.at(node.mesh);
@@ -95,8 +91,8 @@ void GltfModel::loadVertexBuffer(const tinygltf::Model& gltfModel, const tinyglt
         if (isInvalid(primitive.indices)) continue;
         const GltfBufferExtractor indicesExtract(gltfModel, primitive.indices);
 
-#define GLTFMODEL_LOADVERTEXBUFFER_INDEX_CASE(ComponentType, type)                          \
-    case ComponentType:                                                                     \
+#define GLTFMODEL_LOADVERTEXBUFFER_INDEX_CASE(ComponentType, type)                                          \
+    case ComponentType:                                                                                     \
         pushBackIndex((const type*)indicesExtract.data, indicesExtract.count, vertexStart, indexBuffer);    \
         break;
 

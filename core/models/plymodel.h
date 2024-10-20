@@ -17,8 +17,9 @@ private:
     std::filesystem::path filename;
     utils::Buffer vertexCache, indexCache;
     interfaces::Mesh mesh;
+    interfaces::Skeleton skeleton;
 
-    void loadFromFile(const utils::PhysicalDevice& physicalDevice, VkCommandBuffer commandBuffer);
+    bool loadFromFile(const utils::PhysicalDevice& physicalDevice, VkCommandBuffer commandBuffer);
     void createDescriptors(VkDevice device);
     void destroyCache();
 
@@ -33,7 +34,7 @@ public:
 
     interfaces::Material& material();
     const interfaces::Material& material() const;
-    interfaces::BoundingBox boundingBox() const;
+    math::box boundingBox() const;
 
     std::vector<interfaces::Animation*> animations(uint32_t instanceNumber) override;
 

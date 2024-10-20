@@ -12,6 +12,7 @@
 
 #include "linearAlgebra.h"
 
+#include "gltfmodel/gltfmesh.h"
 #include "gltfmodel/instance.h"
 #include "gltfmodel/tinyGLTF.h"
 
@@ -22,16 +23,20 @@ private:
     std::filesystem::path filename;
     utils::Buffer vertexCache, indexCache;
     Instances instances;
+    GltfMeshes meshes;
+    Skins skins;
 
-    void loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffer commandBuffer);
-    Node* loadNode(const tinygltf::Model& gltfModel, NodeMap& instance, Node* parent, uint32_t nodeIndex, uint32_t& indexStart);
+    using BoxMap = std::unordered_map<uint32_t, math::box>;
+    BoxMap boxMap;
+
+    bool loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffer commandBuffer);
     void loadVertexBuffer(const tinygltf::Model& gltfModel, const tinygltf::Node& node, std::vector<uint32_t>& indexBuffer, std::vector<interfaces::Vertex>& vertexBuffer);
     void loadSkins(const tinygltf::Model& gltfModel);
     void loadTextures(const tinygltf::Model& gltfModel, const utils::PhysicalDevice& device, VkCommandBuffer commandBuffer);
     void loadMaterials(const tinygltf::Model& gltfModel);
     void loadAnimations(const tinygltf::Model& gltfModel);
 
-    void createDescriptors(VkDevice device);
+    void createDescriptors(const utils::PhysicalDevice& device);
     void destroyCache();
 
 public:

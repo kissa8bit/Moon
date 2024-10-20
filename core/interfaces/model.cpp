@@ -6,8 +6,6 @@
 
 namespace moon::interfaces {
 
-BoundingBox::BoundingBox(math::vec3 min, math::vec3 max) : min(min), max(max) {};
-
 MaterialBlock::MaterialBlock(const Material& material, uint32_t primitive) : primitive(primitive) {
     emissiveFactor = material.emissive.factor;
     colorTextureSet = material.baseColor.coordSet;
@@ -36,16 +34,16 @@ MaterialBlock::MaterialBlock(const Material& material, uint32_t primitive) : pri
     }
 }
 
-bool Mesh::empty() const {
-    return VkBuffer(uniformBuffer) == VK_NULL_HANDLE;
+bool Skeleton::empty() const {
+    return VkBuffer(deviceBuffer) == VK_NULL_HANDLE;
 }
 
-void Mesh::createDescriptorSet(VkDevice device, utils::vkDefault::DescriptorPool& descriptorPool, const utils::vkDefault::DescriptorSetLayout& descriptorSetLayout) {
+void Skeleton::createDescriptorSet(VkDevice device, utils::vkDefault::DescriptorPool& descriptorPool, const utils::vkDefault::DescriptorSetLayout& descriptorSetLayout) {
     if (empty()) return;
 
     descriptorSet = descriptorPool.allocateDescriptorSet(descriptorSetLayout);
 
-    VkDescriptorBufferInfo bufferInfo{ uniformBuffer, 0, uniformBlock.size() };
+    VkDescriptorBufferInfo bufferInfo{ deviceBuffer, 0, deviceBuffer.size() };
     VkWriteDescriptorSet writeDescriptorSet{};
     writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -58,11 +56,8 @@ void Mesh::createDescriptorSet(VkDevice device, utils::vkDefault::DescriptorPool
 
 void Mesh::renderBB(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets) const {
     for (const auto& primitive : primitives) {
-        auto descriptors = descriptorSets;
-        descriptors.push_back(descriptorSet);
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, descriptors.size(), descriptors.data(), 0, NULL);
-
-        vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(interfaces::BoundingBox), (void*)&primitive.bb);
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, descriptorSets.size(), descriptorSets.data(), 0, NULL);
+        vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(math::box), (void*)&primitive.bb);
         vkCmdDraw(commandBuffer, 24, 1, 0, 0);
     }
 }
@@ -73,7 +68,6 @@ void Mesh::render(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout
         const auto& material = *primitive.material;
 
         auto descriptors = descriptorSets;
-        descriptors.push_back(descriptorSet);
         descriptors.push_back(material.descriptorSet);
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, descriptors.size(), descriptors.data(), 0, NULL);
 

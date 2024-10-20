@@ -18,7 +18,6 @@ layout(set = 1, binding = 0) uniform LocalUniformBuffer {
 } local;
 
 layout(set = 2, binding = 0) uniform UBONode {
-    float jointCount;
     mat4 matrix;
     mat4 jointMatrix[MAX_NUM_JOINTS];
 } node;
@@ -35,7 +34,7 @@ layout(location = 7) in vec3 inBitangent;
 layout(location = 0) out vec4 outColor;
 
 void main() {
-    mat4 skinMat =  node.jointCount > 0.0 ?
+    mat4 skinMat =  inJoint0.x != -1.0 && inJoint0.y != -1.0 &&inJoint0.z != -1.0 &&inJoint0.w != -1.0 ?
                     inWeight0.x * node.jointMatrix[int(inJoint0.x)] +
                     inWeight0.y * node.jointMatrix[int(inJoint0.y)] +
                     inWeight0.z * node.jointMatrix[int(inJoint0.z)] +
