@@ -35,10 +35,9 @@ private:
 
     bool loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffer commandBuffer);
     void loadVertices(const tinygltf::Model& gltfModel, const tinygltf::Node& node, interfaces::Indices& indices, interfaces::Vertices& vertices);
-    void loadSkins(const tinygltf::Model& gltfModel);
     void loadTextures(const tinygltf::Model& gltfModel, const utils::PhysicalDevice& device, VkCommandBuffer commandBuffer);
-    void loadMaterials(const tinygltf::Model& gltfModel);
     void loadAnimations(const tinygltf::Model& gltfModel);
+    void loadMaterials(const tinygltf::Model& gltfModel);
 
     void createDescriptors(const utils::PhysicalDevice& device);
     void destroyCache();

@@ -49,22 +49,30 @@ bool GltfModel::loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffe
     uint32_t indexStart = 0;
     for (Node::Id nodeId = 0; nodeId < gltfModel.nodes.size(); nodeId++) {
         const auto& node = gltfModel.nodes[nodeId];
-        if (const auto meshIndex = node.mesh; isValid(meshIndex)) {
-            meshes[nodeId] = GltfMesh(gltfModel, materials, meshIndex, indexStart);
+
+        const auto meshIndex = node.mesh;
+        const bool meshisValid = isValid(meshIndex);
+        if (meshisValid) {
+            meshes[nodeId] = GltfMesh(gltfModel, gltfModel.meshes[meshIndex], materials, indexStart);
             loadVertices(gltfModel, node, host.indices, host.vertices);
+        }
+
+        const auto skinIndex = gltfModel.nodes[nodeId].skin;
+        const bool isSkinValid = isValid(skinIndex);
+        if (isSkinValid) {
+            skins[nodeId] = Skin(gltfModel, gltfModel.skins[skinIndex]);
+        }
+
+        for (auto& instance : instances) {
+            instance.skeletons[nodeId] = GltfSkeleton(device, isSkinValid ? &skins.at(nodeId) : nullptr);
         }
     }
 
-    loadSkins(gltfModel);
     if (gltfModel.animations.size() > 0) {
         loadAnimations(gltfModel);
     }
 
     for(auto& instance : instances){
-        for (const auto& [nodeId, mesh] : meshes) {
-            instance.skeletons[nodeId] = GltfSkeleton(device, mesh.skin);
-        }
-
         for (auto& [id, node] : instance.nodes) {
             if (boxMap.find(id) == boxMap.end()) {} {
                 boxMap[id] = math::box();
