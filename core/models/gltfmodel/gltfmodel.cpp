@@ -9,38 +9,10 @@
 
 #include "gltfmodel.h"
 #include "gltfutils.h"
+#include "gltfskeleton.h"
 #include "node.h"
 
 namespace moon::models {
-
-namespace {
-
-void calculateTangent(std::vector<interfaces::Vertex>& vertexBuffer, std::vector<uint32_t>& indexBuffer){
-    for(uint32_t i = 0; i < indexBuffer.size(); i += 3){
-        const auto &v0 = vertexBuffer[indexBuffer[i + 0]], &v1 = vertexBuffer[indexBuffer[i + 1]], &v2 = vertexBuffer[indexBuffer[i + 2]];
-
-        const auto dv1 = v1.pos - v0.pos;
-        const auto dv2 = v2.pos - v0.pos;
-        const auto duv1 = v1.uv0 - v0.uv0;
-        const auto duv2 = v2.uv0 - v0.uv0;
-
-        const float det = 1.0f / (duv1[0] * duv2[1] - duv1[1] * duv2[0]);
-        const auto bitangent = normalized( det * (duv1[0] * dv2 - duv2[0] * dv1));
-        auto tangent = normalized(det * (duv2[1] * dv1 - duv1[1] * dv2));
-
-        if(dot(cross(tangent, bitangent), v0.normal) < 0.0f){
-            tangent = -1.0f * tangent;
-        }
-
-        for(uint32_t j = i; j < i + 3; j++){
-            auto& v = vertexBuffer[indexBuffer[j]];
-            v.tangent = normalized(tangent - v.normal * dot(v.normal, tangent));
-            v.bitangent = normalized(cross(v.normal, v.tangent));
-        }
-    }
-}
-
-}
 
 GltfModel::GltfModel(std::filesystem::path filename, uint32_t instanceCount) : filename(filename) {
     instances.resize(instanceCount);
@@ -48,8 +20,7 @@ GltfModel::GltfModel(std::filesystem::path filename, uint32_t instanceCount) : f
 
 void GltfModel::destroyCache() {
     for(auto& texture: textures) texture.destroyCache();
-    vertexCache = utils::Buffer();
-    indexCache = utils::Buffer();
+    cache = Cache();
 }
 
 bool GltfModel::loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffer commandBuffer) {
@@ -66,21 +37,23 @@ bool GltfModel::loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffe
 
     for(auto& instance: instances){
         for (const auto& nodeIndex: gltfModel.scenes[isValid(gltfModel.defaultScene) ? gltfModel.defaultScene : 0].nodes) {
-            instance.rootNodes.push_back(instance.loadNode(gltfModel, nodeIndex, nullptr));
+            instance.loadNode(gltfModel, nodeIndex, nullptr);
         }
     }
 
+    struct {
+        interfaces::Indices indices;
+        interfaces::Vertices vertices;
+    } host;
+
     uint32_t indexStart = 0;
-    std::vector<uint32_t> indexBuffer;
-    std::vector<interfaces::Vertex> vertexBuffer;
-    for (NodeId nodeId = 0; nodeId < gltfModel.nodes.size(); nodeId++) {
+    for (Node::Id nodeId = 0; nodeId < gltfModel.nodes.size(); nodeId++) {
         const auto& node = gltfModel.nodes[nodeId];
         if (const auto meshIndex = node.mesh; isValid(meshIndex)) {
             meshes[nodeId] = GltfMesh(gltfModel, materials, meshIndex, indexStart);
-            loadVertexBuffer(gltfModel, node, indexBuffer, vertexBuffer);
+            loadVertices(gltfModel, node, host.indices, host.vertices);
         }
     }
-    calculateTangent(vertexBuffer, indexBuffer);
 
     loadSkins(gltfModel);
     if (gltfModel.animations.size() > 0) {
@@ -89,12 +62,7 @@ bool GltfModel::loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffe
 
     for(auto& instance : instances){
         for (const auto& [nodeId, mesh] : meshes) {
-            auto& skeleton = instance.skeletons[nodeId];
-            skeleton.skin = mesh.skin;
-            const size_t jointCount = mesh.skin ? mesh.skin->size() : 0;
-            const size_t bufferSize = sizeof(math::mat4) * (jointCount + 1);
-            skeleton.deviceBuffer = utils::vkDefault::Buffer(device, device.device(), bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-            moon::utils::Memory::instance().nameMemory(skeleton.deviceBuffer, std::string(__FILE__) + " in line " + std::to_string(__LINE__) + ", Mesh::Mesh, uniformBuffer");
+            instance.skeletons[nodeId] = GltfSkeleton(device, mesh.skin);
         }
 
         for (auto& [id, node] : instance.nodes) {
@@ -102,13 +70,13 @@ bool GltfModel::loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffe
                 boxMap[id] = math::box();
             }
         }
-        updateRootNodes(instance.rootNodes);
+        updateNodes(instance.nodes);
         for (auto& [rootNode, skeleton] : instance.skeletons) {
             skeleton.update(instance.nodes, rootNode);
         }
     }
 
-    for (const auto& vertex : vertexBuffer) {
+    for (const auto& vertex : host.vertices) {
         const auto& pos = vertex.pos;
         for (uint32_t i = 0; i < 4; i++) {
             auto& box = boxMap[i];
@@ -117,9 +85,9 @@ bool GltfModel::loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffe
         }
     }
 
-    utils::createDeviceBuffer(device, device.device(), commandBuffer, vertexBuffer.size() * sizeof(interfaces::Vertex), vertexBuffer.data(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertexCache, vertices);
-    if (!indexBuffer.empty()) {
-        utils::createDeviceBuffer(device, device.device(), commandBuffer, indexBuffer.size() * sizeof(uint32_t), indexBuffer.data(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indexCache, indices);
+    utils::createDeviceBuffer(device, device.device(), commandBuffer, host.vertices.size() * sizeof(interfaces::Vertex), host.vertices.data(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, cache.vertices, vertices);
+    if (!host.indices.empty()) {
+        utils::createDeviceBuffer(device, device.device(), commandBuffer, host.indices.size() * sizeof(uint32_t), host.indices.data(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, cache.indices, indices);
     }
     return true;
 }

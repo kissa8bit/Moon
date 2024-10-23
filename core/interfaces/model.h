@@ -127,6 +127,9 @@ struct Vertex {
     static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
 };
 
+using Vertices = std::vector<Vertex>;
+using Indices = std::vector<uint32_t>;
+
 class Animation {
 public:
     virtual ~Animation() {};

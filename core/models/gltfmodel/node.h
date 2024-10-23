@@ -2,14 +2,19 @@
 #define GLTFMODEL_NODE_H
 
 #include "linearAlgebra.h"
+#include "gltfutils.h"
 
 #include <numeric>
 
 namespace moon::models {
 
 struct Node {
+    using Id = uint32_t;
+    using Children = std::vector<Node*>;
+    const static Id invalidId = std::numeric_limits<Id>::max();
+
     Node* parent{ nullptr };
-    ChildrenNodes children;
+    Children children;
 
     math::mat4 matrix{ 1.0f };
     math::mat4 global{ 1.0f };
@@ -34,12 +39,15 @@ struct Node {
         matrix = (parent ? parent->matrix : math::mat4::identity()) * localMatrix();
         if (recursive) for (auto child : children) child->updateMatrix(recursive);
     }
-
 };
 
-inline void updateRootNodes(const RootNodes& rootNodes, bool recursive = true) {
-    for (const auto& node : rootNodes) {
-        node->updateMatrix(recursive);
+using Nodes = std::unordered_map<Node::Id, std::unique_ptr<Node>>;
+
+inline void updateNodes(const Nodes& nodes, bool recursive = true) {
+    for (const auto& [_, node] : nodes) {
+        if (node && node->parent == nullptr) {
+            node->updateMatrix(recursive);
+        }
     }
 }
 

@@ -15,9 +15,13 @@ namespace moon::models {
 class PlyModel : public interfaces::Model {
 private:
     std::filesystem::path filename;
-    utils::Buffer vertexCache, indexCache;
     interfaces::Mesh mesh;
     interfaces::Skeleton skeleton;
+
+    struct Cache {
+        utils::Buffer vertices;
+        utils::Buffer indices;
+    } cache;
 
     bool loadFromFile(const utils::PhysicalDevice& physicalDevice, VkCommandBuffer commandBuffer);
     void createDescriptors(VkDevice device);

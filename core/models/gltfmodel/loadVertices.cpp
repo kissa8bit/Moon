@@ -46,15 +46,40 @@ struct LoadBuffer {
 };
 
 template <typename type>
-void pushBackIndex(const type* data, size_t count, uint32_t vertexStart, std::vector<uint32_t>& indexBuffer) {
+void pushBackIndex(const type* data, size_t count, uint32_t vertexStart, interfaces::Indices& indices) {
     for (size_t index = 0; index < count; index++) {
-        indexBuffer.push_back(data[index] + vertexStart);
+        indices.push_back(data[index] + vertexStart);
+    }
+}
+
+void calculateTangent(uint32_t indexOffset, interfaces::Vertices& vertices, interfaces::Indices& indices) {
+    for (uint32_t i = indexOffset; i < indices.size(); i += 3) {
+        const auto& v0 = vertices[indices[i + 0]], & v1 = vertices[indices[i + 1]], & v2 = vertices[indices[i + 2]];
+
+        const auto dv1 = v1.pos - v0.pos;
+        const auto dv2 = v2.pos - v0.pos;
+        const auto duv1 = v1.uv0 - v0.uv0;
+        const auto duv2 = v2.uv0 - v0.uv0;
+
+        const float det = 1.0f / (duv1[0] * duv2[1] - duv1[1] * duv2[0]);
+        const auto bitangent = normalized(det * (duv1[0] * dv2 - duv2[0] * dv1));
+        auto tangent = normalized(det * (duv2[1] * dv1 - duv1[1] * dv2));
+
+        if (dot(cross(tangent, bitangent), v0.normal) < 0.0f) {
+            tangent = -1.0f * tangent;
+        }
+
+        for (uint32_t j = i; j < i + 3; j++) {
+            auto& v = vertices[indices[j]];
+            v.tangent = normalized(tangent - v.normal * dot(v.normal, tangent));
+            v.bitangent = normalized(cross(v.normal, v.tangent));
+        }
     }
 }
 
 }
 
-void GltfModel::loadVertexBuffer(const tinygltf::Model& gltfModel, const tinygltf::Node& node, std::vector<uint32_t>& indexBuffer, std::vector<interfaces::Vertex>& vertexBuffer) {
+void GltfModel::loadVertices(const tinygltf::Model& gltfModel, const tinygltf::Node& node, interfaces::Indices& indices, interfaces::Vertices& vertices) {
     if (isInvalid(node.mesh)) return;
 
     const tinygltf::Mesh& mesh = gltfModel.meshes.at(node.mesh);
@@ -66,7 +91,7 @@ void GltfModel::loadVertexBuffer(const tinygltf::Model& gltfModel, const tinyglt
         const auto weight = LoadBuffer<float>(primitive, gltfModel, "WEIGHTS_0",  TINYGLTF_TYPE_VEC4);
         const auto joint = LoadBuffer<void>(primitive, gltfModel, "JOINTS_0", TINYGLTF_TYPE_VEC4);
 
-        uint32_t vertexStart = static_cast<uint32_t>(vertexBuffer.size());
+        uint32_t vertexStart = static_cast<uint32_t>(vertices.size());
         uint32_t vertexCount = pos.accessor ? static_cast<uint32_t>(pos.accessor->count) : 0;
         for (uint32_t index = 0; index < vertexCount; index++) {
             interfaces::Vertex vert{};
@@ -85,15 +110,16 @@ void GltfModel::loadVertexBuffer(const tinygltf::Model& gltfModel, const tinyglt
                 }
             }
             if (weight.buffer) vert.weight0 = weight.loadVec4(index);
-            vertexBuffer.push_back(vert);
+            vertices.push_back(vert);
         }
 
         if (isInvalid(primitive.indices)) continue;
         const GltfBufferExtractor indicesExtract(gltfModel, primitive.indices);
 
+        uint32_t indexOffset = indices.size();
 #define GLTFMODEL_LOADVERTEXBUFFER_INDEX_CASE(ComponentType, type)                                          \
     case ComponentType:                                                                                     \
-        pushBackIndex((const type*)indicesExtract.data, indicesExtract.count, vertexStart, indexBuffer);    \
+        pushBackIndex((const type*)indicesExtract.data, indicesExtract.count, vertexStart, indices);        \
         break;
 
         switch (indicesExtract.componentType) {
@@ -102,6 +128,7 @@ void GltfModel::loadVertexBuffer(const tinygltf::Model& gltfModel, const tinyglt
             GLTFMODEL_LOADVERTEXBUFFER_INDEX_CASE(TINYGLTF_PARAMETER_TYPE_UNSIGNED_BYTE, uint8_t)
         }
 #undef GLTFMODEL_LOADVERTEXBUFFER_INDEX_CASE
+        calculateTangent(indexOffset, vertices, indices);
     }
 }
 

@@ -1,14 +1,9 @@
 #ifndef GLTFMODEL_MESH_H
 #define GLTFMODEL_MESH_H
 
-#include <vector>
-
 #include "linearAlgebra.h"
-
-#include "operations.h"
-#include "buffer.h"
-#include "gltfutils.h"
 #include "tinyGLTF.h"
+#include "node.h"
 #include "skin.h"
 
 namespace moon::models {
@@ -37,7 +32,7 @@ struct GltfMesh : public interfaces::Mesh {
     };
 };
 
-using GltfMeshes = std::unordered_map<NodeId, GltfMesh>;
+using GltfMeshes = std::unordered_map<Node::Id, GltfMesh>;
 
 }
 

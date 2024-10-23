@@ -19,7 +19,7 @@ void GltfModel::loadSkins(const tinygltf::Model& gltfModel) {
         }
     }
 
-    for (NodeId nodeId = 0; nodeId < gltfModel.nodes.size(); nodeId++) {
+    for (Node::Id nodeId = 0; nodeId < gltfModel.nodes.size(); nodeId++) {
         if (const auto skinIndex = gltfModel.nodes[nodeId].skin; !isInvalid(skinIndex)) {
             meshes[nodeId].skin = &skins.at(skinIndex);
         }

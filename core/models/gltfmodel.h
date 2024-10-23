@@ -21,16 +21,20 @@ namespace moon::models {
 class GltfModel : public interfaces::Model {
 private:
     std::filesystem::path filename;
-    utils::Buffer vertexCache, indexCache;
     Instances instances;
     GltfMeshes meshes;
     Skins skins;
+
+    struct Cache {
+        utils::Buffer vertices;
+        utils::Buffer indices;
+    } cache;
 
     using BoxMap = std::unordered_map<uint32_t, math::box>;
     BoxMap boxMap;
 
     bool loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffer commandBuffer);
-    void loadVertexBuffer(const tinygltf::Model& gltfModel, const tinygltf::Node& node, std::vector<uint32_t>& indexBuffer, std::vector<interfaces::Vertex>& vertexBuffer);
+    void loadVertices(const tinygltf::Model& gltfModel, const tinygltf::Node& node, interfaces::Indices& indices, interfaces::Vertices& vertices);
     void loadSkins(const tinygltf::Model& gltfModel);
     void loadTextures(const tinygltf::Model& gltfModel, const utils::PhysicalDevice& device, VkCommandBuffer commandBuffer);
     void loadMaterials(const tinygltf::Model& gltfModel);

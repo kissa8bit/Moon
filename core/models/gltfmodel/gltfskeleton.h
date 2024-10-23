@@ -12,7 +12,15 @@ namespace moon::models {
 struct GltfSkeleton : public interfaces::Skeleton {
     const Skin* skin{ nullptr };
 
-    void update(const NodeMap& nodeMap, NodeId rootNode) {
+    GltfSkeleton() = default;
+    GltfSkeleton(const utils::PhysicalDevice& device, const Skin* skin = nullptr) : skin(skin) {
+        const size_t jointCount = skin ? skin->size() : 0;
+        const size_t bufferSize = sizeof(math::mat4) * (jointCount + 1);
+        deviceBuffer = utils::vkDefault::Buffer(device, device.device(), bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        moon::utils::Memory::instance().nameMemory(deviceBuffer, std::string(__FILE__) + " in line " + std::to_string(__LINE__) + ", GltfSkeleton::GltfSkeleton, deviceBuffer");
+    }
+
+    void update(const Nodes& nodeMap, Node::Id rootNode) {
         hostBuffer.matrix = transpose(nodeMap.at(rootNode)->matrix);
         if (skin) {
             const auto& joints = (*skin);
@@ -24,7 +32,7 @@ struct GltfSkeleton : public interfaces::Skeleton {
     }
 };
 
-using GltfSkeletons = std::unordered_map<NodeId, GltfSkeleton>;
+using GltfSkeletons = std::unordered_map<Node::Id, GltfSkeleton>;
 
 }
 

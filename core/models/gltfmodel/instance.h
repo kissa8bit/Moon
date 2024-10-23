@@ -10,8 +10,7 @@
 namespace moon::models {
 
 struct Instance {
-    NodeMap nodes;
-    RootNodes rootNodes;
+    Nodes nodes;
     GltfSkeletons skeletons;
     GltfAnimations animations;
 
@@ -25,7 +24,6 @@ struct Instance {
     }
     void swap(Instance& other) noexcept {
         std::swap(nodes, other.nodes);
-        std::swap(rootNodes, other.rootNodes);
         std::swap(skeletons, other.skeletons);
         std::swap(animations, other.animations);
     }

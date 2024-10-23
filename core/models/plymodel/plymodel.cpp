@@ -37,8 +37,7 @@ const interfaces::Material& PlyModel::material() const { return materials.back()
 math::box PlyModel::boundingBox() const { return mesh.primitives.empty() ? math::box() : mesh.primitives.back().bb; }
 
 void PlyModel::destroyCache() {
-    vertexCache = utils::Buffer();
-    indexCache = utils::Buffer();
+    cache = Cache();
 }
 
 bool PlyModel::loadFromFile(const utils::PhysicalDevice& physicalDevice, VkCommandBuffer commandBuffer) {
@@ -58,26 +57,30 @@ bool PlyModel::loadFromFile(const utils::PhysicalDevice& physicalDevice, VkComma
 
     file.read(file_stream);
 
-    uint32_t vertexCount = verts->count;
-    uint32_t indexCount = faces ? 3 * faces->count : 0;
-    std::vector<uint32_t> indexBuffer(indexCount);
-    std::vector<interfaces::Vertex> vertexBuffer(verts ? verts->count : 0, interfaces::Vertex());
+    struct {
+        interfaces::Indices indices; interfaces::Vertices vertices;
+    } host = {
+        interfaces::Indices(faces ? 3 * faces->count : 0),
+        interfaces::Vertices(verts ? verts->count : 0, interfaces::Vertex())
+    };
     math::box bb;
 
     if (faces) {
-        std::memcpy(indexBuffer.data(), faces->buffer.get_const(), faces->buffer.size_bytes());
+        std::memcpy(host.indices.data(), faces->buffer.get_const(), faces->buffer.size_bytes());
     }
     if(verts){
         const auto buffer = (const math::vec3*)verts->buffer.get();
-        for (size_t i = 0; i < vertexBuffer.size(); ++i) {
-            vertexBuffer[i].pos = buffer[i];
+        for (size_t i = 0; i < host.vertices.size(); ++i) {
+            host.vertices[i].pos = buffer[i];
         }
-        for (uint32_t i = 0; i < indexBuffer.size(); i += 3) {
-            auto& vert0 = vertexBuffer[indexBuffer[i + 0]], & vert1 = vertexBuffer[indexBuffer[i + 1]], & vert2 = vertexBuffer[indexBuffer[i + 2]];
+        for (uint32_t i = 0; i < host.indices.size(); i += 3) {
+            auto& vert0 = host.vertices[host.indices[i + 0]],
+                & vert1 = host.vertices[host.indices[i + 1]],
+                & vert2 = host.vertices[host.indices[i + 2]];
             const auto n = normalized(cross(vert1.pos - vert0.pos, vert2.pos - vert1.pos));
             vert0.normal += n; vert1.normal += n; vert2.normal += n;
         }
-        for(auto& vert : vertexBuffer){
+        for(auto& vert : host.vertices){
             vert.normal = normalized(vert.normal);
             bb.max = math::max(bb.max, vert.pos);
             bb.min = math::min(bb.min, vert.pos);
@@ -85,14 +88,14 @@ bool PlyModel::loadFromFile(const utils::PhysicalDevice& physicalDevice, VkComma
     }
     if(normals){
         const auto buffer = (const math::vec3*)normals->buffer.get();
-        for (size_t index = 0; index < vertexBuffer.size(); ++index) {
-            vertexBuffer[index].normal = buffer[index];
+        for (size_t index = 0; index < host.vertices.size(); ++index) {
+            host.vertices[index].normal = buffer[index];
         }
     }
     if(texcoords){
         const auto buffer = (const math::vec2*)texcoords->buffer.get();
-        for (size_t index = 0; index < vertexBuffer.size(); ++index) {
-            vertexBuffer[index].uv0 = buffer[index];
+        for (size_t index = 0; index < host.vertices.size(); ++index) {
+            host.vertices[index].uv0 = buffer[index];
         }
     }
 
@@ -106,13 +109,13 @@ bool PlyModel::loadFromFile(const utils::PhysicalDevice& physicalDevice, VkComma
     material().extensions.diffuse.texture = &textures.back();
 
     mesh.primitives.push_back(
-        interfaces::Primitive({0, indexCount}, {0, vertexCount}, &material(), bb)
+        interfaces::Primitive({0, (uint32_t)host.indices.size()}, {0, (uint32_t)host.vertices.size()}, &material(), bb)
     );
 
     const auto& device = physicalDevice.device();
-    utils::createDeviceBuffer(physicalDevice, device, commandBuffer, vertexBuffer.size() * sizeof(interfaces::Vertex), vertexBuffer.data(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertexCache, vertices);
-    if (indexCount > 0) {
-        utils::createDeviceBuffer(physicalDevice, device, commandBuffer, indexBuffer.size() * sizeof(uint32_t), indexBuffer.data(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indexCache, indices);
+    utils::createDeviceBuffer(physicalDevice, device, commandBuffer, host.vertices.size() * sizeof(interfaces::Vertex), host.vertices.data(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, cache.vertices, vertices);
+    if (!host.indices.empty()) {
+        utils::createDeviceBuffer(physicalDevice, device, commandBuffer, host.indices.size() * sizeof(uint32_t), host.indices.data(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, cache.indices, indices);
     }
 
     skeleton.deviceBuffer = utils::vkDefault::Buffer(physicalDevice, device, sizeof(math::mat4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
