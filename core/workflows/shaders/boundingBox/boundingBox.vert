@@ -25,12 +25,13 @@ layout (set = 2, binding = 0) uniform UBONode
 } node;
 
 layout (push_constant) uniform PushConstants{
-    vec3 min;
-    vec3 max;
+    vec4 min;
+    vec4 max;
 } pushConstants;
 
-vec3 min = pushConstants.min;
-vec3 max = pushConstants.max;
+vec3 min = pushConstants.min.xyz;
+vec3 max = pushConstants.max.xyz;
+int joint = int(pushConstants.max.w);
 
 vec3 vertex[24] = vec3[](
     vec3(min.x,min.y,min.z),
@@ -72,5 +73,6 @@ vec3 vertex[24] = vec3[](
 
 void main()
 {
-    gl_Position = global.proj * global.view * local.matrix * node.matrix * vec4(vertex[gl_VertexIndex],1.0f);
+    mat4 skinMat = (joint != -1 ? node.jointMatrix[joint] : mat4(1.0f));
+    gl_Position = global.proj * global.view * local.matrix * node.matrix * skinMat * vec4(vertex[gl_VertexIndex], 1.0f);
 }

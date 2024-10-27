@@ -82,8 +82,8 @@ bool PlyModel::loadFromFile(const utils::PhysicalDevice& physicalDevice, VkComma
         }
         for(auto& vert : host.vertices){
             vert.normal = normalized(vert.normal);
-            bb.max = math::max(bb.max, vert.pos);
-            bb.min = math::min(bb.min, vert.pos);
+            bb.max = math::vec4(math::max(bb.max.dvec(), vert.pos), -1.0f);
+            bb.min = math::vec4(math::min(bb.min.dvec(), vert.pos), -1.0f);
         }
     }
     if(normals){
@@ -161,7 +161,9 @@ void PlyModel::render(uint32_t, VkCommandBuffer commandBuffer, VkPipelineLayout 
 }
 
 void PlyModel::renderBB(uint32_t, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets) const {
-    mesh.renderBB(commandBuffer, pipelineLayout, descriptorSets);
+    auto descriptors = descriptorSets;
+    descriptors.push_back(skeleton.descriptorSet);
+    mesh.renderBB(commandBuffer, pipelineLayout, descriptors);
 }
 
 std::vector<interfaces::Animation*> PlyModel::animations(uint32_t instanceNumber) {

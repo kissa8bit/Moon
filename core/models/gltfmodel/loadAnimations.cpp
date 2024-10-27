@@ -231,8 +231,8 @@ void GltfModel::loadAnimations(const tinygltf::Model& gltfModel){
             GltfAnimation::Channels channels;
             for (const auto &source: anim.channels) {
                 if (auto it = instance.nodes.find(source.target_node); it != instance.nodes.end()) {
-                    const auto& [_, node] = *it;
-                    channels.push_back(GltfAnimation::Channel{ channelsPathMap.at(source.target_path), source.sampler, node.get() });
+                    auto& [_, node] = *it;
+                    channels.push_back(GltfAnimation::Channel{ channelsPathMap.at(source.target_path), source.sampler, &node });
                 }
             }
             instance.animations.push_back(GltfAnimation(&instance.nodes, &instance.skeletons, channels, samplers, duration));
@@ -240,7 +240,7 @@ void GltfModel::loadAnimations(const tinygltf::Model& gltfModel){
     }
 }
 
-GltfAnimation::GltfAnimation(const Nodes* nodeMap, GltfSkeletons* skeletons, const GltfAnimation::Channels& channels, const GltfAnimation::Samplers& samplers, float duration)
+GltfAnimation::GltfAnimation(Nodes* nodeMap, GltfSkeletons* skeletons, const GltfAnimation::Channels& channels, const GltfAnimation::Samplers& samplers, float duration)
     : nodeMap(nodeMap), skeletons(skeletons), channels(channels), samplers(samplers), totalTime(duration)
 {}
 
@@ -279,10 +279,7 @@ bool GltfAnimation::update(float time){
         }
     }
     if (needUpdate){
-        updateNodes(*nodeMap);
-        for (auto& [rootNode, skeleton] : *skeletons) {
-            skeleton.update(*nodeMap, rootNode);
-        }
+        updateNodes(*nodeMap, *skeletons);
     }
     return needUpdate;
 }

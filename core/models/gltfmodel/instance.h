@@ -29,17 +29,26 @@ struct Instance {
     }
 
     Node* loadNode(const tinygltf::Model& gltfModel, uint32_t nodeIndex, Node* parent) {
-        nodes[nodeIndex] = std::make_unique<Node>(gltfModel.nodes[nodeIndex], parent);
-        Node* node = nodes[nodeIndex].get();
-
+        Node* current = &(nodes[nodeIndex] = Node(gltfModel.nodes[nodeIndex], parent));
         for (const auto& child : gltfModel.nodes[nodeIndex].children) {
-            nodes[nodeIndex]->children.push_back(loadNode(gltfModel, child, node));
+            nodes[nodeIndex].children.push_back(loadNode(gltfModel, child, current));
         }
-        return node;
+        return current;
     }
 };
 
 using Instances = std::vector<Instance>;
+
+inline void updateNodes(Nodes& nodes, GltfSkeletons& skeletons, bool recursive = true) {
+    for (auto& [_, node] : nodes) {
+        if (node.parent == nullptr) {
+            node.updateMatrix(recursive);
+        }
+    }
+    for (auto& [rootNode, skeleton] : skeletons) {
+        skeleton.update(nodes, rootNode);
+    }
+}
 
 }
 

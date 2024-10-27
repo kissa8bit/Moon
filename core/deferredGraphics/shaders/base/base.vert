@@ -47,7 +47,7 @@ void main()
     outUV0 = inUV0;
     outUV1 = inUV1;
 
-    mat4 skinMat = inJoint0.x != -1.0 && inJoint0.y != -1.0 &&inJoint0.z != -1.0 &&inJoint0.w != -1.0 ?
+    mat4 skinMat = inJoint0.x != -1.0 && inJoint0.y != -1.0 && inJoint0.z != -1.0 && inJoint0.w != -1.0 ?
         inWeight0.x * node.jointMatrix[int(inJoint0.x)] +
         inWeight0.y * node.jointMatrix[int(inJoint0.y)] +
         inWeight0.z * node.jointMatrix[int(inJoint0.z)] +

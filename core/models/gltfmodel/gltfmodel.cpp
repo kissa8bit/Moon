@@ -35,12 +35,6 @@ bool GltfModel::loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffe
     loadTextures(gltfModel, device, commandBuffer);
     loadMaterials(gltfModel);
 
-    for(auto& instance: instances){
-        for (const auto& nodeIndex: gltfModel.scenes[isValid(gltfModel.defaultScene) ? gltfModel.defaultScene : 0].nodes) {
-            instance.loadNode(gltfModel, nodeIndex, nullptr);
-        }
-    }
-
     struct {
         interfaces::Indices indices;
         interfaces::Vertices vertices;
@@ -51,46 +45,35 @@ bool GltfModel::loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffe
         const auto& node = gltfModel.nodes[nodeId];
 
         const auto meshIndex = node.mesh;
-        const bool meshisValid = isValid(meshIndex);
-        if (meshisValid) {
+        const bool isMeshValid = isValid(meshIndex);
+        if (isMeshValid) {
             meshes[nodeId] = GltfMesh(gltfModel, gltfModel.meshes[meshIndex], materials, indexStart);
-            loadVertices(gltfModel, node, host.indices, host.vertices);
+            loadVertices(gltfModel, gltfModel.meshes[meshIndex], host.indices, host.vertices);
         }
 
-        const auto skinIndex = gltfModel.nodes[nodeId].skin;
+        const auto skinIndex = node.skin;
         const bool isSkinValid = isValid(skinIndex);
         if (isSkinValid) {
             skins[nodeId] = Skin(gltfModel, gltfModel.skins[skinIndex]);
+            if (isMeshValid) {
+                meshes.at(nodeId).calculateNodeBoxes(host.vertices, host.indices, skins.at(nodeId));
+            }
         }
 
         for (auto& instance : instances) {
-            instance.skeletons[nodeId] = GltfSkeleton(device, isSkinValid ? &skins.at(nodeId) : nullptr);
-        }
-    }
-
-    if (gltfModel.animations.size() > 0) {
-        loadAnimations(gltfModel);
-    }
-
-    for(auto& instance : instances){
-        for (auto& [id, node] : instance.nodes) {
-            if (boxMap.find(id) == boxMap.end()) {} {
-                boxMap[id] = math::box();
+            if (instance.nodes.find(nodeId) == instance.nodes.end()) {
+                instance.loadNode(gltfModel, nodeId, nullptr);
+            }
+            if (isMeshValid) {
+                instance.skeletons[nodeId] = GltfSkeleton(device, isSkinValid ? &skins.at(nodeId) : nullptr);
             }
         }
-        updateNodes(instance.nodes);
-        for (auto& [rootNode, skeleton] : instance.skeletons) {
-            skeleton.update(instance.nodes, rootNode);
-        }
     }
 
-    for (const auto& vertex : host.vertices) {
-        const auto& pos = vertex.pos;
-        for (uint32_t i = 0; i < 4; i++) {
-            auto& box = boxMap[i];
-            box.max = math::max(box.max, pos);
-            box.min = math::min(box.min, pos);
-        }
+    loadAnimations(gltfModel);
+
+    for(auto& instance : instances){
+        updateNodes(instance.nodes, instance.skeletons);
     }
 
     utils::createDeviceBuffer(device, device.device(), commandBuffer, host.vertices.size() * sizeof(interfaces::Vertex), host.vertices.data(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, cache.vertices, vertices);
@@ -155,9 +138,14 @@ void GltfModel::render(uint32_t instanceNumber, VkCommandBuffer commandBuffer, V
 }
 
 void GltfModel::renderBB(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets) const {
-    for (auto& [_, node] : instances.at(instanceNumber).nodes) {
-        if (!CHECK_M(node.get(), std::string("[ GltfModel::render ] node is nullptr"))) continue;
-        // node->mesh.renderBB(commandBuffer, pipelineLayout, descriptorSets);
+    const auto& instance = instances.at(instanceNumber);
+    for (const auto& [nodeId, mesh] : meshes) {
+        const auto& skeleton = instance.skeletons.at(nodeId);
+        auto descriptors = descriptorSets;
+        descriptors.push_back(skeleton.descriptorSet);
+
+        const auto renderBB = (skins.find(nodeId) == skins.end() ? &GltfMesh::renderBB : &GltfMesh::renderNodeBB);
+        (mesh.*renderBB)(commandBuffer, pipelineLayout, descriptors);
     }
 }
 

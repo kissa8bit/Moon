@@ -20,12 +20,12 @@ struct GltfSkeleton : public interfaces::Skeleton {
         moon::utils::Memory::instance().nameMemory(deviceBuffer, std::string(__FILE__) + " in line " + std::to_string(__LINE__) + ", GltfSkeleton::GltfSkeleton, deviceBuffer");
     }
 
-    void update(const Nodes& nodeMap, Node::Id rootNode) {
-        hostBuffer.matrix = transpose(nodeMap.at(rootNode)->matrix);
+    void update(const Nodes& nodes, Node::Id rootNode) {
+        hostBuffer.matrix = transpose(nodes.at(rootNode).matrix);
         if (skin) {
             const auto& joints = skin->joints;
             for (size_t i = 0; i < joints.size(); i++) {
-                hostBuffer.jointMatrix[i] = transpose(inverse(hostBuffer.matrix) * nodeMap.at(joints[i].jointedNodeId)->matrix * joints[i].inverseBindMatrices);
+                hostBuffer.jointMatrix[i] = transpose(inverse(hostBuffer.matrix) * nodes.at(joints[i].jointedNodeId).matrix * joints[i].inverseBindMatrices);
             }
         }
         deviceBuffer.copy(&hostBuffer);

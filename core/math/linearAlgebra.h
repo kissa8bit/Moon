@@ -14,11 +14,11 @@ template<typename type> type radians(const type& angle) {
 
 template<typename type>
 struct BoundingBox {
-    alignas(16) math::Vector<type, 3> min{ std::numeric_limits<type>::max() };
-    alignas(16) math::Vector<type, 3> max{ std::numeric_limits<type>::lowest() };
+    alignas(16) math::Vector<type, 4> min{ std::numeric_limits<type>::max(), std::numeric_limits<type>::max(), std::numeric_limits<type>::max(), 1.0f };
+    alignas(16) math::Vector<type, 4> max{ std::numeric_limits<type>::lowest(), std::numeric_limits<type>::lowest(), std::numeric_limits<type>::lowest(), -1.0f };
 
     BoundingBox() = default;
-    BoundingBox(math::Vector<type, 3> min, math::Vector<type, 3> max) : min(min), max(max) {};
+    BoundingBox(const math::Vector<type, 4>& min, const math::Vector<type, 4>& max) : min(min), max(max) {};
 };
 
 using vec2 = Vector<float, 2>;

@@ -368,7 +368,7 @@ void testScene::createObjects()
     objects["SimpleSkin"]->animationControl.set(0);
 
     objects["RiggedFigure"] = std::make_shared<moon::transformational::Object>(models["RiggedFigure"].get());
-    objects["RiggedFigure"]->scale(1.0f).rotate(moon::math::radians(90.0f), { 1.0f,0.0f,0.0f }).rotate(moon::math::radians(90.0f), { 0.0f,0.0f,1.0f }).translate(moon::math::vec3(-32.0f, -5.0f, 10.0f));
+    objects["RiggedFigure"]->scale(1.0f).rotate(moon::math::radians(-90.0f), { 1.0f,0.0f,0.0f }).rotate(moon::math::radians(90.0f), { 0.0f,0.0f,1.0f }).translate(moon::math::vec3(-32.0f, -5.0f, 10.0f));
     objects["RiggedFigure"]->animationControl.set(0);
 
     objects["InterpolationTest"] = std::make_shared<moon::transformational::Object>(models["InterpolationTest"].get());

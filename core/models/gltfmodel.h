@@ -30,11 +30,8 @@ private:
         utils::Buffer indices;
     } cache;
 
-    using BoxMap = std::unordered_map<uint32_t, math::box>;
-    BoxMap boxMap;
-
     bool loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffer commandBuffer);
-    void loadVertices(const tinygltf::Model& gltfModel, const tinygltf::Node& node, interfaces::Indices& indices, interfaces::Vertices& vertices);
+    void loadVertices(const tinygltf::Model& gltfModel, const tinygltf::Mesh& mesh, interfaces::Indices& indices, interfaces::Vertices& vertices);
     void loadTextures(const tinygltf::Model& gltfModel, const utils::PhysicalDevice& device, VkCommandBuffer commandBuffer);
     void loadAnimations(const tinygltf::Model& gltfModel);
     void loadMaterials(const tinygltf::Model& gltfModel);

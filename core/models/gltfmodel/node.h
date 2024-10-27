@@ -22,6 +22,7 @@ struct Node {
     math::vec3 scale{ 1.0f };
     math::quat rotation{ 1.0f, 0.0f, 0.0f, 0.0f };
 
+    Node() = default;
     Node(const tinygltf::Node& gltfNode, Node* parent)
         : parent(parent)
     {
@@ -41,15 +42,8 @@ struct Node {
     }
 };
 
-using Nodes = std::unordered_map<Node::Id, std::unique_ptr<Node>>;
-
-inline void updateNodes(const Nodes& nodes, bool recursive = true) {
-    for (const auto& [_, node] : nodes) {
-        if (node && node->parent == nullptr) {
-            node->updateMatrix(recursive);
-        }
-    }
-}
+using Nodes = std::unordered_map<Node::Id, Node>;
+using Boxes = std::unordered_map<Node::Id, math::box>;
 
 }
 
