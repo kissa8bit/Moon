@@ -10,8 +10,7 @@ Graphics::Lighting::Lighting(const GraphicsParameters& parameters, const interfa
     : parameters(parameters), lightSources(lightSources), depthMaps(depthMaps)
 {}
 
-void Graphics::Lighting::createDescriptorSetLayout(VkDevice device)
-{
+void Graphics::Lighting::create(VkDevice device, VkRenderPass renderPass) {
     std::vector<VkDescriptorSetLayoutBinding> bindings;
         bindings.push_back(utils::vkDefault::inAttachmentFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
         bindings.push_back(utils::vkDefault::inAttachmentFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
@@ -20,25 +19,20 @@ void Graphics::Lighting::createDescriptorSetLayout(VkDevice device)
         bindings.push_back(utils::vkDefault::bufferVertexLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
 
     descriptorSetLayout = utils::vkDefault::DescriptorSetLayout(device, bindings);
-
     lightDescriptorSetLayoutMap[interfaces::Light::Type::spot] = interfaces::Light::createDescriptorSetLayout(device);
     shadowDescriptorSetLayout = utils::DepthMap::createDescriptorSetLayout(device);
-}
 
-void Graphics::Lighting::createPipeline(VkDevice device, VkRenderPass renderPass) {
     const workflows::ShaderNames shaderNames = {
         {workflows::ShaderType::Vertex, "spotLightingPass/spotLightingVert.spv"},
         {workflows::ShaderType::Fragment, "spotLightingPass/spotLightingFrag.spv"}
     };
     createPipeline(interfaces::Light::Type::spot, shaderNames, device, renderPass);
-}
 
-void Graphics::Lighting::createDescriptors(VkDevice device) {
     descriptorPool = utils::vkDefault::DescriptorPool(device, { &descriptorSetLayout }, parameters.imageInfo.Count);
     descriptorSets = descriptorPool.allocateDescriptorSets(descriptorSetLayout, parameters.imageInfo.Count);
 }
 
-void Graphics::Lighting::updateDescriptorSets(
+void Graphics::Lighting::update(
     VkDevice device,
     const utils::BuffersDatabase& bDatabase,
     const utils::AttachmentsDatabase& aDatabase)
@@ -73,12 +67,6 @@ void Graphics::Lighting::updateDescriptorSets(
             descriptorWrites.back().pBufferInfo = &bufferInfo;
         vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
     }
-}
-
-void Graphics::Lighting::create(VkDevice device, VkRenderPass renderPass) {
-    createDescriptorSetLayout(device);
-    createPipeline(device, renderPass);
-    createDescriptors(device);
 }
 
 void Graphics::Lighting::render(uint32_t frameNumber, VkCommandBuffer commandBuffer) const

@@ -84,13 +84,13 @@ bool GltfModel::loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffe
 }
 
 void GltfModel::createDescriptors(const utils::PhysicalDevice& device) {
-    meshDescriptorSetLayout = interfaces::Model::createMeshDescriptorSetLayout(device.device());
-    materialDescriptorSetLayout = interfaces::Model::createMaterialDescriptorSetLayout(device.device());
+    skeletonDescriptorSetLayout = interfaces::Skeleton::descriptorSetLayout(device.device());
+    materialDescriptorSetLayout = interfaces::Material::descriptorSetLayout(device.device());
 
     std::vector<const utils::vkDefault::DescriptorSetLayout*> layouts(materials.size(), &materialDescriptorSetLayout);
     for (const auto& instance : instances) {
         for (const auto& _ : instance.nodes) {
-            layouts.push_back(&meshDescriptorSetLayout);
+            layouts.push_back(&skeletonDescriptorSetLayout);
         }
     }
 
@@ -98,7 +98,7 @@ void GltfModel::createDescriptors(const utils::PhysicalDevice& device) {
 
     for (auto& instance : instances) {
         for (auto& [nodeId, skeleton] : instance.skeletons) {
-            skeleton.createDescriptorSet(device.device(), descriptorPool, meshDescriptorSetLayout);
+            skeleton.createDescriptorSet(device.device(), descriptorPool, skeletonDescriptorSetLayout);
         }
     }
 

@@ -14,6 +14,26 @@
 namespace moon::interfaces {
 
 struct Material {
+    struct Buffer {
+        math::vec4  baseColorFactor{ 0.0f };
+        math::vec4  emissiveFactor{ 0.0f };
+        math::vec4  diffuseFactor{ 0.0f };
+        math::vec4  specularFactor{ 0.0f };
+        float       workflow{ 0.0f };
+        int         colorTextureSet{ -1 };
+        int         physicalDescriptorTextureSet{ -1 };
+        int         normalTextureSet{ -1 };
+        int         occlusionTextureSet{ -1 };
+        int         emissiveTextureSet{ -1 };
+        float       metallicFactor{ 0.0f };
+        float       roughnessFactor{ 0.0f };
+        float       alphaMask{ 0.0f };
+        float       alphaMaskCutoff{ 0.0f };
+        uint32_t    primitive;
+
+        Buffer(const Material& material, uint32_t primitive);
+    };
+
     enum AlphaMode{ ALPHAMODE_OPAQUE, ALPHAMODE_MASK, ALPHAMODE_BLEND };
     enum PbrWorkflow { METALLIC_ROUGHNESS, SPECULAR_GLOSSINESS };
 
@@ -49,29 +69,12 @@ struct Material {
     Material() = default;
     Material(const utils::Texture* empty);
     void createDescriptorSet(VkDevice device, utils::vkDefault::DescriptorPool& descriptorPool, const utils::vkDefault::DescriptorSetLayout& descriptorSetLayout);
+    Buffer buffer(uint32_t primitive) const;
+
+    static utils::vkDefault::DescriptorSetLayout descriptorSetLayout(VkDevice device);
 };
 
 using Materials = std::vector<Material>;
-
-struct MaterialBlock {
-    math::vec4  baseColorFactor{0.0f};
-    math::vec4  emissiveFactor{0.0f};
-    math::vec4  diffuseFactor{0.0f};
-    math::vec4  specularFactor{0.0f};
-    float       workflow{0.0f};
-    int         colorTextureSet{-1};
-    int         physicalDescriptorTextureSet{-1};
-    int         normalTextureSet{-1};
-    int         occlusionTextureSet{-1};
-    int         emissiveTextureSet{-1};
-    float       metallicFactor{0.0f};
-    float       roughnessFactor{0.0f};
-    float       alphaMask{0.0f};
-    float       alphaMaskCutoff{0.0f};
-    uint32_t    primitive;
-
-    MaterialBlock(const Material& material, uint32_t primitive);
-};
 
 struct Range {
     uint32_t first{ 0 };
@@ -102,8 +105,9 @@ struct Skeleton {
     } hostBuffer;
     VkDescriptorSet descriptorSet{ VK_NULL_HANDLE };
 
-    bool empty() const;
     void createDescriptorSet(VkDevice device, utils::vkDefault::DescriptorPool& descriptorPool, const utils::vkDefault::DescriptorSetLayout& descriptorSetLayout);
+
+    static utils::vkDefault::DescriptorSetLayout descriptorSetLayout(VkDevice device);
 };
 
 struct Mesh {
@@ -140,7 +144,7 @@ public:
 
 class Model {
 protected:
-    utils::vkDefault::DescriptorSetLayout meshDescriptorSetLayout;
+    utils::vkDefault::DescriptorSetLayout skeletonDescriptorSetLayout;
     utils::vkDefault::DescriptorSetLayout materialDescriptorSetLayout;
     utils::vkDefault::DescriptorPool descriptorPool;
 
@@ -156,9 +160,6 @@ public:
     virtual void create(const utils::PhysicalDevice& device, VkCommandPool commandPool) = 0;
     virtual void render(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t& primitiveCount) const = 0;
     virtual void renderBB(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets) const = 0;
-
-    static utils::vkDefault::DescriptorSetLayout createMeshDescriptorSetLayout(VkDevice device);
-    static utils::vkDefault::DescriptorSetLayout createMaterialDescriptorSetLayout(VkDevice device);
 };
 
 }

@@ -25,8 +25,8 @@ void ShadowGraphics::createRenderPass()
 void ShadowGraphics::Shadow::create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass) {
     lightDescriptorSetLayout = interfaces::Light::createDescriptorSetLayout(device);
     objectDescriptorSetLayout = interfaces::Object::createBaseDescriptorSetLayout(device);
-    primitiveDescriptorSetLayout = interfaces::Model::createMeshDescriptorSetLayout(device);
-    materialDescriptorSetLayout = interfaces::Model::createMaterialDescriptorSetLayout(device);
+    skeletonDescriptorSetLayout = interfaces::Skeleton::descriptorSetLayout(device);
+    materialDescriptorSetLayout = interfaces::Material::descriptorSetLayout(device);
 
     const auto vertShader = utils::vkDefault::VertrxShaderModule(device, parameters.shadersPath / shadersNames.at(workflows::ShaderType::Vertex));
     const std::vector<VkPipelineShaderStageCreateInfo> shaderStages = { vertShader };
@@ -59,11 +59,11 @@ void ShadowGraphics::Shadow::create(const workflows::ShaderNames& shadersNames, 
     pushConstantRange.push_back(VkPushConstantRange{});
         pushConstantRange.back().stageFlags = VK_PIPELINE_STAGE_FLAG_BITS_MAX_ENUM;
         pushConstantRange.back().offset = 0;
-        pushConstantRange.back().size = sizeof(interfaces::MaterialBlock);
+        pushConstantRange.back().size = sizeof(interfaces::Material::Buffer);
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts = {
         lightDescriptorSetLayout,
         objectDescriptorSetLayout,
-        primitiveDescriptorSetLayout,
+        skeletonDescriptorSetLayout,
         materialDescriptorSetLayout
     };
     pipelineLayout = utils::vkDefault::PipelineLayout(device, descriptorSetLayouts, pushConstantRange);

@@ -21,7 +21,7 @@ private:
         const ShadowGraphicsParameters& parameters;
         utils::vkDefault::DescriptorSetLayout lightDescriptorSetLayout;
         utils::vkDefault::DescriptorSetLayout objectDescriptorSetLayout;
-        utils::vkDefault::DescriptorSetLayout primitiveDescriptorSetLayout;
+        utils::vkDefault::DescriptorSetLayout skeletonDescriptorSetLayout;
         utils::vkDefault::DescriptorSetLayout materialDescriptorSetLayout;
         const interfaces::Objects* objects{ nullptr };
         interfaces::DepthMaps* depthMaps{ nullptr };

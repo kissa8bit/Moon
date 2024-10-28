@@ -126,11 +126,11 @@ bool PlyModel::loadFromFile(const utils::PhysicalDevice& physicalDevice, VkComma
 }
 
 void PlyModel::createDescriptors(VkDevice device) {
-    meshDescriptorSetLayout = interfaces::Model::createMeshDescriptorSetLayout(device);
-    materialDescriptorSetLayout = interfaces::Model::createMaterialDescriptorSetLayout(device);
-    descriptorPool = utils::vkDefault::DescriptorPool(device, { &materialDescriptorSetLayout, &meshDescriptorSetLayout }, 1);
+    skeletonDescriptorSetLayout = interfaces::Skeleton::descriptorSetLayout(device);
+    materialDescriptorSetLayout = interfaces::Material::descriptorSetLayout(device);
+    descriptorPool = utils::vkDefault::DescriptorPool(device, { &materialDescriptorSetLayout, &skeletonDescriptorSetLayout }, 1);
 
-    skeleton.createDescriptorSet(device, descriptorPool, meshDescriptorSetLayout);
+    skeleton.createDescriptorSet(device, descriptorPool, skeletonDescriptorSetLayout);
     material().createDescriptorSet(device, descriptorPool, materialDescriptorSetLayout);
 }
 

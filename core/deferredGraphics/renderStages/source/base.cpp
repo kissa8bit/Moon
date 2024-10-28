@@ -9,20 +9,17 @@ namespace moon::deferredGraphics {
 
 Graphics::Base::Base(const GraphicsParameters& parameters, const interfaces::Objects* objects) : parameters(parameters), objects(objects) {}
 
-void Graphics::Base::createDescriptorSetLayout(VkDevice device) {
+void Graphics::Base::create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass) {
     std::vector<VkDescriptorSetLayoutBinding> bindings;
         bindings.push_back(utils::vkDefault::bufferVertexLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
         bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
         bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
 
     descriptorSetLayout = utils::vkDefault::DescriptorSetLayout(device, bindings);
-
     objectDescriptorSetLayout = interfaces::Object::createBaseDescriptorSetLayout(device);
-    primitiveDescriptorSetLayout = interfaces::Model::createMeshDescriptorSetLayout(device);
-    materialDescriptorSetLayout = interfaces::Model::createMaterialDescriptorSetLayout(device);
-}
+    skeletonDescriptorSetLayout = interfaces::Skeleton::descriptorSetLayout(device);
+    materialDescriptorSetLayout = interfaces::Material::descriptorSetLayout(device);
 
-void Graphics::Base::createPipeline(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass) {
     std::vector<VkBool32> transparencyData = {
         static_cast<VkBool32>(parameters.enableTransparency),
         static_cast<VkBool32>(parameters.transparencyPass)
@@ -74,11 +71,11 @@ void Graphics::Base::createPipeline(const workflows::ShaderNames& shadersNames, 
     pushConstantRange.push_back(VkPushConstantRange{});
         pushConstantRange.back().stageFlags = VK_PIPELINE_STAGE_FLAG_BITS_MAX_ENUM;
         pushConstantRange.back().offset = 0;
-        pushConstantRange.back().size = sizeof(interfaces::MaterialBlock);
+        pushConstantRange.back().size = sizeof(interfaces::Material::Buffer);
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts = {
         descriptorSetLayout,
         objectDescriptorSetLayout,
-        primitiveDescriptorSetLayout,
+        skeletonDescriptorSetLayout,
         materialDescriptorSetLayout
     };
     pipelineLayoutMap[interfaces::ObjectType::base] = utils::vkDefault::PipelineLayout(device, descriptorSetLayouts, pushConstantRange);
@@ -115,14 +112,12 @@ void Graphics::Base::createPipeline(const workflows::ShaderNames& shadersNames, 
     pipelineLayoutMap[outliningMask] = utils::vkDefault::PipelineLayout(device, descriptorSetLayouts, pushConstantRange);
         pipelineInfo.back().layout = pipelineLayoutMap[outliningMask];
     pipelineMap[outliningMask] = utils::vkDefault::Pipeline(device, pipelineInfo);
-}
 
-void Graphics::Base::createDescriptors(VkDevice device) {
     descriptorPool = utils::vkDefault::DescriptorPool(device, { &descriptorSetLayout }, parameters.imageInfo.Count);
     descriptorSets = descriptorPool.allocateDescriptorSets(descriptorSetLayout, parameters.imageInfo.Count);
 }
 
-void Graphics::Base::updateDescriptorSets(VkDevice device, const utils::BuffersDatabase& bDatabase, const utils::AttachmentsDatabase& aDatabase)
+void Graphics::Base::update(VkDevice device, const utils::BuffersDatabase& bDatabase, const utils::AttachmentsDatabase& aDatabase)
 {
     for (uint32_t i = 0; i < parameters.imageInfo.Count; i++)
     {
@@ -160,12 +155,6 @@ void Graphics::Base::updateDescriptorSets(VkDevice device, const utils::BuffersD
             descriptorWrites.back().pImageInfo = &depthImageInfo;
         vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
     }
-}
-
-void Graphics::Base::create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass) {
-    createDescriptorSetLayout(device);
-    createPipeline(shadersNames, device, renderPass);
-    createDescriptors(device);
 }
 
 void Graphics::Base::render(uint32_t frameNumber, VkCommandBuffer commandBuffers, uint32_t& primitiveCount) const

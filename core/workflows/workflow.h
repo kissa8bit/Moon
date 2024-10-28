@@ -20,7 +20,7 @@ enum class ShaderType
 
 using ShaderNames = std::unordered_map<ShaderType, std::string>;
 
-struct Workbody{
+struct Workbody {
     utils::vkDefault::Pipeline pipeline;
     utils::vkDefault::PipelineLayout pipelineLayout;
     utils::vkDefault::DescriptorSetLayout descriptorSetLayout;

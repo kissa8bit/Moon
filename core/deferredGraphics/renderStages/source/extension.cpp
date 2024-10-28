@@ -54,11 +54,11 @@ void Graphics::OutliningExtension::create(const workflows::ShaderNames& shadersN
     pushConstantRange.push_back(VkPushConstantRange{});
         pushConstantRange.back().stageFlags = VK_PIPELINE_STAGE_FLAG_BITS_MAX_ENUM;
         pushConstantRange.back().offset = 0;
-        pushConstantRange.back().size = sizeof(interfaces::MaterialBlock);
+        pushConstantRange.back().size = sizeof(interfaces::Material::Buffer);
     std::vector<VkDescriptorSetLayout> descriptorSetLayout = {
         parent.descriptorSetLayout,
         parent.objectDescriptorSetLayout,
-        parent.primitiveDescriptorSetLayout,
+        parent.skeletonDescriptorSetLayout,
         parent.materialDescriptorSetLayout
     };
     pipelineLayout = utils::vkDefault::PipelineLayout(device, descriptorSetLayout, pushConstantRange);

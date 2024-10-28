@@ -6,40 +6,8 @@
 
 namespace moon::interfaces {
 
-MaterialBlock::MaterialBlock(const Material& material, uint32_t primitive) : primitive(primitive) {
-    emissiveFactor = material.emissive.factor;
-    colorTextureSet = material.baseColor.coordSet;
-    normalTextureSet = material.normal.coordSet;
-    occlusionTextureSet = material.occlusion.coordSet;
-    emissiveTextureSet = material.emissive.coordSet;
-    alphaMask = static_cast<float>(material.alphaMode == interfaces::Material::ALPHAMODE_MASK);
-    alphaMaskCutoff = material.alphaCutoff;
-    workflow = static_cast<float>(material.pbrWorkflows);
-
-    switch (material.pbrWorkflows)
-    {
-        case interfaces::Material::PbrWorkflow::METALLIC_ROUGHNESS: {
-            baseColorFactor = material.baseColor.factor;
-            metallicFactor = material.metallicRoughness.factor[Material::metallicIndex];
-            roughnessFactor = material.metallicRoughness.factor[Material::roughnessIndex];
-            physicalDescriptorTextureSet = material.metallicRoughness.coordSet;
-            break;
-        }
-        case interfaces::Material::PbrWorkflow::SPECULAR_GLOSSINESS: {
-            physicalDescriptorTextureSet = material.extensions.specularGlossiness.coordSet;
-            diffuseFactor = material.extensions.diffuse.factor;
-            specularFactor = material.extensions.specularGlossiness.factor;
-            break;
-        }
-    }
-}
-
-bool Skeleton::empty() const {
-    return VkBuffer(deviceBuffer) == VK_NULL_HANDLE;
-}
-
 void Skeleton::createDescriptorSet(VkDevice device, utils::vkDefault::DescriptorPool& descriptorPool, const utils::vkDefault::DescriptorSetLayout& descriptorSetLayout) {
-    if (empty()) return;
+    if (!CHECK_M(VkBuffer(deviceBuffer) != VK_NULL_HANDLE, "[ Skeleton::createDescriptorSet ] deviceBuffer is VK_NULL_HANDLE")) return;
 
     descriptorSet = descriptorPool.allocateDescriptorSet(descriptorSetLayout);
 
@@ -52,6 +20,12 @@ void Skeleton::createDescriptorSet(VkDevice device, utils::vkDefault::Descriptor
     writeDescriptorSet.dstBinding = 0;
     writeDescriptorSet.pBufferInfo = &bufferInfo;
     vkUpdateDescriptorSets(device, 1, &writeDescriptorSet, 0, nullptr);
+}
+
+utils::vkDefault::DescriptorSetLayout Skeleton::descriptorSetLayout(VkDevice device) {
+    std::vector<VkDescriptorSetLayoutBinding> binding;
+    binding.push_back(utils::vkDefault::bufferVertexLayoutBinding(static_cast<uint32_t>(binding.size()), 1));
+    return utils::vkDefault::DescriptorSetLayout(device, binding);
 }
 
 void Mesh::renderBB(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets) const {
@@ -71,8 +45,8 @@ void Mesh::render(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout
         descriptors.push_back(material.descriptorSet);
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, descriptors.size(), descriptors.data(), 0, NULL);
 
-        interfaces::MaterialBlock materialBlock(material, primitiveCount++);
-        vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(materialBlock), &materialBlock);
+        const auto buffer = material.buffer(primitiveCount++);
+        vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(buffer), &buffer);
 
         if (primitive.index.range.count > 0) {
             vkCmdDrawIndexed(commandBuffer, primitive.index.range.count, 1, primitive.index.range.first, 0, 0);
@@ -99,22 +73,6 @@ std::vector<VkVertexInputAttributeDescription> Vertex::getAttributeDescriptions(
     attributeDescriptions.push_back(VkVertexInputAttributeDescription{static_cast<uint32_t>(attributeDescriptions.size()),0,VK_FORMAT_R32G32B32_SFLOAT,offsetof(Vertex, bitangent)});
 
     return attributeDescriptions;
-}
-
-utils::vkDefault::DescriptorSetLayout Model::createMeshDescriptorSetLayout(VkDevice device) {
-    std::vector<VkDescriptorSetLayoutBinding> binding;
-        binding.push_back(utils::vkDefault::bufferVertexLayoutBinding(static_cast<uint32_t>(binding.size()), 1));
-    return utils::vkDefault::DescriptorSetLayout(device, binding);
-}
-
-utils::vkDefault::DescriptorSetLayout Model::createMaterialDescriptorSetLayout(VkDevice device) {
-    std::vector<VkDescriptorSetLayoutBinding> binding;
-        binding.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(binding.size()), 1));
-        binding.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(binding.size()), 1));
-        binding.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(binding.size()), 1));
-        binding.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(binding.size()), 1));
-        binding.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(binding.size()), 1));
-    return utils::vkDefault::DescriptorSetLayout(device, binding);
 }
 
 Material::Material(const utils::Texture* emptyTexture) {
@@ -175,6 +133,48 @@ void Material::createDescriptorSet(VkDevice device, utils::vkDefault::Descriptor
         descriptorWrites.back().pImageInfo = &info;
     }
     vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+}
+
+utils::vkDefault::DescriptorSetLayout Material::descriptorSetLayout(VkDevice device) {
+    std::vector<VkDescriptorSetLayoutBinding> binding;
+    binding.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(binding.size()), 1));
+    binding.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(binding.size()), 1));
+    binding.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(binding.size()), 1));
+    binding.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(binding.size()), 1));
+    binding.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(binding.size()), 1));
+    return utils::vkDefault::DescriptorSetLayout(device, binding);
+}
+
+Material::Buffer::Buffer(const Material& material, uint32_t primitive) : primitive(primitive) {
+    emissiveFactor = material.emissive.factor;
+    colorTextureSet = material.baseColor.coordSet;
+    normalTextureSet = material.normal.coordSet;
+    occlusionTextureSet = material.occlusion.coordSet;
+    emissiveTextureSet = material.emissive.coordSet;
+    alphaMask = static_cast<float>(material.alphaMode == interfaces::Material::ALPHAMODE_MASK);
+    alphaMaskCutoff = material.alphaCutoff;
+    workflow = static_cast<float>(material.pbrWorkflows);
+
+    switch (material.pbrWorkflows)
+    {
+    case interfaces::Material::PbrWorkflow::METALLIC_ROUGHNESS: {
+        baseColorFactor = material.baseColor.factor;
+        metallicFactor = material.metallicRoughness.factor[Material::metallicIndex];
+        roughnessFactor = material.metallicRoughness.factor[Material::roughnessIndex];
+        physicalDescriptorTextureSet = material.metallicRoughness.coordSet;
+        break;
+    }
+    case interfaces::Material::PbrWorkflow::SPECULAR_GLOSSINESS: {
+        physicalDescriptorTextureSet = material.extensions.specularGlossiness.coordSet;
+        diffuseFactor = material.extensions.diffuse.factor;
+        specularFactor = material.extensions.specularGlossiness.factor;
+        break;
+    }
+    }
+}
+
+Material::Buffer Material::buffer(uint32_t primitive) const {
+    return Buffer(*this, primitive);
 }
 
 }

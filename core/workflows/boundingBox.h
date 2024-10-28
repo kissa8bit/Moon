@@ -25,7 +25,7 @@ private:
     struct BoundingBox : public Workbody{
         const BoundingBoxParameters& parameters;
         utils::vkDefault::DescriptorSetLayout objectDescriptorSetLayout;
-        utils::vkDefault::DescriptorSetLayout primitiveDescriptorSetLayout;
+        utils::vkDefault::DescriptorSetLayout skeletonDescriptorSetLayout;
         const interfaces::Objects* objects;
 
         BoundingBox(const BoundingBoxParameters& parameters, const interfaces::Objects* objects) : parameters(parameters), objects(objects) {};

@@ -163,8 +163,8 @@ void Graphics::create(const utils::vkDefault::CommandPool& commandPool, utils::A
 
 void Graphics::updateDescriptors(const utils::BuffersDatabase& bDatabase, const utils::AttachmentsDatabase& aDatabase) {
     if (!parameters.enable || !created) return;
-    base.updateDescriptorSets(device, bDatabase, aDatabase);
-    lighting.updateDescriptorSets(device, bDatabase, aDatabase);
+    base.update(device, bDatabase, aDatabase);
+    lighting.update(device, bDatabase, aDatabase);
 }
 
 void Graphics::updateCommandBuffer(uint32_t frameNumber){
