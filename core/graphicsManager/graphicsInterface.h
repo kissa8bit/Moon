@@ -16,19 +16,19 @@ namespace moon::graphicsManager {
 
 class GraphicsInterface{
 protected:
-    const utils::PhysicalDeviceMap* devices{ nullptr };
-    const utils::PhysicalDevice*    device{ nullptr };
-    const utils::SwapChain*         swapChainKHR{ nullptr };
+    const utils::PhysicalDevice::Map* devices{ nullptr };
+    const utils::PhysicalDevice* device{ nullptr };
+    const utils::SwapChain* swapChainKHR{ nullptr };
 
-    uint32_t                        resourceCount{ 0 };
-    std::unique_ptr<Linkable>       link;
+    uint32_t resourceCount{ 0 };
+    std::unique_ptr<Linkable> link;
 
 private:
     virtual void update(uint32_t imageIndex) = 0;
     virtual utils::vkDefault::VkSemaphores submit(const uint32_t frameIndex, const utils::vkDefault::VkSemaphores& externalSemaphore) = 0;
 
     virtual void setProperties(
-        const utils::PhysicalDeviceMap& devicesMap,
+        const utils::PhysicalDevice::Map& devicesMap,
         const uint32_t deviceIndex,
         const utils::SwapChain* swapChain,
         uint32_t resources)

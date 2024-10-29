@@ -23,7 +23,7 @@ private:
     utils::vkDefault::DebugUtilsMessenger   debugMessenger;
     utils::vkDefault::Surface               surface;
 
-    moon::utils::PhysicalDeviceMap          devices;
+    moon::utils::PhysicalDevice::Map        devices;
     moon::utils::PhysicalDevice*            activeDevice{nullptr};
     moon::utils::SwapChain                  swapChainKHR;
 
@@ -55,7 +55,7 @@ public:
     uint32_t   getImageIndex() const;
     uint32_t   getImageCount() const;
 
-    void setDevice(uint32_t deviceIndex);
+    void setDevice(utils::PhysicalDevice::Index deviceIndex);
     void setGraphics(GraphicsInterface* graphics);
 
     void reset(GLFWwindow* window);

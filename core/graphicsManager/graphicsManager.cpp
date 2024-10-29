@@ -75,7 +75,7 @@ VkResult GraphicsManager::createDevice(const VkPhysicalDeviceFeatures& deviceFea
 
     for (const auto phDevice : phDevices){
         auto device = moon::utils::PhysicalDevice(phDevice, deviceFeatures, deviceExtensions);
-        const moon::utils::DeviceIndex index = device.properties().index;
+        const moon::utils::PhysicalDevice::Index index = device.properties().index;
         devices[index] = std::move(device);
         if(!activeDevice){
             activeDevice = &devices[index];
@@ -122,7 +122,7 @@ void GraphicsManager::setGraphics(GraphicsInterface* ingraphics){
     ingraphics->link->renderPass() = linker.getRenderPass();
 }
 
-void GraphicsManager::setDevice(uint32_t deviceIndex){
+void GraphicsManager::setDevice(utils::PhysicalDevice::Index deviceIndex){
     activeDevice = &devices.at(deviceIndex);
 }
 

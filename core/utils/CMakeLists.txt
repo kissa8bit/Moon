@@ -29,6 +29,7 @@ set(SOURCES
     depthMap.cpp
     cursor.cpp
     memory.cpp
+    queueFamily.cpp
 )
 
 set(HEADERS
@@ -43,6 +44,7 @@ set(HEADERS
     depthMap.h
     cursor.h
     memory.h
+    queueFamily.h
 )
 
 add_library(utils STATIC ${SOURCES} ${HEADERS})

@@ -18,45 +18,6 @@ struct ImageInfo {
     VkSampleCountFlagBits   Samples{ VK_SAMPLE_COUNT_1_BIT };
 };
 
-using QueueFamilyIndex = uint32_t;
-using QueueFamilySize = uint32_t;
-
-struct QueueFamily {
-    VkQueueFamilyProperties queueFamilyProperties{};
-    VkBool32 presentSupport{false};
-    std::vector<float> queuePriorities;
-
-    QueueFamily() = default;
-    QueueFamily(VkQueueFamilyProperties queueFamilyProperties, VkBool32 presentSupport = false) :
-        queueFamilyProperties(queueFamilyProperties), presentSupport(presentSupport) {
-        queuePriorities.resize(queueFamilyProperties.queueCount, 1.0f / queueFamilyProperties.queueCount);
-    }
-    QueueFamily(const QueueFamily& other) : QueueFamily(other.queueFamilyProperties, other.presentSupport) {}
-    QueueFamily& operator=(const QueueFamily& other) {
-        queueFamilyProperties = other.queueFamilyProperties;
-        presentSupport = other.presentSupport;
-        queuePriorities.resize(queueFamilyProperties.queueCount, 1.0f / queueFamilyProperties.queueCount);
-        return *this;
-    }
-
-    QueueFamilySize count() const { return queueFamilyProperties.queueCount; }
-    bool availableQueueFlag(VkQueueFlags flag) const { return (flag & queueFamilyProperties.queueFlags) == flag; }
-};
-
-using QueueRequest = std::unordered_map<QueueFamilyIndex, QueueFamilySize>;
-using QueueFamilies = std::unordered_map<QueueFamilyIndex, QueueFamily>;
-
-using DeviceIndex = uint32_t;
-
-struct PhysicalDeviceProperties {
-    DeviceIndex index{ 0x7FFFFFFF };
-    VkPhysicalDeviceType type{ VK_PHYSICAL_DEVICE_TYPE_MAX_ENUM };
-    VkPhysicalDeviceFeatures deviceFeatures{};
-    std::string name{};
-    std::vector<std::string> deviceExtensions;
-    std::vector<std::string> validationLayers = { "VK_LAYER_KHRONOS_validation" };
-};
-
 using Paths = std::vector<std::filesystem::path>;
 
 struct SubpassInfo {

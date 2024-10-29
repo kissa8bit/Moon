@@ -9,6 +9,7 @@
 #include <map>
 
 #include "operations.h"
+#include "queueFamily.h"
 
 namespace moon::utils::vkDefault {
 
@@ -386,32 +387,6 @@ public:
 	CommandPool(const VkDevice& device);
 	CommandBuffers allocateCommandBuffers(const uint32_t& commandBuffersCount) const;
 };
-
-using QueueIndex = uint32_t;
-
-class Device {
-private:
-	VkPhysicalDevice physicalDevice{ VK_NULL_HANDLE };
-	VkDevice descriptor{ VK_NULL_HANDLE };
-	std::map<QueueFamilyIndex, std::vector<VkQueue>> queueMap;
-
-public:
-	~Device();
-	Device() = default;
-	Device(const Device&) = delete;
-	Device& operator=(const Device&) = delete;
-	Device(Device&& other) noexcept;
-	Device& operator=(Device&& other) noexcept;
-	void swap(Device& other) noexcept;
-
-	Device(VkPhysicalDevice physicalDevice, const PhysicalDeviceProperties& properties, const QueueFamilies& queueFamilies, const QueueRequest& queueRequest);
-	operator const VkDevice& () const;
-	operator const VkDevice* () const;
-
-	VkQueue operator()(QueueFamilyIndex familyIndex, QueueIndex queueIndex) const;
-};
-
-using Devices = std::vector<Device>;
 
 }
 #endif // VKDEFAULT_H

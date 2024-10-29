@@ -3,6 +3,82 @@
 
 namespace moon::utils {
 
+Device::~Device() {
+    if (descriptor) vkDestroyDevice(descriptor, nullptr); descriptor = VK_NULL_HANDLE;
+}
+
+Device::Device(Device&& other) noexcept {
+    swap(other);
+}
+
+Device& Device::operator=(Device&& other) noexcept {
+    swap(other);
+    return *this;
+}
+
+void Device::swap(Device& other) noexcept {
+    std::swap(physicalDevice, other.physicalDevice);
+    std::swap(descriptor, other.descriptor);
+    std::swap(queueMap, other.queueMap);
+}
+
+Device::Device(VkPhysicalDevice physicalDevice, const PhysicalDevice::Properties& properties, const QueueFamily::Map& queueFamilies, const QueueRequest& queueRequest)
+    : physicalDevice(physicalDevice)
+{
+    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+    for (const auto& [index, request] : queueRequest) {
+        if (const auto it = queueFamilies.find(index); it != queueFamilies.end()) {
+            const auto& queueFamily = it->second;
+            auto& queueCreateInfo = queueCreateInfos.emplace_back(VkDeviceQueueCreateInfo{});
+            queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+            queueCreateInfo.queueFamilyIndex = index;
+            queueCreateInfo.queueCount = std::min(queueFamily.count(), request);
+            queueCreateInfo.pQueuePriorities = queueFamily.queuePriorities.data();
+        }
+    }
+
+    VkDeviceCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+    createInfo.pQueueCreateInfos = queueCreateInfos.data();
+    createInfo.pEnabledFeatures = &properties.deviceFeatures;
+
+    const auto pEnabledExtensionNames = properties.deviceExtensions.data()->c_str();
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(properties.deviceExtensions.size());
+    createInfo.ppEnabledExtensionNames = &pEnabledExtensionNames;
+#ifndef DEBUG_PRINT_DISABLE
+    const auto pEnabledLayerNames = properties.validationLayers.data()->c_str();
+    createInfo.enabledLayerCount = static_cast<uint32_t>(properties.validationLayers.size());
+    createInfo.ppEnabledLayerNames = &pEnabledLayerNames;
+#endif
+
+    CHECK(vkCreateDevice(physicalDevice, &createInfo, nullptr, &descriptor));
+
+    for (const auto& queueCreateInfo : queueCreateInfos) {
+        queueMap[queueCreateInfo.queueFamilyIndex] = std::vector<VkQueue>(queueCreateInfo.queueCount);
+        for (uint32_t index = 0; index < queueCreateInfo.queueCount; index++) {
+            vkGetDeviceQueue(descriptor, queueCreateInfo.queueFamilyIndex, index, &queueMap[queueCreateInfo.queueFamilyIndex][index]);
+        }
+    }
+}
+
+Device::operator const VkDevice& () const {
+    return descriptor;
+}
+
+Device::operator const VkDevice* () const {
+    return &descriptor;
+}
+
+VkQueue Device::operator()(QueueFamily::Index familyIndex, QueueIndex queueIndex) const {
+    if (queueMap.count(familyIndex)) {
+        if (const auto& queue = queueMap.at(familyIndex); queue.size() > queueIndex) {
+            return queue[queueIndex];
+        }
+    }
+    return VK_NULL_HANDLE;
+}
+
 PhysicalDevice& PhysicalDevice::operator=(PhysicalDevice&& other) {
     swap(other);
     return *this;
@@ -65,11 +141,11 @@ PhysicalDevice::operator VkPhysicalDevice() const {
     return descriptor;
 }
 
-const vkDefault::Device& PhysicalDevice::device(uint32_t index) const {
+const Device& PhysicalDevice::device(uint32_t index) const {
     return devices.at(index);
 }
 
-const PhysicalDeviceProperties& PhysicalDevice::properties() const {
+const PhysicalDevice::Properties& PhysicalDevice::properties() const {
     return props;
 }
 
