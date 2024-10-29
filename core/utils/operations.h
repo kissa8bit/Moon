@@ -6,7 +6,7 @@
 #include <string>
 #include <filesystem>
 
-struct GLFWwindow;
+#include "window.h"
 
 namespace moon::utils {
 
@@ -263,7 +263,7 @@ namespace swapChain {
             const std::vector<VkPresentModeKHR>&    availablePresentModes);
 
     VkExtent2D queryingExtent(
-            GLFWwindow* window,
+            Window*                                 window,
             const VkSurfaceCapabilitiesKHR&         capabilities);
 }
 

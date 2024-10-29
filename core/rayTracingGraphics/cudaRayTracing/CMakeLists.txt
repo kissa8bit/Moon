@@ -66,7 +66,8 @@ set(CUDA_NVCC_FLAGS
     -rdc=true
     --use_fast_math
     --expt-relaxed-constexpr
-    -std=c++17)
+    -std=c++17
+)
 
 set(INCLUDE_DIRS
     ${CMAKE_CURRENT_LIST_DIR}

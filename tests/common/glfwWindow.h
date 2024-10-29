@@ -2,24 +2,26 @@
 #define MOON_TEST_WINDOW_H
 
 #include <filesystem>
+#include <vulkan.h>
 #include <glfw3.h>
 
 #include "linearAlgebra.h"
+#include "window.h"
 
 namespace moon::tests {
 
 static bool resizeFlag = false;
 
-class Window
+class GlfwWindow : utils::Window
 {
 private:
     math::vec2u extent{ 0 };
     GLFWwindow* window{ nullptr };
 
 public:
-    Window() = default;
-    Window(const math::vec2u& extent, const std::filesystem::path& iconName = "");
-    ~Window();
+    GlfwWindow() = default;
+    GlfwWindow(const math::vec2u& extent, const std::filesystem::path& iconName = "");
+    ~GlfwWindow();
 
     operator GLFWwindow*() const;
     math::vec2u sizes() const;
@@ -30,6 +32,10 @@ public:
     void resize();
     void close();
     bool& windowResized();
+
+    utils::Window::FramebufferSize getFramebufferSize() const override;
+    VkResult createSurface(VkInstance instance, VkSurfaceKHR* surface) const override;
+    std::vector<const char*> getExtensions() const override;
 };
 
 }

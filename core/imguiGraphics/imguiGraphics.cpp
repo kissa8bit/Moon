@@ -1,24 +1,21 @@
 #include "imguiGraphics.h"
 
 #include "imgui.h"
-#include "imgui_impl_glfw.h"
 #include "imgui_impl_vulkan.h"
 
 #include "operations.h"
 
 namespace moon::imguiGraphics {
 
-ImguiGraphics::ImguiGraphics(GLFWwindow* window, VkInstance instance, uint32_t imageCount) :
-    window(window),
-    instance(instance),
-    imageCount(imageCount) {
+ImguiGraphics::ImguiGraphics(VkInstance instance, uint32_t imageCount)
+    : instance(instance), imageCount(imageCount)
+{
     setupImguiContext();
     link = std::make_unique<ImguiLink>();
 }
 
 ImguiGraphics::~ImguiGraphics(){
     ImGui_ImplVulkan_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 }
 
@@ -40,8 +37,6 @@ void ImguiGraphics::reset() {
         poolInfo.pPoolSizes = descriptorPoolSize.data();
     descriptorPool = utils::vkDefault::DescriptorPool(device->device(), poolInfo);
 
-    // Setup Platform/Renderer backends
-    ImGui_ImplGlfw_InitForVulkan(window, true);
     ImGui_ImplVulkan_InitInfo initInfo = {};
         initInfo.Instance = instance;
         initInfo.PhysicalDevice = *device;

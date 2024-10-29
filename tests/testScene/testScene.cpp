@@ -1,6 +1,7 @@
 #include "testScene.h"
 #include "deferredGraphics.h"
 #include "graphicsManager.h"
+#include "linearAlgebra.h"
 #include "gltfmodel.h"
 #include "plymodel.h"
 #include "cameras.h"
@@ -11,6 +12,7 @@
 
 #ifdef IMGUI_GRAPHICS
 #include "testSceneGui.h"
+#include "imgui_impl_glfw.h"
 #endif
 
 #include <random>
@@ -19,7 +21,7 @@
 #include <algorithm>
 #include <execution>
 
-testScene::testScene(moon::graphicsManager::GraphicsManager& app, moon::tests::Window& window, const std::filesystem::path& ExternalPath):
+testScene::testScene(moon::graphicsManager::GraphicsManager& app, moon::tests::GlfwWindow& window, const std::filesystem::path& ExternalPath):
     ExternalPath(ExternalPath),
     window(window),
     app(app),
@@ -27,6 +29,12 @@ testScene::testScene(moon::graphicsManager::GraphicsManager& app, moon::tests::W
     board(std::make_shared<controller>(window, glfwGetKey))
 {
     create();
+}
+
+testScene::~testScene() {
+#ifdef IMGUI_GRAPHICS
+    ImGui_ImplGlfw_Shutdown();
+#endif
 }
 
 void testScene::resize() {
@@ -87,9 +95,11 @@ void testScene::create()
 #endif
 
 #ifdef IMGUI_GRAPHICS
-    gui = std::make_shared<moon::imguiGraphics::ImguiGraphics>(window, app.getInstance(), app.getImageCount());
+    gui = std::make_shared<moon::imguiGraphics::ImguiGraphics>(app.getInstance(), app.getImageCount());
     app.setGraphics(gui.get());
-    gui->reset();
+    if(ImGui_ImplGlfw_InitForVulkan(window, true)) {
+        gui->reset();
+    }
 #endif
 
     createModels();

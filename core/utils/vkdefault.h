@@ -243,7 +243,7 @@ public:
 		std::swap(instance, other.instance);
 	}
 
-	Surface(const VkInstance& instance, GLFWwindow* window);
+	Surface(const VkInstance& instance, Window* window);
 	operator const VkSurfaceKHR& () const;
 };
 

@@ -12,6 +12,7 @@ set(CMAKE_DEBUG_POSTFIX d)
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../common
+    ${GLFW_DIR}/include/GLFW
 )
 
 set(SOURCES
@@ -19,7 +20,7 @@ set(SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/controller.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/main.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/gui.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../common/window.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/glfwWindow.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/mouse.cpp
 )
 set(INCLUDES
@@ -29,7 +30,7 @@ set(INCLUDES
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/scene.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/controller.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/gui.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/../common/window.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/glfwWindow.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/mouse.h
 )
 

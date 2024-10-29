@@ -1,12 +1,10 @@
-#include "window.h"
+#include "glfwWindow.h"
 
 #include <stb_image.h>
 
-#include "linearAlgebra.h"
-
 namespace moon::tests {
 
-Window::Window(const math::vec2u& extent, const std::filesystem::path& iconName)
+GlfwWindow::GlfwWindow(const math::vec2u& extent, const std::filesystem::path& iconName)
 	: extent(extent)
 {
     glfwInit();
@@ -24,24 +22,24 @@ Window::Window(const math::vec2u& extent, const std::filesystem::path& iconName)
     }
 }
 
-Window::~Window() {
+GlfwWindow::~GlfwWindow() {
     glfwDestroyWindow(window);
     glfwTerminate();
 }
 
-Window::operator GLFWwindow* () const {
+GlfwWindow::operator GLFWwindow* () const {
 	return window;
 }
 
-math::vec2u Window::sizes() const {
+math::vec2u GlfwWindow::sizes() const {
 	return extent;
 }
 
-bool& Window::windowResized() {
+bool& GlfwWindow::windowResized() {
     return resizeFlag;
 }
 
-void Window::resize() {
+void GlfwWindow::resize() {
     int width = 0, height = 0;
     glfwGetFramebufferSize(window, &width, &height);
     while (width * height == 0)
@@ -54,22 +52,38 @@ void Window::resize() {
     resizeFlag = false;
 }
 
-float Window::aspectRatio() const {
+float GlfwWindow::aspectRatio() const {
 	return (float)extent[0] / (float)extent[1];
 }
 
-void Window::close() {
+void GlfwWindow::close() {
 	glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
 
-bool Window::isClosed() const {
+bool GlfwWindow::isClosed() const {
     return glfwWindowShouldClose(window);
 }
 
-math::vec2d Window::mousePose() const {
+math::vec2d GlfwWindow::mousePose() const {
 	double x = 0, y = 0;
 	glfwGetCursorPos(window, &x, &y);
 	return { x,y };
+}
+
+utils::Window::FramebufferSize GlfwWindow::getFramebufferSize() const {
+    int width = 0, height = 0;
+    glfwGetFramebufferSize(window, &width, &height);
+    return utils::Window::FramebufferSize{ static_cast<uint32_t>(width) , static_cast<uint32_t>(height) };
+}
+
+VkResult GlfwWindow::createSurface(VkInstance instance, VkSurfaceKHR* surface) const {
+    return glfwCreateWindowSurface(instance, window, nullptr, surface);
+}
+
+std::vector<const char*> GlfwWindow::getExtensions() const {
+    uint32_t glfwExtensionCount = 0;
+    const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+    return std::vector<const char*>(glfwExtensions, glfwExtensions + glfwExtensionCount);
 }
 
 }

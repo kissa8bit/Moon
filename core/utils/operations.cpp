@@ -2,7 +2,6 @@
 
 #include "memory.h"
 
-#include <glfw3.h>
 #include <vulkan/vk_enum_string_helper.h>
 
 #include <set>
@@ -631,15 +630,14 @@ VkPresentModeKHR swapChain::queryingPresentMode(const std::vector<VkPresentModeK
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D swapChain::queryingExtent(GLFWwindow* window, const VkSurfaceCapabilitiesKHR& capabilities)
+VkExtent2D swapChain::queryingExtent(Window* window, const VkSurfaceCapabilitiesKHR& capabilities)
 {
-    int width = 0, height = 0;
-    glfwGetFramebufferSize(window, &width, &height);
-
-    VkExtent2D actualExtent = (capabilities.currentExtent.width != UINT32_MAX && capabilities.currentExtent.height != UINT32_MAX) ? capabilities.currentExtent :
-    VkExtent2D{ actualExtent.width = std::clamp(static_cast<uint32_t>(width), capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
-                actualExtent.height = std::clamp(static_cast<uint32_t>(height), capabilities.minImageExtent.height, capabilities.maxImageExtent.height)};
-
+    if(!CHECK_M(window, "[ swapChain::queryingExtent ] : window is nullptr")) return{};
+    const auto [width, height] = window->getFramebufferSize();
+    VkExtent2D actualExtent = (capabilities.currentExtent.width != UINT32_MAX && capabilities.currentExtent.height != UINT32_MAX)
+    ? capabilities.currentExtent
+    : VkExtent2D{   actualExtent.width = std::clamp(static_cast<uint32_t>(width), capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
+                    actualExtent.height = std::clamp(static_cast<uint32_t>(height), capabilities.minImageExtent.height, capabilities.maxImageExtent.height)};
     return actualExtent;
 }
 

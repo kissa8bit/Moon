@@ -6,7 +6,7 @@
 #include "graphicsManager.h"
 #include "memory.h"
 
-#include "window.h"
+#include "glfwWindow.h"
 
 #if defined(TESTCUDA)
     #include "testCuda.h"
@@ -25,9 +25,9 @@ VkPhysicalDeviceFeatures physicalDeviceFeatures(){
     return deviceFeatures;
 }
 
-std::pair<uint32_t, uint32_t> resize(moon::tests::Window& window, moon::graphicsManager::GraphicsManager& app, scene& testScene) {
+std::pair<uint32_t, uint32_t> resize(moon::tests::GlfwWindow& window, moon::graphicsManager::GraphicsManager& app, scene& testScene) {
     window.resize();
-    app.reset(window);
+    app.reset((moon::utils::Window*)&window);
     testScene.resize();
     return { window.sizes()[0], window.sizes()[1] };
 }
@@ -47,9 +47,9 @@ int main()
 
     const std::filesystem::path ExternalPath = std::filesystem::absolute(std::filesystem::path(__FILE__).replace_filename("../../"));
 
-    moon::tests::Window window({WIDTH, HEIGHT}, ExternalPath / "dependences/texture/icon.PNG");
+    moon::tests::GlfwWindow window({WIDTH, HEIGHT}, ExternalPath / "dependences/texture/icon.PNG");
 
-    moon::graphicsManager::GraphicsManager app(window, imageCount, resCount, physicalDeviceFeatures());
+    moon::graphicsManager::GraphicsManager app((moon::utils::Window*)&window, imageCount, resCount, physicalDeviceFeatures());
 
 #if defined(TESTCUDA)
     testCuda testScene(app, window, ExternalPath);

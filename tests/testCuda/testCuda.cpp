@@ -7,6 +7,7 @@
 
 #ifdef IMGUI_GRAPHICS
 #include "gui.h"
+#include "imgui_impl_glfw.h"
 #endif
 
 #include <models/objmodel.h>
@@ -122,7 +123,7 @@ void createWorld(std::unordered_map<std::string, std::unique_ptr<cuda::rayTracin
     }
 }
 
-testCuda::testCuda(moon::graphicsManager::GraphicsManager& app, moon::tests::Window& window, const std::filesystem::path& ExternalPath) :
+testCuda::testCuda(moon::graphicsManager::GraphicsManager& app, moon::tests::GlfwWindow& window, const std::filesystem::path& ExternalPath) :
     ExternalPath(ExternalPath),
     app(app),
     window(window),
@@ -145,7 +146,11 @@ testCuda::testCuda(moon::graphicsManager::GraphicsManager& app, moon::tests::Win
     create();
 }
 
-testCuda::~testCuda() = default;
+testCuda::~testCuda() {
+#ifdef IMGUI_GRAPHICS
+    ImGui_ImplGlfw_Shutdown();
+#endif
+}
 
 void testCuda::create()
 {
@@ -164,9 +169,11 @@ void testCuda::create()
     graphics->reset();
 
 #ifdef IMGUI_GRAPHICS
-    gui = std::make_shared<moon::imguiGraphics::ImguiGraphics>(window, app.getInstance(), app.getImageCount());
+    gui = std::make_shared<moon::imguiGraphics::ImguiGraphics>(app.getInstance(), app.getImageCount());
     app.setGraphics(gui.get());
-    gui->reset();
+    if (ImGui_ImplGlfw_InitForVulkan(window, true)) {
+        gui->reset();
+    }
 #endif
 
     timer.elapsedTime("testCuda::create : create graphics");

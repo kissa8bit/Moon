@@ -13,15 +13,16 @@ set(SOURCES
     testCuda.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/main.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/controller.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../common/window.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/glfwWindow.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/mouse.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/gui.cpp
 )
+
 set(INCLUDES
     testCuda.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/scene.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/controller.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/../common/window.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/glfwWindow.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/mouse.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/gui.h
 )
@@ -31,12 +32,13 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/../common
     ${CMAKE_CURRENT_SOURCE_DIR}/../..
     ${OBJ_DIR}
+    ${GLFW_DIR}/include/GLFW
 )
 
 add_executable(testCuda ${INCLUDES} ${SOURCES})
 add_definitions(-DTESTCUDA)
 
-target_link_libraries(testCuda PRIVATE rayTracingGraphics imguiGraphics ${LIBS_DIRS})
+target_link_libraries(testCuda PRIVATE rayTracingGraphics imguiGraphics utils ${LIBS_DIRS})
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_custom_command(

@@ -16,7 +16,7 @@ private:
         utils::vkDefault::ImageView imageView;
     };
 
-    GLFWwindow* window{ nullptr };
+    Window* window{ nullptr };
     const PhysicalDevice* device{ nullptr };
     VkSurfaceKHR surface{ VK_NULL_HANDLE };
     utils::vkDefault::ImageInfo imageInfo;
@@ -32,7 +32,7 @@ public:
     SwapChain(SwapChain&&) = delete;
     SwapChain& operator=(SwapChain&&) = delete;
 
-    VkResult reset(const PhysicalDevice* device, GLFWwindow* window, VkSurfaceKHR surface, int32_t maxImageCount = -1);
+    VkResult reset(const PhysicalDevice* device, Window* window, VkSurfaceKHR surface, int32_t maxImageCount = -1);
     VkResult present(VkSemaphore waitSemaphore, uint32_t imageIndex) const;
 
     operator const VkSwapchainKHR&() const;
@@ -40,7 +40,7 @@ public:
 
     utils::vkDefault::ImageInfo info() const;
     VkSurfaceKHR getSurface() const;
-    GLFWwindow* getWindow() const;
+    Window* getWindow() const;
 
     std::vector<uint32_t> makeScreenshot(uint32_t i = 0) const;
 };

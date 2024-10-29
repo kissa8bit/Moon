@@ -1,8 +1,6 @@
 #include "vkdefault.h"
 #include "operations.h"
 
-#include <glfw3.h>
-
 namespace moon::utils {
 
 VkSamplerCreateInfo vkDefault::sampler(){
@@ -437,8 +435,10 @@ vkDefault::Surface::~Surface() {
     }
 }
 
-vkDefault::Surface::Surface(const VkInstance& instance, GLFWwindow* window) : instance(instance) {
-    CHECK(glfwCreateWindowSurface(instance, window, nullptr, &surface));
+vkDefault::Surface::Surface(const VkInstance& instance, Window* window) : instance(instance) {
+    if (window) {
+        CHECK(window->createSurface(instance, &surface));
+    }
 }
 
 vkDefault::Surface::operator const VkSurfaceKHR& () const {

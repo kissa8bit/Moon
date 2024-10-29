@@ -11,7 +11,6 @@ endif()
 set(INCLUDE_DIRS
     ${Vulkan_INCLUDE_DIRS}
     ${Vulkan_INCLUDE_DIRS}/vulkan
-    ${GLFW_DIR}/include/GLFW
     ${STB_DIR}
 )
 
@@ -45,6 +44,7 @@ set(HEADERS
     cursor.h
     memory.h
     queueFamily.h
+    window.h
 )
 
 add_library(utils STATIC ${SOURCES} ${HEADERS})

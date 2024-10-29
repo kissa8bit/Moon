@@ -7,7 +7,7 @@
 #include <memory>
 
 #include "scene.h"
-#include "window.h"
+#include "glfwWindow.h"
 #include "controller.h"
 
 #include "linearAlgebra.h"
@@ -30,7 +30,7 @@ private:
     float blitFactor = 1.0f;
 
     moon::graphicsManager::GraphicsManager& app;
-    moon::tests::Window& window;
+    moon::tests::GlfwWindow& window;
     std::unique_ptr<cuda::rayTracing::Camera> hostcam;
 
     std::shared_ptr<controller> mouse;
@@ -51,7 +51,7 @@ private:
 
     void create();
 public:
-    testCuda(moon::graphicsManager::GraphicsManager& app, moon::tests::Window& window, const std::filesystem::path& ExternalPath);
+    testCuda(moon::graphicsManager::GraphicsManager& app, moon::tests::GlfwWindow& window, const std::filesystem::path& ExternalPath);
     ~testCuda();
 
     void resize() override;

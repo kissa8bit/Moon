@@ -8,7 +8,7 @@
 #include <memory>
 
 #include "scene.h"
-#include "window.h"
+#include "glfwWindow.h"
 #include "controller.h"
 #include "controledObject.h"
 #include "mouse.h"
@@ -28,7 +28,7 @@ private:
     std::filesystem::path ExternalPath;
 
     moon::graphicsManager::GraphicsManager& app;
-    moon::tests::Window& window;
+    moon::tests::GlfwWindow& window;
     moon::tests::Mouse mouse;
     std::shared_ptr<controller> board{ nullptr };
 
@@ -62,7 +62,8 @@ private:
     void makeGui();
 
 public:
-    testScene(moon::graphicsManager::GraphicsManager& app, moon::tests::Window& window, const std::filesystem::path& ExternalPath);
+    testScene(moon::graphicsManager::GraphicsManager& app, moon::tests::GlfwWindow& window, const std::filesystem::path& ExternalPath);
+    ~testScene();
 
     void resize() override;
     void updateFrame(uint32_t frameNumber, float frameTime) override;

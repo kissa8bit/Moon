@@ -1,28 +1,27 @@
 #include "graphicsManager.h"
 #include "linkable.h"
 
-#include <glfw3.h>
 #include <string>
 
 namespace moon::graphicsManager {
 
-GraphicsManager::GraphicsManager(GLFWwindow* window, int32_t imageCount, int32_t resourceCount, const VkPhysicalDeviceFeatures& deviceFeatures) :
+GraphicsManager::GraphicsManager(utils::Window* window, int32_t imageCount, int32_t resourceCount, const VkPhysicalDeviceFeatures& deviceFeatures) :
     imageCount(imageCount),
     resourceCount(resourceCount) {
-    moon::utils::debug::checkResult(createInstance(), "in file " + std::string(__FILE__) + ", line " + std::to_string(__LINE__));
+    moon::utils::debug::checkResult(createInstance(window), "in file " + std::string(__FILE__) + ", line " + std::to_string(__LINE__));
     moon::utils::debug::checkResult(createDevice(deviceFeatures), "in file " + std::string(__FILE__) + ", line " + std::to_string(__LINE__));
     moon::utils::debug::checkResult(createSurface(window), "in file " + std::string(__FILE__) + ", line " + std::to_string(__LINE__));
     reset(window);
 }
 
-void GraphicsManager::reset(GLFWwindow* window){
+void GraphicsManager::reset(utils::Window* window){
     deviceWaitIdle();
     moon::utils::debug::checkResult(createSwapChain(window, imageCount), "in file " + std::string(__FILE__) + ", line " + std::to_string(__LINE__));
     moon::utils::debug::checkResult(createLinker(), "in file " + std::string(__FILE__) + ", line " + std::to_string(__LINE__));
     moon::utils::debug::checkResult(createSyncObjects(), "in file " + std::string(__FILE__) + ", line " + std::to_string(__LINE__));
 }
 
-VkResult GraphicsManager::createInstance(){
+VkResult GraphicsManager::createInstance(utils::Window* window){
     VkApplicationInfo appInfo{};
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         appInfo.pApplicationName = "Graphics Manager";
@@ -33,9 +32,10 @@ VkResult GraphicsManager::createInstance(){
 
     enableValidationLayers &= moon::utils::validationLayer::checkSupport(validationLayers);
 
-    uint32_t glfwExtensionCount = 0;
-    const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-    std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+    std::vector<const char*> extensions;
+    if(window){
+        extensions = window->getExtensions();
+    }
     if(enableValidationLayers){
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
@@ -93,7 +93,7 @@ VkResult GraphicsManager::createDevice(const VkPhysicalDeviceFeatures& deviceFea
     return VK_SUCCESS;
 }
 
-VkResult GraphicsManager::createSurface(GLFWwindow* window){
+VkResult GraphicsManager::createSurface(utils::Window* window){
     CHECK_M(instance, "[ GraphicsManager::createSurface ] instance is VK_NULL_HANDLE");
     CHECK_M(!devices.empty(), "[ GraphicsManager::createSwapChain ] device is VK_NULL_HANDLE");
     CHECK_M(window, "[ createSurface ] Window is nullptr");
@@ -104,7 +104,7 @@ VkResult GraphicsManager::createSurface(GLFWwindow* window){
     return VK_SUCCESS;
 }
 
-VkResult GraphicsManager::createSwapChain(GLFWwindow* window, int32_t maxImageCount){
+VkResult GraphicsManager::createSwapChain(utils::Window* window, int32_t maxImageCount){
     CHECK_M(window, "[ GraphicsManager::createSwapChain ] Window is nullptr");
     CHECK_M(surface, "[ GraphicsManager::createSwapChain ] surface is VK_NULL_HANDLE");
     CHECK_M(activeDevice, "[ GraphicsManager::activeDevice ] device is nullptr");

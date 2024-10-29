@@ -38,15 +38,15 @@ private:
     uint32_t resourceIndex{0};
     uint32_t resourceCount{0};
 
-    VkResult createInstance();
+    VkResult createInstance(utils::Window* window);
     VkResult createDevice(const VkPhysicalDeviceFeatures& deviceFeatures = {});
-    VkResult createSurface(GLFWwindow* window);
-    VkResult createSwapChain(GLFWwindow* window, int32_t maxImageCount = -1);
+    VkResult createSurface(utils::Window* window);
+    VkResult createSwapChain(utils::Window * window, int32_t maxImageCount = -1);
     VkResult createLinker();
     VkResult createSyncObjects();
 
 public:
-    GraphicsManager(GLFWwindow* window, int32_t imageCount = -1, int32_t resourceCount = -1, const VkPhysicalDeviceFeatures& deviceFeatures = {});
+    GraphicsManager(utils::Window* window, int32_t imageCount = -1, int32_t resourceCount = -1, const VkPhysicalDeviceFeatures& deviceFeatures = {});
 
     VkInstance getInstance() const;
     VkExtent2D getImageExtent() const;
@@ -58,7 +58,7 @@ public:
     void setDevice(utils::PhysicalDevice::Index deviceIndex);
     void setGraphics(GraphicsInterface* graphics);
 
-    void reset(GLFWwindow* window);
+    void reset(utils::Window* window);
 
     VkResult checkNextFrame();
     VkResult drawFrame();

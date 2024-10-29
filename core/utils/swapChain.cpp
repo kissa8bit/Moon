@@ -1,11 +1,11 @@
 #include "swapChain.h"
 #include "buffer.h"
-#include <glfw3.h>
+
 #include <cstring>
 
 namespace moon::utils {
 
-VkResult SwapChain::reset(const PhysicalDevice* pdevice, GLFWwindow* pwindow, VkSurfaceKHR surfaceKHR, int32_t maxImageCount){
+VkResult SwapChain::reset(const PhysicalDevice* pdevice, Window* pwindow, VkSurfaceKHR surfaceKHR, int32_t maxImageCount){
     device = pdevice;
     window = pwindow;
     surface = surfaceKHR;
@@ -54,7 +54,7 @@ const VkImageView& SwapChain::imageView(uint32_t i) const {
 
 utils::vkDefault::ImageInfo SwapChain::info() const { return imageInfo;}
 VkSurfaceKHR SwapChain::getSurface() const { return surface;}
-GLFWwindow* SwapChain::getWindow() const { return window;}
+Window* SwapChain::getWindow() const { return window;}
 
 std::vector<uint32_t> SwapChain::makeScreenshot(uint32_t i) const {
     std::vector<uint32_t> buffer(imageInfo.Extent.height * imageInfo.Extent.width, 0);
