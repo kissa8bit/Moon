@@ -19,7 +19,7 @@ struct RayTracingLinkParameters{
     }in;
     struct{}out;
     std::filesystem::path shadersPath;
-    moon::utils::ImageInfo imageInfo;
+    moon::utils::vkDefault::ImageInfo imageInfo;
 };
 
 class RayTracingLink : public moon::graphicsManager::Linkable{

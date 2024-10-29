@@ -15,7 +15,7 @@ void ShadowGraphics::createRenderPass()
 {
     utils::vkDefault::RenderPass::AttachmentDescriptions attachments = { utils::Attachments::depthDescription(VK_FORMAT_D32_SFLOAT)};
 
-    utils::SubpassInfos subpassInfos;
+    utils::vkDefault::SubpassInfos subpassInfos;
     auto& subpass = subpassInfos.emplace_back();
     subpass.depth = { VkAttachmentReference{0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL} };
 

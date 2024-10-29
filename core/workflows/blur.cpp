@@ -19,7 +19,7 @@ void GaussianBlur::createRenderPass(){
         utils::Attachments::imageDescription(parameters.imageInfo.Format)
     };
 
-    utils::SubpassInfos subpassInfos;
+    utils::vkDefault::SubpassInfos subpassInfos;
     auto& xblur = subpassInfos.emplace_back();
     xblur.out = {
         VkAttachmentReference{0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},

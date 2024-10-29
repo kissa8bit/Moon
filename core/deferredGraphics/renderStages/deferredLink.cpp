@@ -4,13 +4,13 @@
 
 namespace moon::deferredGraphics {
 
-DeferredLink::DeferredLink(VkDevice device, const std::filesystem::path& shadersPath, const utils::ImageInfo& info, VkRenderPass renderPass, const graphicsManager::PositionInWindow& position, const utils::Attachments* attachment)
+DeferredLink::DeferredLink(VkDevice device, const std::filesystem::path& shadersPath, const utils::vkDefault::ImageInfo& info, VkRenderPass renderPass, const graphicsManager::PositionInWindow& position, const utils::Attachments* attachment)
     : Linkable(renderPass, position) {
     createPipeline(device, shadersPath, info);
     createDescriptors(device, info, attachment);
 }
 
-void DeferredLink::createPipeline(VkDevice device, const std::filesystem::path& shadersPath, const utils::ImageInfo& info) {
+void DeferredLink::createPipeline(VkDevice device, const std::filesystem::path& shadersPath, const utils::vkDefault::ImageInfo& info) {
     std::vector<VkDescriptorSetLayoutBinding> bindings;
     bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
     descriptorSetLayout = utils::vkDefault::DescriptorSetLayout(device, bindings);
@@ -59,7 +59,7 @@ void DeferredLink::createPipeline(VkDevice device, const std::filesystem::path& 
     pipeline = utils::vkDefault::Pipeline(device, pipelineInfo);
 }
 
-void DeferredLink::createDescriptors(VkDevice device, const utils::ImageInfo& info, const utils::Attachments* attachment) {
+void DeferredLink::createDescriptors(VkDevice device, const utils::vkDefault::ImageInfo& info, const utils::Attachments* attachment) {
     descriptorPool = utils::vkDefault::DescriptorPool(device, {&descriptorSetLayout}, info.Count);
     descriptorSets = descriptorPool.allocateDescriptorSets(descriptorSetLayout, info.Count);
 

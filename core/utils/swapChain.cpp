@@ -52,7 +52,7 @@ const VkImageView& SwapChain::imageView(uint32_t i) const {
     return attachments[i].imageView;
 }
 
-ImageInfo SwapChain::info() const { return imageInfo;}
+utils::vkDefault::ImageInfo SwapChain::info() const { return imageInfo;}
 VkSurfaceKHR SwapChain::getSurface() const { return surface;}
 GLFWwindow* SwapChain::getWindow() const { return window;}
 

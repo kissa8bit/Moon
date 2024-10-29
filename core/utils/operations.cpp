@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <iostream>
 #include <string.h>
+#include <unordered_map>
 
 #define ONLYDEVICELOCALHEAP
 

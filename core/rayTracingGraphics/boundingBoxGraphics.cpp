@@ -23,7 +23,7 @@ void BoundingBoxGraphics::BoundingBoxGraphics::createRenderPass(){
         moon::utils::Attachments::imageDescription(image.Format)
     };
 
-    utils::SubpassInfos subpassInfos = utils::vkDefault::subpassInfos(attachments.size());
+    utils::vkDefault::SubpassInfos subpassInfos = utils::vkDefault::subpassInfos(attachments.size());
 
     utils::vkDefault::RenderPass::SubpassDependencies dependencies;
     dependencies.push_back(VkSubpassDependency{});
@@ -135,7 +135,7 @@ void BoundingBoxGraphics::createDescriptors(){
     }
 }
 
-void BoundingBoxGraphics::create(VkPhysicalDevice physicalDevice, VkDevice device, const moon::utils::ImageInfo& image, const std::filesystem::path& shadersPath){
+void BoundingBoxGraphics::create(VkPhysicalDevice physicalDevice, VkDevice device, const moon::utils::vkDefault::ImageInfo& image, const std::filesystem::path& shadersPath){
     if(!enable) return;
 
     this->physicalDevice = physicalDevice;

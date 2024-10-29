@@ -33,14 +33,14 @@ public:
 
 class SkyboxObject : public BaseObject {
 private:
-    utils::Paths texturePaths;
+    utils::vkDefault::Paths texturePaths;
     utils::CubeTexture texture;
 
     void create(const utils::PhysicalDevice& device, VkCommandPool commandPool, uint32_t imageCount) override;
     void createDescriptors(const utils::PhysicalDevice& device, uint32_t imageCount);
 
 public:
-    SkyboxObject(uint8_t pipelineBitMask, void* hostData, size_t hostDataSize, const utils::Paths& texturePaths, const float& mipLevel);
+    SkyboxObject(uint8_t pipelineBitMask, void* hostData, size_t hostDataSize, const utils::vkDefault::Paths& texturePaths, const float& mipLevel);
     SkyboxObject& setMipLevel(float mipLevel);
 };
 
@@ -74,7 +74,7 @@ private:
 public:
     Object() = default;
     Object(interfaces::Model* model, uint32_t firstInstance = 0, uint32_t instanceCount = 1);
-    Object(const utils::Paths& texturePaths, const float& mipLevel = 1.0f);
+    Object(const utils::vkDefault::Paths& texturePaths, const float& mipLevel = 1.0f);
 
     DEFAULT_TRANSFORMATIONAL_OVERRIDE(Object)
     DEFAULT_TRANSFORMATIONAL_GETTERS()

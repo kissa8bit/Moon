@@ -13,8 +13,29 @@
 
 namespace moon::utils::vkDefault {
 
-VkSamplerCreateInfo sampler();
+struct ImageInfo {
+	uint32_t                Count{ 0 };
+	VkFormat                Format{ VK_FORMAT_UNDEFINED };
+	VkExtent2D              Extent{ 0, 0 };
+	VkSampleCountFlagBits   Samples{ VK_SAMPLE_COUNT_1_BIT };
+};
 
+using Paths = std::vector<std::filesystem::path>;
+
+struct SubpassInfo {
+	std::vector<VkAttachmentReference> out;
+	std::vector<VkAttachmentReference> in;
+	std::vector<VkAttachmentReference> depth;
+};
+
+using SubpassInfos = std::vector<SubpassInfo>;
+
+template<typename Buffers>
+void raiseFlags(Buffers& buffers) {
+	for (auto& buffer : buffers) buffer.raiseFlag();
+}
+
+VkSamplerCreateInfo sampler();
 VkPipelineVertexInputStateCreateInfo vertexInputState();
 VkViewport viewport(VkOffset2D offset, VkExtent2D extent);
 VkRect2D scissor(VkOffset2D offset, VkExtent2D extent);
@@ -27,8 +48,7 @@ VkPipelineDepthStencilStateCreateInfo depthStencilDisable();
 VkPipelineDepthStencilStateCreateInfo depthStencilEnable();
 VkPipelineColorBlendAttachmentState colorBlendAttachmentState(VkBool32 enable);
 VkPipelineColorBlendStateCreateInfo colorBlendState(uint32_t attachmentCount, VkPipelineColorBlendAttachmentState* pAttachments);
-utils::SubpassInfos subpassInfos(uint32_t attachmentCount = 1);
-
+SubpassInfos subpassInfos(uint32_t attachmentCount = 1);
 VkDescriptorSetLayoutBinding bufferVertexLayoutBinding(const uint32_t& binding, const uint32_t& count);
 VkDescriptorSetLayoutBinding bufferFragmentLayoutBinding(const uint32_t& binding, const uint32_t& count);
 VkDescriptorSetLayoutBinding imageFragmentLayoutBinding(const uint32_t& binding, const uint32_t& count);
@@ -157,7 +177,7 @@ public:
 	using SubpassDescriptions = std::vector<VkSubpassDescription>;
 	using SubpassDependencies = std::vector<VkSubpassDependency>;
 
-	RenderPass(VkDevice device, const AttachmentDescriptions& attachments, const utils::SubpassInfos& subpassInfos, const SubpassDependencies& dependencies);
+	RenderPass(VkDevice device, const AttachmentDescriptions& attachments, const SubpassInfos& subpassInfos, const SubpassDependencies& dependencies);
 };
 
 class Framebuffer {
@@ -334,7 +354,7 @@ public:
 
 class SwapchainKHR {
 private:
-	utils::ImageInfo imageInfo;
+	utils::vkDefault::ImageInfo imageInfo;
 	VkSwapchainKHR descriptor{ VK_NULL_HANDLE };
 	VkDevice device{ VK_NULL_HANDLE };
 
@@ -352,7 +372,7 @@ public:
 
 	VkResult reset(
 		const VkDevice& device,
-		const utils::ImageInfo& imageInfo,
+		const utils::vkDefault::ImageInfo& imageInfo,
 		const utils::swapChain::SupportDetails& supportDetails,
 		const std::vector<uint32_t>& queueFamilyIndices,
 		VkSurfaceKHR surface,

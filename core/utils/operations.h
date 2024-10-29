@@ -5,28 +5,10 @@
 #include <vector>
 #include <string>
 #include <filesystem>
-#include <unordered_map>
 
 struct GLFWwindow;
 
 namespace moon::utils {
-
-struct ImageInfo {
-    uint32_t                Count{ 0 };
-    VkFormat                Format{ VK_FORMAT_UNDEFINED };
-    VkExtent2D              Extent{ 0, 0 };
-    VkSampleCountFlagBits   Samples{ VK_SAMPLE_COUNT_1_BIT };
-};
-
-using Paths = std::vector<std::filesystem::path>;
-
-struct SubpassInfo {
-    std::vector<VkAttachmentReference> out;
-    std::vector<VkAttachmentReference> in;
-    std::vector<VkAttachmentReference> depth;
-};
-
-using SubpassInfos = std::vector<SubpassInfo>;
 
 namespace debug {
 
@@ -247,6 +229,7 @@ namespace singleCommandBuffer {
         VkDevice device{VK_NULL_HANDLE};
         VkQueue queue{VK_NULL_HANDLE};
         VkCommandPool commandPool{VK_NULL_HANDLE};
+
     public:
         Scoped(VkDevice device, VkQueue queue, VkCommandPool commandPool);
         ~Scoped();
@@ -254,11 +237,6 @@ namespace singleCommandBuffer {
         Scoped& operator=(const Scoped&) = delete;
         operator VkCommandBuffer();
     };
-}
-
-template<typename T>
-void raiseFlags(std::vector<T>& buffers) {
-    for (auto& buffer : buffers) buffer.raiseFlag();
 }
 
 namespace swapChain {

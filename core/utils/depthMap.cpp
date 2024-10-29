@@ -4,7 +4,7 @@
 
 namespace moon::utils {
 
-DepthMap::Map::Map(const PhysicalDevice& device, const utils::ImageInfo& imageInfo) :
+DepthMap::Map::Map(const PhysicalDevice& device, const utils::vkDefault::ImageInfo& imageInfo) :
     attachments(utils::Attachments(
         device,
         device.device(),
@@ -17,7 +17,7 @@ DepthMap::Map::Map(const PhysicalDevice& device, const utils::ImageInfo& imageIn
     descriptorSets(descriptorPool.allocateDescriptorSets(descriptorSetLayout, imageInfo.Count))
 {}
 
-DepthMap::DepthMap(const PhysicalDevice& device, VkCommandPool commandPool, const utils::ImageInfo& imageInfo)
+DepthMap::DepthMap(const PhysicalDevice& device, VkCommandPool commandPool, const utils::vkDefault::ImageInfo& imageInfo)
     : map(device, imageInfo), emptyTextureWhite(utils::Texture::empty(device, commandPool, false)), imageInfo(imageInfo), device(device.device())
 {}
 

@@ -51,7 +51,7 @@ utils::Buffers& BaseObject::buffers() {
     return uniformBuffer.device;
 }
 
-SkyboxObject::SkyboxObject(uint8_t pipelineBitMask, void* hostData, size_t hostDataSize, const utils::Paths& texturePaths, const float& mipLevel)
+SkyboxObject::SkyboxObject(uint8_t pipelineBitMask, void* hostData, size_t hostDataSize, const utils::vkDefault::Paths& texturePaths, const float& mipLevel)
     : BaseObject(pipelineBitMask, hostData, hostDataSize), texturePaths(texturePaths) {
     setMipLevel(mipLevel);
 }
@@ -126,7 +126,7 @@ Object::Object(interfaces::Model* model, uint32_t firstInstance, uint32_t instan
     }
 }
 
-Object::Object(const utils::Paths& texturePaths, const float& mipLevel) {
+Object::Object(const utils::vkDefault::Paths& texturePaths, const float& mipLevel) {
     uint8_t pipelineBitMask = interfaces::ObjectType::skybox | interfaces::ObjectProperty::non;
     pObject = std::make_unique<interfaces::SkyboxObject>(pipelineBitMask, &buffer, sizeof(buffer), texturePaths, mipLevel);
 }
@@ -134,7 +134,7 @@ Object::Object(const utils::Paths& texturePaths, const float& mipLevel) {
 Object& Object::update() {
     math::mat4 transformMatrix = convert(convert(m_rotation, m_translation));
     buffer.modelMatrix = transpose(m_globalTransformation * transformMatrix * math::scale(m_scaling));
-    utils::raiseFlags(pObject->buffers());
+    utils::vkDefault::raiseFlags(pObject->buffers());
     return *this;
 }
 
@@ -148,21 +148,21 @@ Object& Object::setBase(std::optional<math::vec4> constant, std::optional<math::
     if (factor.has_value()) {
         buffer.base.factor = factor.value();
     }
-    utils::raiseFlags(pObject->buffers());
+    utils::vkDefault::raiseFlags(pObject->buffers());
     return *this;
 }
 
 Object& Object::setBloom(std::optional<math::vec4> constant, std::optional<math::vec4> factor) {
     buffer.bloom.constant = constant.value_or(buffer.bloom.constant);
     buffer.bloom.factor = factor.value_or(buffer.bloom.factor);
-    utils::raiseFlags(pObject->buffers());
+    utils::vkDefault::raiseFlags(pObject->buffers());
     return *this;
 }
 
 Object& Object::setOutlining(const bool& enable, const float& width, const math::vec4& color) {
     buffer.outlining.width = width > 0.0f ? width : buffer.outlining.width;
     buffer.outlining.color = math::dot(color, color) > 0.0f ? color : buffer.outlining.color;
-    utils::raiseFlags(pObject->buffers());
+    utils::vkDefault::raiseFlags(pObject->buffers());
 
     auto& pipelineFlagBits = pObject->pipelineFlagBits();
     pipelineFlagBits &= ~interfaces::ObjectProperty::outlining;

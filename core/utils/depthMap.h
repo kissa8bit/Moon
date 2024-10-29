@@ -16,16 +16,16 @@ private:
         utils::vkDefault::DescriptorSets descriptorSets;
 
         Map() = default;
-        Map(const PhysicalDevice& device, const utils::ImageInfo& imageInfo);
+        Map(const PhysicalDevice& device, const utils::vkDefault::ImageInfo& imageInfo);
     } map;
 
     Texture emptyTextureWhite;
-    utils::ImageInfo imageInfo;
+    utils::vkDefault::ImageInfo imageInfo;
     VkDevice device{VK_NULL_HANDLE};
 
 public:
     DepthMap() = default;
-    DepthMap(const PhysicalDevice& device, VkCommandPool commandPool, const utils::ImageInfo& imageInfo);
+    DepthMap(const PhysicalDevice& device, VkCommandPool commandPool, const utils::vkDefault::ImageInfo& imageInfo);
     void update(bool enable);
 
     const utils::vkDefault::DescriptorSets& descriptorSets() const;

@@ -13,7 +13,7 @@ RayTracingGraphics::RayTracingGraphics(const std::filesystem::path& shadersPath,
     link = std::make_unique<RayTracingLink>();
 }
 
-RayTracingGraphics::ImageResource::ImageResource(const std::string& id, const moon::utils::PhysicalDevice& phDevice, const moon::utils::ImageInfo& imageInfo){
+RayTracingGraphics::ImageResource::ImageResource(const std::string& id, const moon::utils::PhysicalDevice& phDevice, const moon::utils::vkDefault::ImageInfo& imageInfo){
     this->id = id;
 
     host.resize(imageInfo.Extent.width * imageInfo.Extent.height);
@@ -66,7 +66,7 @@ void RayTracingGraphics::reset()
     emptyTexture = utils::Texture::empty(*device, commandPool);
     aDatabase.addEmptyTexture("black", &emptyTexture);
 
-    moon::utils::ImageInfo imageInfo{ resourceCount, swapChainKHR->info().Format, extent, VK_SAMPLE_COUNT_1_BIT };
+    moon::utils::vkDefault::ImageInfo imageInfo{ resourceCount, swapChainKHR->info().Format, extent, VK_SAMPLE_COUNT_1_BIT };
 
     color = ImageResource("color", *device, imageInfo);
     aDatabase.addAttachmentData(color.id, true, &color.device);
@@ -87,7 +87,7 @@ void RayTracingGraphics::reset()
     bloomGraph->create(commandPool, aDatabase);
     bloomGraph->updateDescriptors(bDatabase, aDatabase);
 
-    moon::utils::ImageInfo bbInfo{ resourceCount, swapChainKHR->info().Format, extent, VK_SAMPLE_COUNT_1_BIT};
+    moon::utils::vkDefault::ImageInfo bbInfo{ resourceCount, swapChainKHR->info().Format, extent, VK_SAMPLE_COUNT_1_BIT};
     std::string bbId = "bb";
     bbGraphics.create(*device, device->device(), bbInfo, shadersPath);
     aDatabase.addAttachmentData(bbId, bbGraphics.getEnable(), &bbGraphics.getAttachments());
@@ -97,7 +97,7 @@ void RayTracingGraphics::reset()
     linkParams.in.bloom = bloomParams.out.bloom;
     linkParams.in.boundingBox = bbId;
     linkParams.shadersPath = shadersPath;
-    linkParams.imageInfo = utils::ImageInfo{ resourceCount, swapChainKHR->info().Format, swapChainKHR->info().Extent, VK_SAMPLE_COUNT_1_BIT };
+    linkParams.imageInfo = utils::vkDefault::ImageInfo{ resourceCount, swapChainKHR->info().Format, swapChainKHR->info().Extent, VK_SAMPLE_COUNT_1_BIT };
 
     link = std::make_unique<RayTracingLink>(device->device(), linkParams, link->renderPass(), aDatabase);
 

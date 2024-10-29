@@ -31,7 +31,7 @@ private:
         moon::utils::Attachments device;
 
         ImageResource() = default;
-        ImageResource(const std::string& id, const moon::utils::PhysicalDevice& phDevice, const moon::utils::ImageInfo& imageInfo);
+        ImageResource(const std::string& id, const moon::utils::PhysicalDevice& phDevice, const moon::utils::vkDefault::ImageInfo& imageInfo);
         ImageResource(const ImageResource&) = delete;
         ImageResource& operator=(const ImageResource&) = delete;
         ImageResource(ImageResource&&) noexcept;

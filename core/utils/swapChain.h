@@ -16,10 +16,10 @@ private:
         utils::vkDefault::ImageView imageView;
     };
 
-    GLFWwindow*             window{ nullptr };
-    const PhysicalDevice*   device{ nullptr };
-    VkSurfaceKHR            surface{ VK_NULL_HANDLE };
-    ImageInfo               imageInfo;
+    GLFWwindow* window{ nullptr };
+    const PhysicalDevice* device{ nullptr };
+    VkSurfaceKHR surface{ VK_NULL_HANDLE };
+    utils::vkDefault::ImageInfo imageInfo;
 
     utils::vkDefault::SwapchainKHR swapChainKHR;
     utils::vkDefault::CommandPool commandPool;
@@ -38,7 +38,7 @@ public:
     operator const VkSwapchainKHR&() const;
     const VkImageView& SwapChain::imageView(uint32_t i) const;
 
-    ImageInfo info() const;
+    utils::vkDefault::ImageInfo info() const;
     VkSurfaceKHR getSurface() const;
     GLFWwindow* getWindow() const;
 

@@ -105,7 +105,7 @@ Light& Light::update() {
     math::mat4 transformMatrix = convert(convert(m_rotation, m_translation));
     buffer.view = transpose(inverse(math::mat4(m_globalTransformation * transformMatrix * math::scale(m_scaling))));
     buffer.props = moon::math::vec4(static_cast<float>(type), lightPowerFactor, lightDropFactor, 0.0f);
-    utils::raiseFlags(pLight->buffers());
+    utils::vkDefault::raiseFlags(pLight->buffers());
     return *this;
 }
 

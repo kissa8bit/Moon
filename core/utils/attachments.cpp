@@ -26,7 +26,7 @@ void Attachment::swap(Attachment& other) noexcept {
     std::memcpy((void*)this, (void*)buff, sizeof(Attachment));
 }
 
-Attachment::Attachment(VkPhysicalDevice physicalDevice, VkDevice device, const ImageInfo& imageInfo, VkImageUsageFlags usage) {
+Attachment::Attachment(VkPhysicalDevice physicalDevice, VkDevice device, const utils::vkDefault::ImageInfo& imageInfo, VkImageUsageFlags usage) {
     const auto depthFormats = image::depthFormats();
     const bool isDepth = std::any_of(depthFormats.begin(), depthFormats.end(), [&imageInfo](const VkFormat& format) {return imageInfo.Format == format; });
     const VkImageAspectFlagBits imageAspectFlagBits = isDepth ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
@@ -50,7 +50,7 @@ void Attachments::swap(Attachments& other) noexcept {
     std::swap(imageClearValue, other.imageClearValue);
 }
 
-Attachments::Attachments(VkPhysicalDevice physicalDevice, VkDevice device, const ImageInfo& imageInfo, VkImageUsageFlags usage, const VkClearValue& clear, VkSamplerCreateInfo samplerInfo)
+Attachments::Attachments(VkPhysicalDevice physicalDevice, VkDevice device, const utils::vkDefault::ImageInfo& imageInfo, VkImageUsageFlags usage, const VkClearValue& clear, VkSamplerCreateInfo samplerInfo)
     : imageInfo(imageInfo), imageClearValue(clear)
 {
     instances.resize(imageInfo.Count);
@@ -125,7 +125,7 @@ std::vector<VkImage> Attachments::getImages() const {
     return images;
 }
 
-void createAttachments(VkPhysicalDevice physicalDevice, VkDevice device, const ImageInfo image, uint32_t attachmentsCount, Attachments* pAttachments, VkImageUsageFlags usage, VkSamplerCreateInfo samplerInfo){
+void createAttachments(VkPhysicalDevice physicalDevice, VkDevice device, const utils::vkDefault::ImageInfo image, uint32_t attachmentsCount, Attachments* pAttachments, VkImageUsageFlags usage, VkSamplerCreateInfo samplerInfo){
     for(uint32_t i = 0; i < attachmentsCount; i++){
         pAttachments[i] = Attachments(physicalDevice, device, image, usage, { {0.0f,0.0f,0.0f,0.0f}}, samplerInfo);
     }

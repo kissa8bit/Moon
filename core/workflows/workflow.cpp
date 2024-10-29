@@ -27,7 +27,7 @@ Workflow::operator utils::vkDefault::CommandBuffers* () {
 }
 
 void Workflow::raiseUpdateFlags() {
-    utils::raiseFlags(commandBuffers);
+    utils::vkDefault::raiseFlags(commandBuffers);
 }
 
 }

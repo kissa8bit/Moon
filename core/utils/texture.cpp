@@ -108,7 +108,7 @@ VkResult TextureImage::create(
     return VK_SUCCESS;
 }
 
-Texture::Texture(const utils::Paths& path) : paths(path) {}
+Texture::Texture(const utils::vkDefault::Paths& path) : paths(path) {}
 
 void Texture::swap(Texture& other) noexcept {
     std::swap(paths, other.paths);
@@ -171,7 +171,7 @@ const VkSampler Texture::sampler() const {return image.sampler;}
 
 CubeTexture::CubeTexture(Texture&& texture) : Texture(std::move(texture)){}
 
-CubeTexture::CubeTexture(const utils::Paths& path, VkPhysicalDevice physicalDevice, VkDevice device, VkCommandBuffer commandBuffer, const TextureSampler& textureSampler) : Texture(path)
+CubeTexture::CubeTexture(const utils::vkDefault::Paths& path, VkPhysicalDevice physicalDevice, VkDevice device, VkCommandBuffer commandBuffer, const TextureSampler& textureSampler) : Texture(path)
 {
     if (paths.size() != 6) throw std::runtime_error("[CubeTexture::create] : must be 6 images");
 

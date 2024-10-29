@@ -62,7 +62,7 @@ public:
 
 struct Parameters {
     bool enable{false};
-    utils::ImageInfo imageInfo;
+    utils::vkDefault::ImageInfo imageInfo;
     std::filesystem::path shadersPath;
 };
 

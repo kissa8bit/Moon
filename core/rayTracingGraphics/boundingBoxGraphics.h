@@ -18,7 +18,7 @@ class BoundingBoxGraphics
 private:
     VkPhysicalDevice                physicalDevice{VK_NULL_HANDLE};
     VkDevice                        device{VK_NULL_HANDLE};
-    moon::utils::ImageInfo          image;
+    moon::utils::vkDefault::ImageInfo          image;
 
     std::filesystem::path           vertShaderPath;
     std::filesystem::path           fragShaderPath;
@@ -48,7 +48,7 @@ private:
 public:
     BoundingBoxGraphics() = default;
 
-    void create(VkPhysicalDevice physicalDevice, VkDevice device, const moon::utils::ImageInfo& image, const std::filesystem::path& shadersPath);
+    void create(VkPhysicalDevice physicalDevice, VkDevice device, const moon::utils::vkDefault::ImageInfo& image, const std::filesystem::path& shadersPath);
     void update(uint32_t imageIndex);
     void render(VkCommandBuffer commandBuffer, uint32_t imageIndex) const;
 

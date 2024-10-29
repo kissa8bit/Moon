@@ -37,13 +37,13 @@ Camera::Camera(const float& angle, const float& aspect, const float& near, const
 Camera& Camera::update() {
     math::mat4 transformMatrix = convert(convert(m_rotation, m_translation));
     buffer.view = transpose(inverse(math::mat4(m_globalTransformation * transformMatrix)));
-    utils::raiseFlags(pCamera->buffers());
+    utils::vkDefault::raiseFlags(pCamera->buffers());
     return *this;
 }
 
 Camera& Camera::setProjMatrix(const math::mat4& proj) {
     buffer.proj = transpose(proj);
-    utils::raiseFlags(pCamera->buffers());
+    utils::vkDefault::raiseFlags(pCamera->buffers());
     return *this;
 }
 

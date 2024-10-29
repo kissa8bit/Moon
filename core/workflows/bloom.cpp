@@ -17,7 +17,7 @@ void BloomGraphics::createRenderPass(){
         utils::Attachments::imageDescription(parameters.imageInfo.Format,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
     };
 
-    utils::SubpassInfos subpassInfos = utils::vkDefault::subpassInfos(attachments.size());
+    utils::vkDefault::SubpassInfos subpassInfos = utils::vkDefault::subpassInfos(attachments.size());
 
     utils::vkDefault::RenderPass::SubpassDependencies dependencies;
     dependencies.push_back(VkSubpassDependency{});

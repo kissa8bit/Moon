@@ -26,7 +26,7 @@ void Scattering::createRenderPass()
         utils::Attachments::imageDescription(VK_FORMAT_R32G32B32A32_SFLOAT)
     };
 
-    utils::SubpassInfos subpassInfos = utils::vkDefault::subpassInfos(attachments.size());
+    utils::vkDefault::SubpassInfos subpassInfos = utils::vkDefault::subpassInfos(attachments.size());
 
     utils::vkDefault::RenderPass::SubpassDependencies dependencies;
     dependencies.push_back(VkSubpassDependency{});

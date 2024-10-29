@@ -16,7 +16,7 @@ class GraphicsLinker
 {
 private:
     std::vector<GraphicsInterface*>* graphics;
-    moon::utils::ImageInfo           imageInfo;
+    moon::utils::vkDefault::ImageInfo           imageInfo;
 
     utils::vkDefault::RenderPass     renderPass;
     utils::vkDefault::Framebuffers   framebuffers;

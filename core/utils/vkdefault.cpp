@@ -161,8 +161,8 @@ VkPipelineColorBlendStateCreateInfo vkDefault::colorBlendState(uint32_t attachme
     return colorBlending;
 }
 
-utils::SubpassInfos vkDefault::subpassInfos(uint32_t attachmentCount) {
-    utils::SubpassInfos subpassInfos;
+vkDefault::SubpassInfos vkDefault::subpassInfos(uint32_t attachmentCount) {
+    vkDefault::SubpassInfos subpassInfos;
     auto& subpass = subpassInfos.emplace_back();
     subpass.out.resize(attachmentCount);
     for (uint32_t i = 0; i < attachmentCount; i++) {
@@ -358,7 +358,7 @@ vkDefault::VertrxShaderModule::operator const VkPipelineShaderStageCreateInfo& (
     return pipelineShaderStageCreateInfo;
 }
 
-vkDefault::RenderPass::RenderPass(VkDevice device, const AttachmentDescriptions& attachments, const utils::SubpassInfos& subpassInfos, const SubpassDependencies& dependencies) : device(device) {
+vkDefault::RenderPass::RenderPass(VkDevice device, const AttachmentDescriptions& attachments, const vkDefault::SubpassInfos& subpassInfos, const SubpassDependencies& dependencies) : device(device) {
     utils::vkDefault::RenderPass::SubpassDescriptions subpasses;
     for (const auto& subpassInfo : subpassInfos) {
         auto& subpass = subpasses.emplace_back();
@@ -643,7 +643,7 @@ vkDefault::Buffer::operator const VkDeviceMemory* () const {
 VKDEFAULT_MAKE_SWAP(Buffer)
 VKDEFAULT_MAKE_DESCRIPTOR(Buffer, VkBuffer)
 
-VkResult vkDefault::SwapchainKHR::reset(const VkDevice& logical, const utils::ImageInfo& info, const utils::swapChain::SupportDetails& supportDetails, const std::vector<uint32_t>& queueFamilyIndices, VkSurfaceKHR surface, VkSurfaceFormatKHR surfaceFormat) {
+VkResult vkDefault::SwapchainKHR::reset(const VkDevice& logical, const utils::vkDefault::ImageInfo& info, const utils::swapChain::SupportDetails& supportDetails, const std::vector<uint32_t>& queueFamilyIndices, VkSurfaceKHR surface, VkSurfaceFormatKHR surfaceFormat) {
     if (descriptor) vkDestroySwapchainKHR(device, release(descriptor), nullptr);
     device = logical;
     imageInfo = info;

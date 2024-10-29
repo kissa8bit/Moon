@@ -24,14 +24,14 @@ struct Attachment {
     Attachment& operator=(Attachment&& other) noexcept;
     void swap(Attachment& other) noexcept;
 
-    Attachment(VkPhysicalDevice physicalDevice, VkDevice device, const ImageInfo& imageInfo, VkImageUsageFlags usage);
+    Attachment(VkPhysicalDevice physicalDevice, VkDevice device, const utils::vkDefault::ImageInfo & imageInfo, VkImageUsageFlags usage);
 };
 
 class Attachments {
 private:
     std::vector<Attachment> instances;
     utils::vkDefault::Sampler imageSampler;
-    ImageInfo imageInfo;
+    utils::vkDefault::ImageInfo imageInfo;
     VkClearValue imageClearValue{};
 
 public:
@@ -42,7 +42,7 @@ public:
     Attachments& operator=(Attachments&& other) noexcept;
     void swap(Attachments& other) noexcept;
 
-    Attachments(VkPhysicalDevice physicalDevice, VkDevice device, const ImageInfo& imageInfo, VkImageUsageFlags usage, const VkClearValue& clear = {{0.0f, 0.0f, 0.0f, 0.0f}}, VkSamplerCreateInfo samplerInfo = VkSamplerCreateInfo{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO });
+    Attachments(VkPhysicalDevice physicalDevice, VkDevice device, const utils::vkDefault::ImageInfo& imageInfo, VkImageUsageFlags usage, const VkClearValue& clear = {{0.0f, 0.0f, 0.0f, 0.0f}}, VkSamplerCreateInfo samplerInfo = VkSamplerCreateInfo{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO });
 
     std::vector<VkImage> getImages() const;
 
@@ -60,7 +60,7 @@ public:
     static VkAttachmentDescription depthDescription(VkFormat format);
 };
 
-void createAttachments(VkPhysicalDevice physicalDevice, VkDevice device, const ImageInfo image, uint32_t attachmentsCount, Attachments* pAttachments, VkImageUsageFlags usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VkSamplerCreateInfo samplerInfo = VkSamplerCreateInfo{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO });
+void createAttachments(VkPhysicalDevice physicalDevice, VkDevice device, const utils::vkDefault::ImageInfo image, uint32_t attachmentsCount, Attachments* pAttachments, VkImageUsageFlags usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VkSamplerCreateInfo samplerInfo = VkSamplerCreateInfo{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO });
 
 struct AttachmentsDatabase {
     struct data{

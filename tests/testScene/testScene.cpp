@@ -422,7 +422,7 @@ void testScene::createObjects()
     }
 
     skyboxObjects["lake"] = std::make_shared<moon::transformational::Object>(
-        moon::utils::Paths{
+        moon::utils::vkDefault::Paths{
             ExternalPath / "dependences/texture/skybox/left.jpg",
             ExternalPath / "dependences/texture/skybox/right.jpg",
             ExternalPath / "dependences/texture/skybox/front.jpg",
@@ -433,7 +433,7 @@ void testScene::createObjects()
     skyboxObjects["lake"]->scale({200.0f,200.0f,200.0f});
 
     skyboxObjects["stars"] = std::make_shared<moon::transformational::Object>(
-        moon::utils::Paths{
+        moon::utils::vkDefault::Paths{
             ExternalPath / "dependences/texture/skybox1/left.png",
             ExternalPath / "dependences/texture/skybox1/right.png",
             ExternalPath / "dependences/texture/skybox1/front.png",

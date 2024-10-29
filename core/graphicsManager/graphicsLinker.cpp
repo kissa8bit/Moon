@@ -41,7 +41,7 @@ void GraphicsLinker::createRenderPass(VkDevice device){
         moon::utils::Attachments::imageDescription(imageInfo.Format, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
     };
 
-    utils::SubpassInfos subpassInfos = utils::vkDefault::subpassInfos(attachments.size());
+    utils::vkDefault::SubpassInfos subpassInfos = utils::vkDefault::subpassInfos(attachments.size());
 
     utils::vkDefault::RenderPass::SubpassDependencies dependencies;
     dependencies.push_back(VkSubpassDependency{});

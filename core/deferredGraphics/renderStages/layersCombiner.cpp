@@ -14,7 +14,7 @@ LayersCombiner::LayersCombiner(LayersCombinerParameters& parameters) : combiner(
 
 void LayersCombiner::createAttachments(utils::AttachmentsDatabase& aDatabase)
 {
-    auto createAttachments = [](VkPhysicalDevice physicalDevice, VkDevice device, const utils::ImageInfo image, uint32_t attachmentsCount, utils::Attachments* pAttachments){
+    auto createAttachments = [](VkPhysicalDevice physicalDevice, VkDevice device, const utils::vkDefault::ImageInfo image, uint32_t attachmentsCount, utils::Attachments* pAttachments){
         for(size_t index=0; index < attachmentsCount; index++){
             pAttachments[index] = utils::Attachments(physicalDevice, device, image, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | (index==1 ? VK_IMAGE_USAGE_TRANSFER_SRC_BIT : 0));
         }
@@ -33,7 +33,7 @@ void LayersCombiner::createRenderPass(){
         utils::Attachments::imageDescription(parameters.imageInfo.Format, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
     };
 
-    utils::SubpassInfos subpassInfos = utils::vkDefault::subpassInfos(attachments.size());
+    utils::vkDefault::SubpassInfos subpassInfos = utils::vkDefault::subpassInfos(attachments.size());
 
     utils::vkDefault::RenderPass::SubpassDependencies dependencies;
     dependencies.push_back(VkSubpassDependency{});

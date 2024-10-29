@@ -51,9 +51,9 @@ void DeferredGraphics::createGraphicsPasses(){
     CHECK_M(params.cameraObject,    std::string("[ DeferredGraphics::createGraphicsPasses ] camera is nullptr"));
 
     VkExtent2D extent{ params.extent[0], params.extent[1] };
-    utils::ImageInfo info{ resourceCount, swapChainKHR->info().Format, extent, params.MSAASamples };
-    utils::ImageInfo scatterInfo{ resourceCount, VK_FORMAT_R32G32B32A32_SFLOAT, extent, params.MSAASamples };
-    utils::ImageInfo shadowsInfo{ resourceCount, VK_FORMAT_D32_SFLOAT, VkExtent2D{1024,1024}, params.MSAASamples };
+    utils::vkDefault::ImageInfo info{ resourceCount, swapChainKHR->info().Format, extent, params.MSAASamples };
+    utils::vkDefault::ImageInfo scatterInfo{ resourceCount, VK_FORMAT_R32G32B32A32_SFLOAT, extent, params.MSAASamples };
+    utils::vkDefault::ImageInfo shadowsInfo{ resourceCount, VK_FORMAT_D32_SFLOAT, VkExtent2D{1024,1024}, params.MSAASamples };
 
     graphicsParams.in.camera = "camera";
     graphicsParams.out.image = "image";
@@ -207,7 +207,7 @@ void DeferredGraphics::createGraphicsPasses(){
         workflow->updateDescriptors(bDatabase, aDatabase);
     }
 
-    utils::ImageInfo linkInfo{resourceCount, swapChainKHR->info().Format, swapChainKHR->info().Extent, params.MSAASamples};
+    utils::vkDefault::ImageInfo linkInfo{resourceCount, swapChainKHR->info().Format, swapChainKHR->info().Extent, params.MSAASamples};
     link = std::make_unique<DeferredLink>(device->device(), params.shadersPath, linkInfo, link->renderPass(), link->positionInWindow(), aDatabase.get(postProcessingParams.out.postProcessing));
 }
 
@@ -328,7 +328,7 @@ void DeferredGraphics::bind(interfaces::Light* lightSource){
     lights.push_back(lightSource);
 
     if (depthMaps.find(lightSource) == depthMaps.end()) {
-        utils::ImageInfo shadowsInfo{ resourceCount, VK_FORMAT_D32_SFLOAT, VkExtent2D{1024,1024}, params.MSAASamples };
+        utils::vkDefault::ImageInfo shadowsInfo{ resourceCount, VK_FORMAT_D32_SFLOAT, VkExtent2D{1024,1024}, params.MSAASamples };
         depthMaps[lightSource] = utils::DepthMap(*device, commandPool, shadowsInfo);
         depthMaps[lightSource].update(lightSource->isShadowEnable() && workflowsParameters["Shadow"]->enable);
     }
