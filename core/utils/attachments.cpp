@@ -1,6 +1,9 @@
 #include "attachments.h"
+
 #include "operations.h"
 #include "vkdefault.h"
+#include "memory.h"
+
 #include <texture.h>
 #include <algorithm>
 #include <iterator>

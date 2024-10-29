@@ -51,6 +51,8 @@ __device__ void Triangle::calcHitRecord(const ray& r, const HitCoords& coord, Hi
     };
 }
 
+#undef interpolate
+
 __global__ void createKernel(Triangle* tr, const size_t i0, const size_t i1, const size_t i2, const Vertex* vertexBuffer, cudaTextureObject_t texture) {
     tr = new (tr) Triangle(i0, i1, i2, vertexBuffer, texture);
 }

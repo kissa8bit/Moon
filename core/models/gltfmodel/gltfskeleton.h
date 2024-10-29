@@ -1,7 +1,7 @@
 #ifndef GLTFSKELETON_H
 #define GLTFSKELETON_H
 
-#include <unordered_map>
+#include "memory.h"
 
 #include "skin.h"
 #include "model.h"

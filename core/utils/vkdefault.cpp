@@ -808,7 +808,7 @@ vkDefault::Device::Device(VkPhysicalDevice physicalDevice, const PhysicalDeviceP
     const auto pEnabledExtensionNames = properties.deviceExtensions.data()->c_str();
     createInfo.enabledExtensionCount = static_cast<uint32_t>(properties.deviceExtensions.size());
     createInfo.ppEnabledExtensionNames = &pEnabledExtensionNames;
-#ifndef NDEBUG
+#ifndef DEBUG_PRINT_DISABLE
     const auto pEnabledLayerNames = properties.validationLayers.data()->c_str();
     createInfo.enabledLayerCount = static_cast<uint32_t>(properties.validationLayers.size());
     createInfo.ppEnabledLayerNames = &pEnabledLayerNames;

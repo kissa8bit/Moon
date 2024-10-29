@@ -1,5 +1,8 @@
 #include "buffer.h"
+
+#include "memory.h"
 #include "operations.h"
+
 #include <cstring>
 
 namespace moon::utils {

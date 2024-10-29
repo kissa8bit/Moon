@@ -1,5 +1,7 @@
 #include "texture.h"
+
 #include "operations.h"
+#include "memory.h"
 
 #ifndef STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION

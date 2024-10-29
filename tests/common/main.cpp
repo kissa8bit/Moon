@@ -4,6 +4,8 @@
 #include <filesystem>
 
 #include "graphicsManager.h"
+#include "memory.h"
+
 #include "window.h"
 
 #if defined(TESTCUDA)
@@ -55,7 +57,9 @@ int main()
     testScene testScene(app, window, ExternalPath);
 #endif
 
-    // moon::utils::Memory::instance().status();
+#ifndef DEBUG_PRINT_DISABLE
+    moon::utils::Memory::instance().status();
+#endif
 
     for(float time = 1.0f; !window.isClosed();){
         if(auto start = clk::now(); app.checkNextFrame() != VK_ERROR_OUT_OF_DATE_KHR) {

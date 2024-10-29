@@ -1,9 +1,10 @@
 #include "plymodel.h"
 
+#include "memory.h"
+#include "device.h"
+
 #define TINYPLY_IMPLEMENTATION
 #include "tinyply.h"
-#include "operations.h"
-#include "device.h"
 
 #include <memory>
 #include <fstream>

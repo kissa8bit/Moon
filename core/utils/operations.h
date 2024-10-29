@@ -11,44 +11,6 @@ struct GLFWwindow;
 
 namespace moon::utils {
 
-class Memory {
-private:
-    struct Description{
-        uint64_t alignment{0};
-        uint64_t size{0};
-    };
-
-    uint64_t totalMemoryUsed{0};
-    std::vector<VkDeviceMemory> memoryKeys;
-    std::unordered_map<VkDeviceMemory, Description> memoryMap;
-    std::unordered_map<VkDeviceMemory, std::string> nameMap;
-
-    Memory() = default;
-    ~Memory();
-public:
-
-    Memory(const Memory&) = delete;
-    Memory& operator=(const Memory&) = delete;
-
-    static Memory& instance();
-
-    VkResult allocate(
-            VkPhysicalDevice physicalDevice,
-            VkDevice device,
-            VkMemoryRequirements requirements,
-            VkMemoryPropertyFlags properties,
-            VkDeviceMemory* memory);
-
-    void nameMemory(
-            VkDeviceMemory memory,
-            const std::string& name);
-
-    void free(
-            VkDeviceMemory memory);
-
-    void status();
-};
-
 struct ImageInfo {
     uint32_t                Count{ 0 };
     VkFormat                Format{ VK_FORMAT_UNDEFINED };
@@ -341,19 +303,19 @@ void raiseFlags(std::vector<T>& buffers) {
 namespace swapChain {
 
     struct SupportDetails{
-        VkSurfaceCapabilitiesKHR        capabilities{};
+        VkSurfaceCapabilitiesKHR capabilities{};
         std::vector<VkSurfaceFormatKHR> formats;
-        std::vector<VkPresentModeKHR>   presentModes;
+        std::vector<VkPresentModeKHR> presentModes;
         bool isNotEmpty(){return !formats.empty() && !presentModes.empty();}
     };
 
     SupportDetails queryingSupport(
-            VkPhysicalDevice                            device,
-            VkSurfaceKHR                                surface);
+            VkPhysicalDevice                        device,
+            VkSurfaceKHR                            surface);
 
     uint32_t queryingSupportImageCount(
-            VkPhysicalDevice                            device,
-            VkSurfaceKHR                                surface);
+            VkPhysicalDevice                        device,
+            VkSurfaceKHR                            surface);
 
     VkSurfaceFormatKHR queryingSurfaceFormat(
             const std::vector<VkSurfaceFormatKHR>&  availableFormats);

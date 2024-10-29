@@ -1,4 +1,7 @@
 #include "operations.h"
+
+#include "memory.h"
+
 #include <glfw3.h>
 #include <vulkan/vk_enum_string_helper.h>
 
@@ -14,7 +17,7 @@
 namespace moon::utils {
 
 void debug::displayError(std::string message){
-#ifndef NDEBUG
+#ifndef DEBUG_PRINT_DISABLE
     std::cerr << message << std::endl;
 #endif
 #ifdef THROW_EXEPTION
@@ -34,57 +37,6 @@ bool debug::checkResult(bool result, std::string message){
         debug::displayError(message);
     }
     return result;
-}
-
-Memory::~Memory(){
-#ifndef NDEBUG
-    instance().status();
-#endif
-};
-
-Memory& Memory::instance()
-{
-    static Memory s;
-    return s;
-}
-
-VkResult Memory::allocate(VkPhysicalDevice physicalDevice, VkDevice device, VkMemoryRequirements requirements, VkMemoryPropertyFlags properties, VkDeviceMemory* memory)
-{
-    VkMemoryAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocInfo.allocationSize = requirements.size;
-        allocInfo.memoryTypeIndex = physicalDevice::findMemoryTypeIndex(physicalDevice, requirements.memoryTypeBits, properties);
-    VkResult result = vkAllocateMemory(device, &allocInfo, nullptr, memory);
-
-    memoryMap[*memory] = Description{requirements.alignment, requirements.size};
-    memoryKeys.push_back(*memory);
-    totalMemoryUsed += requirements.alignment + requirements.size;
-
-    return result;
-}
-
-void Memory::nameMemory(VkDeviceMemory memory, const std::string& name)
-{
-    nameMap[memory] = name;
-}
-
-void Memory::free(VkDeviceMemory memory)
-{
-    totalMemoryUsed -= memoryMap[memory].alignment + memoryMap[memory].size;
-    memoryMap.erase(memory);
-    nameMap.erase(memory);
-    memoryKeys.erase(std::remove(memoryKeys.begin(), memoryKeys.end(), memory), memoryKeys.end());
-}
-
-void Memory::status()
-{
-    for(const auto& memory : memoryKeys){
-        std::cout << nameMap[memory] << std::endl;
-        std::cout << memory << "\t" << memoryMap[memory].alignment << "\t" << memoryMap[memory].size << std::endl << std::endl;
-    }
-
-    std::cout << "Total allocations : " << memoryMap.size() << std::endl;
-    std::cout << "Total memory used : " << totalMemoryUsed << std::endl;
 }
 
 bool validationLayer::checkSupport(const std::vector<std::string> validationLayers)
