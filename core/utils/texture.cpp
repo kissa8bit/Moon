@@ -3,9 +3,11 @@
 #include "operations.h"
 #include "memory.h"
 
+#ifdef USE_STB_IMAGE
 #ifndef STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+#endif
 #endif
 
 #include <cmath>
@@ -145,6 +147,7 @@ Texture::Texture(
     CHECK(image.create(physicalDevice, device, commandBuffer, 0, 1, textureSampler));
 }
 
+#ifdef USE_STB_IMAGE
 Texture::Texture(
         const std::filesystem::path& path,
         VkPhysicalDevice    physicalDevice,
@@ -162,6 +165,7 @@ Texture::Texture(
 
     CHECK(image.create(physicalDevice, device, commandBuffer, 0, 1, textureSampler));
 }
+#endif
 
 void Texture::setMipLevel(float mipLevel){image.mipLevel = mipLevel;}
 void Texture::setTextureFormat(VkFormat format){image.format = format;}
@@ -171,6 +175,7 @@ const VkSampler Texture::sampler() const {return image.sampler;}
 
 CubeTexture::CubeTexture(Texture&& texture) : Texture(std::move(texture)){}
 
+#ifdef USE_STB_IMAGE
 CubeTexture::CubeTexture(const utils::vkDefault::Paths& path, VkPhysicalDevice physicalDevice, VkDevice device, VkCommandBuffer commandBuffer, const TextureSampler& textureSampler) : Texture(path)
 {
     if (paths.size() != 6) throw std::runtime_error("[CubeTexture::create] : must be 6 images");
@@ -195,6 +200,7 @@ CubeTexture::CubeTexture(const utils::vkDefault::Paths& path, VkPhysicalDevice p
 
     CHECK(image.create(physicalDevice, device, commandBuffer, VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT, 6, textureSampler));
 }
+#endif
 
 Texture Texture::empty(const PhysicalDevice& device, VkCommandPool commandPool, bool isBlack){
     VkCommandBuffer commandBuffer = singleCommandBuffer::create(device.device(),commandPool);

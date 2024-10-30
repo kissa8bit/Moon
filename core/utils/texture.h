@@ -82,11 +82,13 @@ public:
             void*               buffer,
             const TextureSampler& textureSampler = TextureSampler{});
 
-    Texture(const std::filesystem::path& path,
-            VkPhysicalDevice    physicalDevice,
-            VkDevice            device,
-            VkCommandBuffer     commandBuffer,
-            const TextureSampler& textureSampler = TextureSampler{});
+#ifdef USE_STB_IMAGE
+    Texture(const std::filesystem::path&    path,
+            VkPhysicalDevice                physicalDevice,
+            VkDevice                        device,
+            VkCommandBuffer                 commandBuffer,
+            const TextureSampler&           textureSampler = TextureSampler{});
+#endif
 
     void setMipLevel(float mipLevel);
     void setTextureFormat(VkFormat format);
@@ -108,11 +110,13 @@ public:
     CubeTexture(CubeTexture&&) noexcept = default;
     CubeTexture& operator=(CubeTexture&&) noexcept = default;
     CubeTexture(Texture&& texture);
+#ifdef USE_STB_IMAGE
     CubeTexture(const utils::vkDefault::Paths&     path,
                 VkPhysicalDevice        physicalDevice,
                 VkDevice                device,
                 VkCommandBuffer         commandBuffer,
                 const TextureSampler&   textureSampler = TextureSampler{});
+#endif
 };
 
 }
