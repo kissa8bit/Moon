@@ -19,16 +19,16 @@ void createDeviceBuffer(VkPhysicalDevice physicalDevice, VkDevice device, VkComm
     buffer::copy(commandBuffer, bufferSize, cache, deviceLocal);
 };
 
-UniformBuffer::UniformBuffer(UniformBuffer&& other) {
+UniformBuffer::UniformBuffer(UniformBuffer&& other) noexcept {
     swap(other);
 }
 
-UniformBuffer& UniformBuffer::operator=(UniformBuffer&& other) {
+UniformBuffer& UniformBuffer::operator=(UniformBuffer&& other) noexcept {
     swap(other);
     return *this;
 }
 
-void UniformBuffer::swap(UniformBuffer& other) {
+void UniformBuffer::swap(UniformBuffer& other) noexcept {
     std::swap(host, other.host);
     std::swap(cache, other.cache);
     std::swap(device, other.device);
@@ -67,7 +67,7 @@ bool BuffersDatabase::add(const std::string& id, const Buffers* pBuffer) {
 }
 
 bool BuffersDatabase::remove(const std::string& id) {
-    return buffersMap.erase("camera");
+    return buffersMap.erase(id);
 }
 
 const Buffers* BuffersDatabase::get(const std::string& id) const {

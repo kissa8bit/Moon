@@ -25,9 +25,9 @@ struct UniformBuffer {
     UniformBuffer() = default;
     UniformBuffer(void* hostData, size_t dataSize);
     UniformBuffer(const utils::PhysicalDevice& device, uint32_t imageCount, void* hostData, size_t dataSize);
-    UniformBuffer(UniformBuffer&&);
-    UniformBuffer& operator=(UniformBuffer&&);
-    void swap(UniformBuffer&);
+    UniformBuffer(UniformBuffer&&) noexcept;
+    UniformBuffer& operator=(UniformBuffer&&) noexcept;
+    void swap(UniformBuffer&) noexcept;
 
     void update(uint32_t frameNumber, VkCommandBuffer commandBuffer);
 };
