@@ -63,25 +63,12 @@ void DeferredLink::createDescriptors(VkDevice device, const utils::vkDefault::Im
     descriptorPool = utils::vkDefault::DescriptorPool(device, {&descriptorSetLayout}, info.Count);
     descriptorSets = descriptorPool.allocateDescriptorSets(descriptorSetLayout, info.Count);
 
-    CHECK_M(attachment, std::string("[ Link::createDescriptors ] attachment is nullptr"));
-    if(!attachment) return;
-    for (size_t image = 0; image < info.Count; image++)
-    {
-        VkDescriptorImageInfo imageInfo;
-            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageInfo.imageView = attachment->imageView(image);
-            imageInfo.sampler = attachment->sampler();
-
-        std::vector<VkWriteDescriptorSet> descriptorWrites;
-        descriptorWrites.push_back(VkWriteDescriptorSet{});
-            descriptorWrites.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites.back().dstSet = descriptorSets[image];
-            descriptorWrites.back().dstBinding = static_cast<uint32_t>(descriptorWrites.size() - 1);
-            descriptorWrites.back().dstArrayElement = 0;
-            descriptorWrites.back().descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites.back().descriptorCount = 1;
-            descriptorWrites.back().pImageInfo = &imageInfo;
-        vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+    if (CHECK_M(attachment, std::string("[ Link::createDescriptors ] attachment is nullptr"))) {
+        for (size_t i = 0; i < info.Count; i++) {
+            utils::descriptorSet::Writes writes;
+            utils::descriptorSet::write(writes, descriptorSets[i], attachment->descriptorImageInfo(i));
+            utils::descriptorSet::update(device, writes);
+        }
     }
 }
 

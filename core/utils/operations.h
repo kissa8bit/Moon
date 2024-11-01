@@ -291,5 +291,38 @@ namespace shaderModule {
             const std::vector<char>&        code);
 }
 
+namespace descriptorSet {
+
+    using Writes = std::vector<VkWriteDescriptorSet>;
+
+    void update(
+            VkDevice                        device,
+            const Writes&                   writes);
+
+    void write(
+            Writes&                                     writes,
+            VkDescriptorSet                             descriptorSet,
+            const VkDescriptorBufferInfo&               bufferInfo,
+            VkDescriptorType                            descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+
+    void write(
+            Writes&                                     writes,
+            VkDescriptorSet                             descriptorSet,
+            const VkDescriptorImageInfo&                imageInfo,
+            VkDescriptorType                            descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+
+    void write(
+            Writes&                                     writes,
+            VkDescriptorSet                             descriptorSet,
+            const std::vector<VkDescriptorBufferInfo>&  bufferInfo,
+            VkDescriptorType                            descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+
+    void write(
+            Writes&                                     writes,
+            VkDescriptorSet                             descriptorSet,
+            const std::vector<VkDescriptorImageInfo>&   imageInfo,
+            VkDescriptorType                            descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+}
+
 }
 #endif

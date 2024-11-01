@@ -32,40 +32,24 @@ void Graphics::Lighting::create(VkDevice device, VkRenderPass renderPass) {
     descriptorSets = descriptorPool.allocateDescriptorSets(descriptorSetLayout, parameters.imageInfo.Count);
 }
 
-void Graphics::Lighting::update(
-    VkDevice device,
-    const utils::BuffersDatabase& bDatabase,
-    const utils::AttachmentsDatabase& aDatabase)
+void Graphics::Lighting::update(VkDevice device, const utils::BuffersDatabase& bDatabase, const utils::AttachmentsDatabase& aDatabase)
 {
     for (uint32_t i = 0; i < parameters.imageInfo.Count; i++){
-        std::vector<VkDescriptorImageInfo> imageInfos;
-        imageInfos.push_back(aDatabase.descriptorImageInfo(parameters.out.position, i));
-        imageInfos.push_back(aDatabase.descriptorImageInfo(parameters.out.normal, i));
-        imageInfos.push_back(aDatabase.descriptorImageInfo(parameters.out.color, i));
-        imageInfos.push_back(aDatabase.descriptorImageInfo(parameters.out.depth, i));
+        auto descriptorSet = descriptorSets[i];
 
+        VkDescriptorImageInfo positionInfo = aDatabase.descriptorImageInfo(parameters.out.position, i);
+        VkDescriptorImageInfo normalInfo = aDatabase.descriptorImageInfo(parameters.out.normal, i);
+        VkDescriptorImageInfo colorInfo = aDatabase.descriptorImageInfo(parameters.out.color, i);
+        VkDescriptorImageInfo depthInfo = aDatabase.descriptorImageInfo(parameters.out.depth, i);
         VkDescriptorBufferInfo bufferInfo = bDatabase.descriptorBufferInfo(parameters.in.camera, i);
 
-        std::vector<VkWriteDescriptorSet> descriptorWrites;
-        for(auto& imageInfo: imageInfos){
-            descriptorWrites.push_back(VkWriteDescriptorSet{});
-                descriptorWrites.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                descriptorWrites.back().dstSet = descriptorSets[i];
-                descriptorWrites.back().dstBinding = static_cast<uint32_t>(descriptorWrites.size() - 1);
-                descriptorWrites.back().dstArrayElement = 0;
-                descriptorWrites.back().descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
-                descriptorWrites.back().descriptorCount = 1;
-                descriptorWrites.back().pImageInfo = &imageInfo;
-        }
-        descriptorWrites.push_back(VkWriteDescriptorSet{});
-            descriptorWrites.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites.back().dstSet = descriptorSets[i];
-            descriptorWrites.back().dstBinding = static_cast<uint32_t>(descriptorWrites.size() - 1);
-            descriptorWrites.back().dstArrayElement = 0;
-            descriptorWrites.back().descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            descriptorWrites.back().descriptorCount = 1;
-            descriptorWrites.back().pBufferInfo = &bufferInfo;
-        vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+        utils::descriptorSet::Writes writes;
+        utils::descriptorSet::write(writes, descriptorSet, positionInfo, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
+        utils::descriptorSet::write(writes, descriptorSet, normalInfo, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
+        utils::descriptorSet::write(writes, descriptorSet, colorInfo, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
+        utils::descriptorSet::write(writes, descriptorSet, depthInfo, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
+        utils::descriptorSet::write(writes, descriptorSet, bufferInfo);
+        utils::descriptorSet::update(device, writes);
     }
 }
 

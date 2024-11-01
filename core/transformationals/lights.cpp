@@ -45,34 +45,14 @@ void SpotLight::createDescriptors(const utils::PhysicalDevice& device, uint32_t 
     descriptorSets = descriptorPool.allocateDescriptorSets(descriptorSetLayout, imageCount);
 
     for (size_t i = 0; i < imageCount; i++) {
-        VkDescriptorBufferInfo lightBufferInfo{};
-            lightBufferInfo.buffer = uniformBuffer.device[i];
-            lightBufferInfo.offset = 0;
-            lightBufferInfo.range = uniformBuffer.size;
+        auto descriptorSet = descriptorSets[i];
+        const auto bufferInfo = uniformBuffer.device[i].descriptorBufferInfo();
+        const auto imageInfo = texture.descriptorImageInfo();
 
-        VkDescriptorImageInfo lightTexture{};
-            lightTexture.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            lightTexture.imageView = texture.imageView();
-            lightTexture.sampler = texture.sampler();
-
-        std::vector<VkWriteDescriptorSet> descriptorWrites;
-        descriptorWrites.push_back(VkWriteDescriptorSet{});
-            descriptorWrites.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites.back().dstSet = descriptorSets[i];
-            descriptorWrites.back().dstBinding = static_cast<uint32_t>(descriptorWrites.size() - 1);
-            descriptorWrites.back().dstArrayElement = 0;
-            descriptorWrites.back().descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            descriptorWrites.back().descriptorCount = 1;
-            descriptorWrites.back().pBufferInfo = &lightBufferInfo;
-        descriptorWrites.push_back(VkWriteDescriptorSet{});
-            descriptorWrites.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites.back().dstSet = descriptorSets[i];
-            descriptorWrites.back().dstBinding = static_cast<uint32_t>(descriptorWrites.size() - 1);
-            descriptorWrites.back().dstArrayElement = 0;
-            descriptorWrites.back().descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites.back().descriptorCount = 1;
-            descriptorWrites.back().pImageInfo = &lightTexture;
-        vkUpdateDescriptorSets(device.device(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+        utils::descriptorSet::Writes writes;
+        utils::descriptorSet::write(writes, descriptorSet, bufferInfo);
+        utils::descriptorSet::write(writes, descriptorSet, imageInfo);
+        utils::descriptorSet::update(device.device(), writes);
     }
 }
 

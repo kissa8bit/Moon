@@ -148,27 +148,14 @@ void Scattering::updateDescriptors(const utils::BuffersDatabase& bDatabase, cons
 
     for (uint32_t i = 0; i < parameters.imageInfo.Count; i++)
     {
-        VkDescriptorImageInfo depthInfos = aDatabase.descriptorImageInfo(parameters.in.depth, i);
-        VkDescriptorBufferInfo bufferInfo = bDatabase.descriptorBufferInfo(parameters.in.camera, i);
+        auto descriptorSet = lighting.descriptorSets[i];
+        const auto& depthInfos = aDatabase.descriptorImageInfo(parameters.in.depth, i);
+        const auto& bufferInfo = bDatabase.descriptorBufferInfo(parameters.in.camera, i);
 
-        std::vector<VkWriteDescriptorSet> descriptorWrites;
-        descriptorWrites.push_back(VkWriteDescriptorSet{});
-            descriptorWrites.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites.back().dstSet = lighting.descriptorSets[i];
-            descriptorWrites.back().dstBinding = static_cast<uint32_t>(descriptorWrites.size() - 1);
-            descriptorWrites.back().dstArrayElement = 0;
-            descriptorWrites.back().descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            descriptorWrites.back().descriptorCount = 1;
-            descriptorWrites.back().pBufferInfo = &bufferInfo;
-        descriptorWrites.push_back(VkWriteDescriptorSet{});
-            descriptorWrites.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites.back().dstSet = lighting.descriptorSets[i];
-            descriptorWrites.back().dstBinding = static_cast<uint32_t>(descriptorWrites.size() - 1);
-            descriptorWrites.back().dstArrayElement = 0;
-            descriptorWrites.back().descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites.back().descriptorCount = 1;
-            descriptorWrites.back().pImageInfo = &depthInfos;
-        vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+        utils::descriptorSet::Writes writes;
+        utils::descriptorSet::write(writes, descriptorSet, bufferInfo);
+        utils::descriptorSet::write(writes, descriptorSet, depthInfos);
+        utils::descriptorSet::update(device, writes);
     }
 }
 

@@ -348,6 +348,8 @@ public:
 	void raiseFlag();
 	bool dropFlag();
 
+	VkDescriptorBufferInfo descriptorBufferInfo() const;
+
 	operator const VkDeviceMemory& () const;
 	operator const VkDeviceMemory* () const;
 };

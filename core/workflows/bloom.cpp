@@ -206,42 +206,22 @@ void BloomGraphics::updateDescriptors(const utils::BuffersDatabase&, const utils
     srcAttachment = aDatabase.get(parameters.in.bloom);
 
     for (uint32_t i = 0; i < parameters.imageInfo.Count; i++) {
-        VkDescriptorImageInfo imageInfo{};
-        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageInfo.imageView = bufferAttachment.imageView(i);
-        imageInfo.sampler = bufferAttachment.sampler();
+        const auto imageInfo = bufferAttachment.descriptorImageInfo(i);
 
-        std::vector<VkWriteDescriptorSet> descriptorWrites;
-        descriptorWrites.push_back(VkWriteDescriptorSet{});
-        descriptorWrites.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites.back().dstSet = filter.descriptorSets[i];
-        descriptorWrites.back().dstBinding = static_cast<uint32_t>(descriptorWrites.size() - 1);
-        descriptorWrites.back().dstArrayElement = 0;
-        descriptorWrites.back().descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrites.back().descriptorCount = 1;
-        descriptorWrites.back().pImageInfo = &imageInfo;
-        vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+        utils::descriptorSet::Writes writes;
+        utils::descriptorSet::write(writes, filter.descriptorSets[i], imageInfo);
+        utils::descriptorSet::update(device, writes);
     }
 
-    for (size_t image = 0; image < parameters.imageInfo.Count; image++)
-    {
-        std::vector<VkDescriptorImageInfo> blitImageInfo(parameters.blitAttachmentsCount);
-        for(uint32_t i = 0, index = 0; i < blitImageInfo.size(); i++, index++){
-            blitImageInfo[index].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            blitImageInfo[index].imageView = frames[i].imageView(image);
-            blitImageInfo[index].sampler = frames[i].sampler();
+    for (size_t i = 0; i < parameters.imageInfo.Count; i++) {
+        std::vector<VkDescriptorImageInfo> imageInfos(parameters.blitAttachmentsCount);
+        for(uint32_t j = 0; j < imageInfos.size(); j++){
+            imageInfos[j] = frames[j].descriptorImageInfo(i);
         }
 
-        std::vector<VkWriteDescriptorSet> descriptorWrites;
-            descriptorWrites.push_back(VkWriteDescriptorSet{});
-            descriptorWrites.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites.back().dstSet = bloom.descriptorSets[image];
-            descriptorWrites.back().dstBinding = static_cast<uint32_t>(descriptorWrites.size() - 1);
-            descriptorWrites.back().dstArrayElement = 0;
-            descriptorWrites.back().descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites.back().descriptorCount = static_cast<uint32_t>(blitImageInfo.size());
-            descriptorWrites.back().pImageInfo = blitImageInfo.data();
-        vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+        utils::descriptorSet::Writes writes;
+        utils::descriptorSet::write(writes, bloom.descriptorSets[i], imageInfos);
+        utils::descriptorSet::update(device, writes);
     }
 }
 

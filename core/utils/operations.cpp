@@ -16,7 +16,7 @@
 
 namespace moon::utils {
 
-void debug::displayError(std::string message){
+void debug::displayError(std::string message) {
 #ifndef DEBUG_PRINT_DISABLE
     std::cerr << message << std::endl;
 #endif
@@ -25,22 +25,21 @@ void debug::displayError(std::string message){
 #endif
 }
 
-VkResult debug::checkResult(VkResult result, std::string message){
+VkResult debug::checkResult(VkResult result, std::string message) {
     if (result != VK_SUCCESS){
         debug::displayError(string_VkResult(result) + std::string(" : ") + message);
     }
     return result;
 }
 
-bool debug::checkResult(bool result, std::string message){
+bool debug::checkResult(bool result, std::string message) {
     if (!result){
         debug::displayError(message);
     }
     return result;
 }
 
-bool validationLayer::checkSupport(const std::vector<std::string> validationLayers)
-{
+bool validationLayer::checkSupport(const std::vector<std::string> validationLayers) {
     uint32_t layerCount;
     CHECK(vkEnumerateInstanceLayerProperties(&layerCount, nullptr));
 
@@ -58,14 +57,12 @@ bool validationLayer::checkSupport(const std::vector<std::string> validationLaye
     return res;
 }
 
-void validationLayer::destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator)
-{
+void validationLayer::destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
     auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
     if(func != nullptr) func(instance, debugMessenger, pAllocator);
 }
 
-void validationLayer::setupDebugMessenger(VkInstance instance, VkDebugUtilsMessengerEXT* debugMessenger)
-{
+void validationLayer::setupDebugMessenger(VkInstance instance, VkDebugUtilsMessengerEXT* debugMessenger) {
     auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
 
     VkDebugUtilsMessengerCreateInfoEXT createInfo{};
@@ -76,13 +73,8 @@ void validationLayer::setupDebugMessenger(VkInstance instance, VkDebugUtilsMesse
     if(func != nullptr) func(instance, &createInfo, nullptr, debugMessenger);
 }
 
-VKAPI_ATTR VkBool32 VKAPI_CALL validationLayer::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
-{
-    static_cast<void>(messageSeverity);
-    static_cast<void>(messageType);
-    static_cast<void>(pUserData);
+VKAPI_ATTR VkBool32 VKAPI_CALL validationLayer::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT, VkDebugUtilsMessageTypeFlagsEXT, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void*) {
     std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
-
     return VK_FALSE;
 }
 
@@ -100,8 +92,7 @@ void physicalDevice::printMemoryProperties(VkPhysicalDeviceMemoryProperties memo
     std::cout<<std::endl;
 }
 
-uint32_t physicalDevice::findMemoryTypeIndex(VkPhysicalDevice physicalDevice, uint32_t memoryTypeBits, VkMemoryPropertyFlags properties)
-{
+uint32_t physicalDevice::findMemoryTypeIndex(VkPhysicalDevice physicalDevice, uint32_t memoryTypeBits, VkMemoryPropertyFlags properties) {
     VkPhysicalDeviceMemoryProperties memoryProperties;
     vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memoryProperties);
 
@@ -137,8 +128,7 @@ uint32_t physicalDevice::findMemoryTypeIndex(VkPhysicalDevice physicalDevice, ui
     return memoryTypeIndex.size() != 0 ? memoryTypeIndex[0] : UINT32_MAX;
 }
 
-void physicalDevice::printQueueIndices(VkPhysicalDevice device, VkSurfaceKHR surface)
-{
+void physicalDevice::printQueueIndices(VkPhysicalDevice device, VkSurfaceKHR surface) {
     uint32_t queueFamilyCount = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
 
@@ -174,8 +164,7 @@ void physicalDevice::printQueueIndices(VkPhysicalDevice device, VkSurfaceKHR sur
     }
 }
 
-std::vector<uint32_t> physicalDevice::findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface)
-{
+std::vector<uint32_t> physicalDevice::findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface) {
     std::vector<uint32_t> indices;
 
     uint32_t queueFamilyPropertyCount = 0;
@@ -197,8 +186,7 @@ std::vector<uint32_t> physicalDevice::findQueueFamilies(VkPhysicalDevice device,
     return indices;
 }
 
-std::vector<uint32_t> physicalDevice::findQueueFamilies(VkPhysicalDevice device, VkQueueFlagBits queueFlags, VkSurfaceKHR surface)
-{
+std::vector<uint32_t> physicalDevice::findQueueFamilies(VkPhysicalDevice device, VkQueueFlagBits queueFlags, VkSurfaceKHR surface) {
     std::vector<uint32_t> indices;
 
     uint32_t queueFamilyPropertyCount = 0;
@@ -220,8 +208,7 @@ std::vector<uint32_t> physicalDevice::findQueueFamilies(VkPhysicalDevice device,
     return indices;
 }
 
-std::vector<VkQueueFamilyProperties> physicalDevice::findQueueFamiliesProperties(VkPhysicalDevice device, VkQueueFlagBits queueFlags, VkSurfaceKHR surface)
-{
+std::vector<VkQueueFamilyProperties> physicalDevice::findQueueFamiliesProperties(VkPhysicalDevice device, VkQueueFlagBits queueFlags, VkSurfaceKHR surface) {
     std::vector<VkQueueFamilyProperties> result;
 
     uint32_t queueFamilyPropertyCount = 0;
@@ -243,8 +230,7 @@ std::vector<VkQueueFamilyProperties> physicalDevice::findQueueFamiliesProperties
     return result;
 }
 
-VkSampleCountFlagBits physicalDevice::queryingSampleCount(VkPhysicalDevice device)
-{
+VkSampleCountFlagBits physicalDevice::queryingSampleCount(VkPhysicalDevice device) {
     VkPhysicalDeviceProperties physicalDeviceProperties{};
     vkGetPhysicalDeviceProperties(device, &physicalDeviceProperties);
 
@@ -259,16 +245,14 @@ VkSampleCountFlagBits physicalDevice::queryingSampleCount(VkPhysicalDevice devic
     return VK_SAMPLE_COUNT_1_BIT;
 }
 
-bool physicalDevice::isSuitable(VkPhysicalDevice device, VkSurfaceKHR surface, const std::vector<std::string>& deviceExtensions)
-{
+bool physicalDevice::isSuitable(VkPhysicalDevice device, VkSurfaceKHR surface, const std::vector<std::string>& deviceExtensions) {
     VkPhysicalDeviceFeatures supportedFeatures{};
     vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
 
     return physicalDevice::isExtensionsSupport(device, deviceExtensions) && swapChain::queryingSupport(device, surface).isNotEmpty() && supportedFeatures.samplerAnisotropy;
 }
 
-bool physicalDevice::isExtensionsSupport(VkPhysicalDevice device, const std::vector<std::string>& deviceExtensions)
-{
+bool physicalDevice::isExtensionsSupport(VkPhysicalDevice device, const std::vector<std::string>& deviceExtensions) {
     uint32_t extensionCount;
     CHECK(vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount,nullptr));
 
@@ -284,8 +268,7 @@ bool physicalDevice::isExtensionsSupport(VkPhysicalDevice device, const std::vec
     return requiredExtensions.empty();
 }
 
-VkResult buffer::create(VkPhysicalDevice physicalDevice, VkDevice device, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer* buffer, VkDeviceMemory* bufferMemory)
-{
+VkResult buffer::create(VkPhysicalDevice physicalDevice, VkDevice device, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer* buffer, VkDeviceMemory* bufferMemory) {
     VkResult result = VK_SUCCESS;
 
     VkBufferCreateInfo bufferInfo{};
@@ -304,15 +287,13 @@ VkResult buffer::create(VkPhysicalDevice physicalDevice, VkDevice device, VkDevi
     return result;
 }
 
-void buffer::copy(VkCommandBuffer commandBuffer, VkDeviceSize size, VkBuffer srcBuffer, VkBuffer dstBuffer)
-{
+void buffer::copy(VkCommandBuffer commandBuffer, VkDeviceSize size, VkBuffer srcBuffer, VkBuffer dstBuffer) {
     VkBufferCopy copyRegion{};
         copyRegion.size = size;
     vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 }
 
-void buffer::destroy(VkDevice device, VkBuffer& buffer, VkDeviceMemory& memory)
-{
+void buffer::destroy(VkDevice device, VkBuffer& buffer, VkDeviceMemory& memory) {
     if(buffer){
         vkDestroyBuffer(device, buffer, nullptr);
         buffer = VK_NULL_HANDLE;
@@ -324,8 +305,7 @@ void buffer::destroy(VkDevice device, VkBuffer& buffer, VkDeviceMemory& memory)
     }
 }
 
-VkCommandBuffer singleCommandBuffer::create(VkDevice device, VkCommandPool commandPool)
-{
+VkCommandBuffer singleCommandBuffer::create(VkDevice device, VkCommandPool commandPool) {
     VkResult result = VK_SUCCESS;
     VkCommandBuffer commandBuffer;
 
@@ -345,13 +325,11 @@ VkCommandBuffer singleCommandBuffer::create(VkDevice device, VkCommandPool comma
     return commandBuffer;
 }
 
-VkResult singleCommandBuffer::submit(VkDevice device, VkQueue queue, VkCommandPool commandPool, VkCommandBuffer* commandBuffer)
-{
+VkResult singleCommandBuffer::submit(VkDevice device, VkQueue queue, VkCommandPool commandPool, VkCommandBuffer* commandBuffer) {
     return singleCommandBuffer::submit(device, queue, commandPool, 1, commandBuffer);
 }
 
-VkResult singleCommandBuffer::submit(VkDevice device, VkQueue queue, VkCommandPool commandPool, uint32_t commandBufferCount, VkCommandBuffer* commandBuffer)
-{
+VkResult singleCommandBuffer::submit(VkDevice device, VkQueue queue, VkCommandPool commandPool, uint32_t commandBufferCount, VkCommandBuffer* commandBuffer) {
     VkResult result = VK_SUCCESS;
     for(size_t i = 0; i < commandBufferCount; i++){
         CHECK(result = vkEndCommandBuffer(commandBuffer[i]));
@@ -373,13 +351,13 @@ singleCommandBuffer::Scoped::Scoped(VkDevice device, VkQueue queue, VkCommandPoo
     commandBuffer(create(device, commandPool)), device(device), queue(queue), commandPool(commandPool)
 {}
 
-singleCommandBuffer::Scoped::~Scoped(){
+singleCommandBuffer::Scoped::~Scoped() {
     if(commandBuffer != VK_NULL_HANDLE){
         submit(device, queue, commandPool, &commandBuffer);
     }
 }
 
-singleCommandBuffer::Scoped::operator VkCommandBuffer(){
+singleCommandBuffer::Scoped::operator VkCommandBuffer() {
     return commandBuffer;
 }
 
@@ -464,8 +442,7 @@ VkResult texture::create(VkPhysicalDevice physicalDevice, VkDevice device, VkIma
     return result;
 }
 
-void texture::destroy(VkDevice device, VkImage& image, VkDeviceMemory& memory)
-{
+void texture::destroy(VkDevice device, VkImage& image, VkDeviceMemory& memory) {
     if(image) {
         vkDestroyImage(device, image, nullptr);
         image = VK_NULL_HANDLE;
@@ -477,8 +454,7 @@ void texture::destroy(VkDevice device, VkImage& image, VkDeviceMemory& memory)
     }
 }
 
-VkResult texture::createView(VkDevice device, VkImageViewType type, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels, uint32_t baseArrayLayer, uint32_t layerCount, VkImage image, VkImageView* imageView)
-{
+VkResult texture::createView(VkDevice device, VkImageViewType type, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels, uint32_t baseArrayLayer, uint32_t layerCount, VkImage image, VkImageView* imageView) {
     VkImageViewCreateInfo viewInfo{};
         viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         viewInfo.image = image;
@@ -492,8 +468,7 @@ VkResult texture::createView(VkDevice device, VkImageViewType type, VkFormat for
     return vkCreateImageView(device, &viewInfo, nullptr, imageView);
 }
 
-void texture::generateMipmaps(VkPhysicalDevice physicalDevice, VkCommandBuffer commandBuffer, VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels, uint32_t baseArrayLayer, uint32_t layerCount)
-{
+void texture::generateMipmaps(VkPhysicalDevice physicalDevice, VkCommandBuffer commandBuffer, VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels, uint32_t baseArrayLayer, uint32_t layerCount) {
     VkFormatProperties formatProperties;
     vkGetPhysicalDeviceFormatProperties(physicalDevice, imageFormat, &formatProperties);
 
@@ -535,8 +510,7 @@ void texture::generateMipmaps(VkPhysicalDevice physicalDevice, VkCommandBuffer c
     vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
 }
 
-void texture::blitDown(VkCommandBuffer commandBuffer, VkImage srcImage, uint32_t srcMipLevel, VkImage dstImage, uint32_t dstMipLevel, uint32_t width, uint32_t height, uint32_t baseArrayLayer, uint32_t layerCount, float blitFactor)
-{
+void texture::blitDown(VkCommandBuffer commandBuffer, VkImage srcImage, uint32_t srcMipLevel, VkImage dstImage, uint32_t dstMipLevel, uint32_t width, uint32_t height, uint32_t baseArrayLayer, uint32_t layerCount, float blitFactor) {
     VkImageBlit blit{};
         blit.srcOffsets[0] = {0, 0, 0};
         blit.srcOffsets[1] = {static_cast<int32_t>(width),static_cast<int32_t>(height),1};
@@ -553,8 +527,7 @@ void texture::blitDown(VkCommandBuffer commandBuffer, VkImage srcImage, uint32_t
     vkCmdBlitImage(commandBuffer, srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
 }
 
-void texture::blitUp(VkCommandBuffer commandBuffer, VkImage srcImage, uint32_t srcMipLevel, VkImage dstImage, uint32_t dstMipLevel, uint32_t width, uint32_t height, uint32_t baseArrayLayer, uint32_t layerCount, float blitFactor)
-{
+void texture::blitUp(VkCommandBuffer commandBuffer, VkImage srcImage, uint32_t srcMipLevel, VkImage dstImage, uint32_t dstMipLevel, uint32_t width, uint32_t height, uint32_t baseArrayLayer, uint32_t layerCount, float blitFactor) {
     VkImageBlit blit{};
         blit.srcOffsets[0] = {0, 0, 0};
         blit.srcOffsets[1] = {static_cast<int32_t>(width/blitFactor),static_cast<int32_t>(height/blitFactor),1};
@@ -571,8 +544,7 @@ void texture::blitUp(VkCommandBuffer commandBuffer, VkImage srcImage, uint32_t s
     vkCmdBlitImage(commandBuffer, srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
 }
 
-swapChain::SupportDetails swapChain::queryingSupport(VkPhysicalDevice device, VkSurfaceKHR surface)
-{
+swapChain::SupportDetails swapChain::queryingSupport(VkPhysicalDevice device, VkSurfaceKHR surface) {
     swapChain::SupportDetails details{};
     VkResult result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
     CHECK(result);
@@ -598,8 +570,7 @@ swapChain::SupportDetails swapChain::queryingSupport(VkPhysicalDevice device, Vk
     return details;
 }
 
-uint32_t swapChain::queryingSupportImageCount(VkPhysicalDevice device, VkSurfaceKHR surface)
-{
+uint32_t swapChain::queryingSupportImageCount(VkPhysicalDevice device, VkSurfaceKHR surface) {
     auto capabilities = swapChain::queryingSupport(device, surface).capabilities;
     uint32_t imageCount = capabilities.minImageCount + 1;
     if (capabilities.maxImageCount > 0 && imageCount > capabilities.maxImageCount){
@@ -608,8 +579,7 @@ uint32_t swapChain::queryingSupportImageCount(VkPhysicalDevice device, VkSurface
     return imageCount;
 }
 
-VkSurfaceFormatKHR swapChain::queryingSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
-{
+VkSurfaceFormatKHR swapChain::queryingSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
     for (const auto& availableFormat : availableFormats) {
         if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
         {
@@ -630,8 +600,7 @@ VkPresentModeKHR swapChain::queryingPresentMode(const std::vector<VkPresentModeK
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D swapChain::queryingExtent(Window* window, const VkSurfaceCapabilitiesKHR& capabilities)
-{
+VkExtent2D swapChain::queryingExtent(Window* window, const VkSurfaceCapabilitiesKHR& capabilities) {
     if(!CHECK_M(window, "[ swapChain::queryingExtent ] : window is nullptr")) return{};
     const auto [width, height] = window->getFramebufferSize();
     VkExtent2D actualExtent = (capabilities.currentExtent.width != UINT32_MAX && capabilities.currentExtent.height != UINT32_MAX)
@@ -641,8 +610,7 @@ VkExtent2D swapChain::queryingExtent(Window* window, const VkSurfaceCapabilities
     return actualExtent;
 }
 
-VkFormat image::supportedFormat(VkPhysicalDevice physicalDevice, const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
-{
+VkFormat image::supportedFormat(VkPhysicalDevice physicalDevice, const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
     VkFormat supportedFormat = candidates[0];
     for (VkFormat format : candidates)
     {
@@ -669,8 +637,7 @@ VkFormat image::depthStencilFormat(VkPhysicalDevice physicalDevice)
         VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 }
 
-std::vector<char> shaderModule::readFile(const std::filesystem::path& filename)
-{
+std::vector<char> shaderModule::readFile(const std::filesystem::path& filename) {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
     if (!file.is_open()) {
@@ -686,8 +653,7 @@ std::vector<char> shaderModule::readFile(const std::filesystem::path& filename)
     return buffer;
 }
 
-VkShaderModule shaderModule::create(VkDevice device, const std::vector<char>& code)
-{
+VkShaderModule shaderModule::create(VkDevice device, const std::vector<char>& code) {
     VkShaderModule shaderModule{VK_NULL_HANDLE};
     VkShaderModuleCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -696,6 +662,54 @@ VkShaderModule shaderModule::create(VkDevice device, const std::vector<char>& co
     CHECK(vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule));
 
     return shaderModule;
+}
+
+void descriptorSet::update(VkDevice device, const Writes& writes) {
+    vkUpdateDescriptorSets(device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
+}
+
+void descriptorSet::write(Writes& writes, VkDescriptorSet descriptorSet, const VkDescriptorBufferInfo& bufferInfo, VkDescriptorType descriptorType) {
+    writes.push_back(VkWriteDescriptorSet{});
+    writes.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    writes.back().dstSet = descriptorSet;
+    writes.back().dstBinding = static_cast<uint32_t>(writes.size() - 1);
+    writes.back().dstArrayElement = 0;
+    writes.back().descriptorType = descriptorType;
+    writes.back().descriptorCount = 1;
+    writes.back().pBufferInfo = &bufferInfo;
+}
+
+void descriptorSet::write(Writes& writes, VkDescriptorSet descriptorSet, const VkDescriptorImageInfo& imageInfo, VkDescriptorType descriptorType) {
+    writes.push_back(VkWriteDescriptorSet{});
+    writes.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    writes.back().dstSet = descriptorSet;
+    writes.back().dstBinding = static_cast<uint32_t>(writes.size() - 1);
+    writes.back().dstArrayElement = 0;
+    writes.back().descriptorType = descriptorType;
+    writes.back().descriptorCount = 1;
+    writes.back().pImageInfo = &imageInfo;
+}
+
+void descriptorSet::write(Writes& writes, VkDescriptorSet descriptorSet, const std::vector<VkDescriptorBufferInfo>& bufferInfos, VkDescriptorType descriptorType) {
+    writes.push_back(VkWriteDescriptorSet{});
+    writes.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    writes.back().dstSet = descriptorSet;
+    writes.back().dstBinding = static_cast<uint32_t>(writes.size() - 1);
+    writes.back().dstArrayElement = 0;
+    writes.back().descriptorType = descriptorType;
+    writes.back().descriptorCount = static_cast<uint32_t>(bufferInfos.size());
+    writes.back().pBufferInfo = bufferInfos.data();
+}
+
+void descriptorSet::write(Writes& writes, VkDescriptorSet descriptorSet, const std::vector<VkDescriptorImageInfo>& imageInfos, VkDescriptorType descriptorType) {
+    writes.push_back(VkWriteDescriptorSet{});
+    writes.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    writes.back().dstSet = descriptorSet;
+    writes.back().dstBinding = static_cast<uint32_t>(writes.size() - 1);
+    writes.back().dstArrayElement = 0;
+    writes.back().descriptorType = descriptorType;
+    writes.back().descriptorCount = static_cast<uint32_t>(imageInfos.size());
+    writes.back().pImageInfo = imageInfos.data();
 }
 
 }

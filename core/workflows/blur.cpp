@@ -160,21 +160,11 @@ void GaussianBlur::updateDescriptors(const utils::BuffersDatabase&, const utils:
 
     auto updateDescriptorSets = [](VkDevice device, const utils::Attachments& image, const utils::vkDefault::DescriptorSets& descriptorSets) {
         for (uint32_t i = 0; i < image.count(); i++) {
-            VkDescriptorImageInfo imageInfo{};
-            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageInfo.imageView = image.imageView(i);
-            imageInfo.sampler = image.sampler();
+            const auto imageInfo = image.descriptorImageInfo(i);
 
-            std::vector<VkWriteDescriptorSet> descriptorWrites;
-            descriptorWrites.push_back(VkWriteDescriptorSet{});
-            descriptorWrites.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites.back().dstSet = descriptorSets[i];
-            descriptorWrites.back().dstBinding = static_cast<uint32_t>(descriptorWrites.size() - 1);
-            descriptorWrites.back().dstArrayElement = 0;
-            descriptorWrites.back().descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites.back().descriptorCount = 1;
-            descriptorWrites.back().pImageInfo = &imageInfo;
-            vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+            utils::descriptorSet::Writes writes;
+            utils::descriptorSet::write(writes, descriptorSets[i], imageInfo);
+            utils::descriptorSet::update(device, writes);
         }
     };
 

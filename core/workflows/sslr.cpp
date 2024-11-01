@@ -124,102 +124,39 @@ void SSLRGraphics::updateDescriptors(const utils::BuffersDatabase& bDatabase, co
 
     for (uint32_t i = 0; i < parameters.imageInfo.Count; i++)
     {
-        VkDescriptorBufferInfo bufferInfo = bDatabase.descriptorBufferInfo(parameters.in.camera, i);
-        VkDescriptorImageInfo positionInfo = aDatabase.descriptorImageInfo(parameters.in.position, i);
-        VkDescriptorImageInfo normalInfo = aDatabase.descriptorImageInfo(parameters.in.normal, i);
-        VkDescriptorImageInfo imageInfo = aDatabase.descriptorImageInfo(parameters.in.color, i);
-        VkDescriptorImageInfo depthInfo = aDatabase.descriptorImageInfo(parameters.in.depth, i);
+        auto descriptorSet = sslr.descriptorSets[i];
+        const auto bufferInfo = bDatabase.descriptorBufferInfo(parameters.in.camera, i);
+        const auto positionInfo = aDatabase.descriptorImageInfo(parameters.in.position, i);
+        const auto normalInfo = aDatabase.descriptorImageInfo(parameters.in.normal, i);
+        const auto imageInfo = aDatabase.descriptorImageInfo(parameters.in.color, i);
+        const auto depthInfo = aDatabase.descriptorImageInfo(parameters.in.depth, i);
 
-        const auto layerPositionId = aDatabase.get(parameters.in.firstTransparency + parameters.in.position) ?
-                                         parameters.in.firstTransparency + parameters.in.position : parameters.in.position;
-        VkDescriptorImageInfo layerPositionInfo = aDatabase.descriptorImageInfo(layerPositionId, i);
+#define SSLRGraphics_updateDescriptors_getId(id)                                \
+    aDatabase.get(parameters.in.firstTransparency + parameters.in.id) ?         \
+        parameters.in.firstTransparency + parameters.in.id : parameters.in.id;  \
 
-        const auto layerNormalId = aDatabase.get(parameters.in.firstTransparency + parameters.in.normal) ?
-                                       parameters.in.firstTransparency + parameters.in.normal : parameters.in.normal;
-        VkDescriptorImageInfo layerNormalInfo = aDatabase.descriptorImageInfo(layerNormalId, i);
+        const auto layerPositionId = SSLRGraphics_updateDescriptors_getId(position);
+        const auto layerNormalId = SSLRGraphics_updateDescriptors_getId(normal);
+        const auto layerImageId = SSLRGraphics_updateDescriptors_getId(color);
+        const auto layerDepthId = SSLRGraphics_updateDescriptors_getId(depth);
+#undef SSLRGraphics_updateDescriptors_getId
 
-        const auto layerImageId = aDatabase.get(parameters.in.firstTransparency + parameters.in.color) ?
-                                      parameters.in.firstTransparency + parameters.in.color : parameters.in.color;
-        VkDescriptorImageInfo layerImageInfo = aDatabase.descriptorImageInfo(layerImageId, i);
+        const auto layerPositionInfo = aDatabase.descriptorImageInfo(layerPositionId, i);
+        const auto layerNormalInfo = aDatabase.descriptorImageInfo(layerNormalId, i);
+        const auto layerImageInfo = aDatabase.descriptorImageInfo(layerImageId, i);
+        const auto layerDepthInfo = aDatabase.descriptorImageInfo(layerDepthId, i, parameters.in.defaultDepthTexture);
 
-        const auto layerDepthId = aDatabase.get(parameters.in.firstTransparency + parameters.in.depth) ?
-                                      parameters.in.firstTransparency + parameters.in.depth : parameters.in.depth;
-        VkDescriptorImageInfo layerDepthInfo = aDatabase.descriptorImageInfo(layerDepthId, i, parameters.in.defaultDepthTexture);
-
-        std::vector<VkWriteDescriptorSet> descriptorWrites;
-        descriptorWrites.push_back(VkWriteDescriptorSet{});
-            descriptorWrites.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites.back().dstSet = sslr.descriptorSets[i];
-            descriptorWrites.back().dstBinding = static_cast<uint32_t>(descriptorWrites.size()) - 1;
-            descriptorWrites.back().dstArrayElement = 0;
-            descriptorWrites.back().descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            descriptorWrites.back().descriptorCount = 1;
-            descriptorWrites.back().pBufferInfo = &bufferInfo;
-        descriptorWrites.push_back(VkWriteDescriptorSet{});
-            descriptorWrites.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites.back().dstSet = sslr.descriptorSets[i];
-            descriptorWrites.back().dstBinding = static_cast<uint32_t>(descriptorWrites.size()) - 1;
-            descriptorWrites.back().dstArrayElement = 0;
-            descriptorWrites.back().descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites.back().descriptorCount = 1;
-            descriptorWrites.back().pImageInfo = &positionInfo;
-        descriptorWrites.push_back(VkWriteDescriptorSet{});
-            descriptorWrites.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites.back().dstSet = sslr.descriptorSets[i];
-            descriptorWrites.back().dstBinding = static_cast<uint32_t>(descriptorWrites.size()) - 1;
-            descriptorWrites.back().dstArrayElement = 0;
-            descriptorWrites.back().descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites.back().descriptorCount = 1;
-            descriptorWrites.back().pImageInfo = &normalInfo;
-        descriptorWrites.push_back(VkWriteDescriptorSet{});
-            descriptorWrites.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites.back().dstSet = sslr.descriptorSets[i];
-            descriptorWrites.back().dstBinding = static_cast<uint32_t>(descriptorWrites.size()) - 1;
-            descriptorWrites.back().dstArrayElement = 0;
-            descriptorWrites.back().descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites.back().descriptorCount = 1;
-            descriptorWrites.back().pImageInfo = &imageInfo;
-        descriptorWrites.push_back(VkWriteDescriptorSet{});
-            descriptorWrites.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites.back().dstSet = sslr.descriptorSets[i];
-            descriptorWrites.back().dstBinding = static_cast<uint32_t>(descriptorWrites.size()) - 1;
-            descriptorWrites.back().dstArrayElement = 0;
-            descriptorWrites.back().descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites.back().descriptorCount = 1;
-            descriptorWrites.back().pImageInfo = &depthInfo;
-        descriptorWrites.push_back(VkWriteDescriptorSet{});
-            descriptorWrites.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites.back().dstSet = sslr.descriptorSets[i];
-            descriptorWrites.back().dstBinding = static_cast<uint32_t>(descriptorWrites.size()) - 1;
-            descriptorWrites.back().dstArrayElement = 0;
-            descriptorWrites.back().descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites.back().descriptorCount = 1;
-            descriptorWrites.back().pImageInfo = &layerPositionInfo;
-        descriptorWrites.push_back(VkWriteDescriptorSet{});
-            descriptorWrites.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites.back().dstSet = sslr.descriptorSets[i];
-            descriptorWrites.back().dstBinding = static_cast<uint32_t>(descriptorWrites.size()) - 1;
-            descriptorWrites.back().dstArrayElement = 0;
-            descriptorWrites.back().descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites.back().descriptorCount = 1;
-            descriptorWrites.back().pImageInfo = &layerNormalInfo;
-        descriptorWrites.push_back(VkWriteDescriptorSet{});
-            descriptorWrites.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites.back().dstSet = sslr.descriptorSets[i];
-            descriptorWrites.back().dstBinding = static_cast<uint32_t>(descriptorWrites.size()) - 1;
-            descriptorWrites.back().dstArrayElement = 0;
-            descriptorWrites.back().descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites.back().descriptorCount = 1;
-            descriptorWrites.back().pImageInfo = &layerImageInfo;
-        descriptorWrites.push_back(VkWriteDescriptorSet{});
-            descriptorWrites.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites.back().dstSet = sslr.descriptorSets[i];
-            descriptorWrites.back().dstBinding = static_cast<uint32_t>(descriptorWrites.size()) - 1;
-            descriptorWrites.back().dstArrayElement = 0;
-            descriptorWrites.back().descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites.back().descriptorCount = 1;
-            descriptorWrites.back().pImageInfo = &layerDepthInfo;
-        vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+        utils::descriptorSet::Writes writes;
+        utils::descriptorSet::write(writes, descriptorSet, bufferInfo);
+        utils::descriptorSet::write(writes, descriptorSet, positionInfo);
+        utils::descriptorSet::write(writes, descriptorSet, normalInfo);
+        utils::descriptorSet::write(writes, descriptorSet, imageInfo);
+        utils::descriptorSet::write(writes, descriptorSet, depthInfo);
+        utils::descriptorSet::write(writes, descriptorSet, layerPositionInfo);
+        utils::descriptorSet::write(writes, descriptorSet, layerNormalInfo);
+        utils::descriptorSet::write(writes, descriptorSet, layerImageInfo);
+        utils::descriptorSet::write(writes, descriptorSet, layerDepthInfo);
+        utils::descriptorSet::update(device, writes);
     }
 }
 

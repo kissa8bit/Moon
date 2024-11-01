@@ -95,6 +95,7 @@ public:
 
     const VkImageView imageView() const;
     const VkSampler sampler() const;
+    VkDescriptorImageInfo descriptorImageInfo() const;
 
     static Texture empty(const PhysicalDevice&, VkCommandPool, bool isBlack = true);
     static Texture empty(const PhysicalDevice&, VkCommandBuffer, bool isBlack = true);

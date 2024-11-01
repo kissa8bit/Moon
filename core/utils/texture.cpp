@@ -173,6 +173,15 @@ void Texture::setTextureFormat(VkFormat format){image.format = format;}
 const VkImageView Texture::imageView() const {return image.imageView;}
 const VkSampler Texture::sampler() const {return image.sampler;}
 
+
+VkDescriptorImageInfo Texture::descriptorImageInfo() const {
+    VkDescriptorImageInfo imageInfo{};
+    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imageInfo.imageView = imageView();
+    imageInfo.sampler = sampler();
+    return imageInfo;
+}
+
 CubeTexture::CubeTexture(Texture&& texture) : Texture(std::move(texture)){}
 
 #ifdef USE_STB_IMAGE

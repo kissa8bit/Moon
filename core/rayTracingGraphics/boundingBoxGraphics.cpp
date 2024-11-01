@@ -117,21 +117,11 @@ void BoundingBoxGraphics::createDescriptors(){
 
     for (uint32_t i = 0; i < image.Count; i++)
     {
-        VkDescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = cameraBuffers[i];
-        bufferInfo.offset = 0;
-        bufferInfo.range = sizeof(CameraBuffer);
+        const auto bufferInfo = cameraBuffers[i].descriptorBufferInfo();
 
-        std::vector<VkWriteDescriptorSet> descriptorWrites;
-        descriptorWrites.push_back(VkWriteDescriptorSet{});
-        descriptorWrites.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites.back().dstSet = descriptorSets[i];
-        descriptorWrites.back().dstBinding = static_cast<uint32_t>(descriptorWrites.size() - 1);
-        descriptorWrites.back().dstArrayElement = 0;
-        descriptorWrites.back().descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrites.back().descriptorCount = 1;
-        descriptorWrites.back().pBufferInfo = &bufferInfo;
-        vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+        utils::descriptorSet::Writes writes;
+        utils::descriptorSet::write(writes, descriptorSets[i], bufferInfo);
+        utils::descriptorSet::update(device, writes);
     }
 }
 

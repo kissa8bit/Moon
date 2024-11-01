@@ -11,15 +11,9 @@ void Skeleton::createDescriptorSet(VkDevice device, utils::vkDefault::Descriptor
 
     descriptorSet = descriptorPool.allocateDescriptorSet(descriptorSetLayout);
 
-    VkDescriptorBufferInfo bufferInfo{ deviceBuffer, 0, deviceBuffer.size() };
-    VkWriteDescriptorSet writeDescriptorSet{};
-    writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    writeDescriptorSet.descriptorCount = 1;
-    writeDescriptorSet.dstSet = descriptorSet;
-    writeDescriptorSet.dstBinding = 0;
-    writeDescriptorSet.pBufferInfo = &bufferInfo;
-    vkUpdateDescriptorSets(device, 1, &writeDescriptorSet, 0, nullptr);
+    utils::descriptorSet::Writes writes;
+    utils::descriptorSet::write(writes, descriptorSet, deviceBuffer.descriptorBufferInfo());
+    utils::descriptorSet::update(device, writes);
 }
 
 utils::vkDefault::DescriptorSetLayout Skeleton::descriptorSetLayout(VkDevice device) {
@@ -121,18 +115,11 @@ void Material::createDescriptorSet(VkDevice device, utils::vkDefault::Descriptor
         getDescriptorImageInfo(emissive.texture)
     };
 
-    std::vector<VkWriteDescriptorSet> descriptorWrites;
+    utils::descriptorSet::Writes writes;
     for (const auto& info : descriptorImageInfos) {
-        descriptorWrites.push_back(VkWriteDescriptorSet{});
-        descriptorWrites.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites.back().dstSet = descriptorSet;
-        descriptorWrites.back().dstBinding = static_cast<uint32_t>(descriptorWrites.size()) - 1;
-        descriptorWrites.back().dstArrayElement = 0;
-        descriptorWrites.back().descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrites.back().descriptorCount = 1;
-        descriptorWrites.back().pImageInfo = &info;
+        utils::descriptorSet::write(writes, descriptorSet, info);
     }
-    vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+    utils::descriptorSet::update(device, writes);
 }
 
 utils::vkDefault::DescriptorSetLayout Material::descriptorSetLayout(VkDevice device) {

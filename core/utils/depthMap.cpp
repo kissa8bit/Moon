@@ -26,22 +26,11 @@ const utils::vkDefault::DescriptorSets& DepthMap::descriptorSets() const{
 }
 
 void DepthMap::update(bool enable){
-    for (size_t i = 0; i < imageInfo.Count; i++)
-    {
-        VkDescriptorImageInfo shadowImageInfo{};
-            shadowImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            shadowImageInfo.imageView = enable && map.attachments.count() ? map.attachments.imageView(i) : emptyTextureWhite.imageView();
-            shadowImageInfo.sampler = enable && map.attachments.count() ? map.attachments.sampler() : emptyTextureWhite.sampler();
-        std::vector<VkWriteDescriptorSet> descriptorWrites;
-            descriptorWrites.push_back(VkWriteDescriptorSet{});
-            descriptorWrites.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites.back().dstSet = map.descriptorSets[i];
-            descriptorWrites.back().dstBinding = static_cast<uint32_t>(descriptorWrites.size() - 1);
-            descriptorWrites.back().dstArrayElement = 0;
-            descriptorWrites.back().descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites.back().descriptorCount = 1;
-            descriptorWrites.back().pImageInfo = &shadowImageInfo;
-        vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+    for (size_t i = 0; i < imageInfo.Count; i++) {
+        auto imageInfo = enable && map.attachments.count() ? map.attachments.descriptorImageInfo(i) : emptyTextureWhite.descriptorImageInfo();
+        utils::descriptorSet::Writes writes;
+        utils::descriptorSet::write(writes, map.descriptorSets[i], imageInfo);
+        utils::descriptorSet::update(device, writes);
     }
 }
 

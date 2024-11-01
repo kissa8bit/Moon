@@ -134,62 +134,26 @@ void SelectorGraphics::updateDescriptors(const utils::BuffersDatabase& bDatabase
 
     for (uint32_t i = 0; i < parameters.imageInfo.Count; i++)
     {
-        VkDescriptorBufferInfo cursorInfo = (*cursor)->descriptorBufferInfo();
-        VkDescriptorImageInfo positionImageInfo = aDatabase.descriptorImageInfo(parameters.in.position, i);
-        VkDescriptorImageInfo depthImageInfo = aDatabase.descriptorImageInfo(parameters.in.depth, i, parameters.in.defaultDepthTexture);
+        auto descriptorSet = selector.descriptorSets[i];
+        const auto cursorInfo = (*cursor)->descriptorBufferInfo();
+        const auto positionImageInfo = aDatabase.descriptorImageInfo(parameters.in.position, i);
+        const auto depthImageInfo = aDatabase.descriptorImageInfo(parameters.in.depth, i, parameters.in.defaultDepthTexture);
 
         std::vector<VkDescriptorImageInfo> positionLayersImageInfo(parameters.transparentLayersCount);
         std::vector<VkDescriptorImageInfo> depthLayersImageInfo(parameters.transparentLayersCount);
-
         for(uint32_t index = 0; index < parameters.transparentLayersCount; index++){
             std::string key = parameters.in.transparency + std::to_string(index) + ".";
-
             positionLayersImageInfo[index] = aDatabase.descriptorImageInfo(key + parameters.in.position, i);
             depthLayersImageInfo[index] = aDatabase.descriptorImageInfo(key + parameters.in.depth, i, parameters.in.defaultDepthTexture);
         }
 
-        std::vector<VkWriteDescriptorSet> descriptorWrites;
-        descriptorWrites.push_back(VkWriteDescriptorSet{});
-            descriptorWrites.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites.back().dstSet = selector.descriptorSets.at(i);
-            descriptorWrites.back().dstBinding = static_cast<uint32_t>(descriptorWrites.size() - 1);
-            descriptorWrites.back().dstArrayElement = 0;
-            descriptorWrites.back().descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-            descriptorWrites.back().descriptorCount = 1;
-            descriptorWrites.back().pBufferInfo = &cursorInfo;
-        descriptorWrites.push_back(VkWriteDescriptorSet{});
-            descriptorWrites.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites.back().dstSet = selector.descriptorSets[i];
-            descriptorWrites.back().dstBinding = static_cast<uint32_t>(descriptorWrites.size() - 1);
-            descriptorWrites.back().dstArrayElement = 0;
-            descriptorWrites.back().descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites.back().descriptorCount = 1;
-            descriptorWrites.back().pImageInfo = &positionImageInfo;
-        descriptorWrites.push_back(VkWriteDescriptorSet{});
-            descriptorWrites.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites.back().dstSet = selector.descriptorSets[i];
-            descriptorWrites.back().dstBinding = static_cast<uint32_t>(descriptorWrites.size() - 1);
-            descriptorWrites.back().dstArrayElement = 0;
-            descriptorWrites.back().descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites.back().descriptorCount = 1;
-            descriptorWrites.back().pImageInfo = &depthImageInfo;
-        descriptorWrites.push_back(VkWriteDescriptorSet{});
-            descriptorWrites.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites.back().dstSet = selector.descriptorSets[i];
-            descriptorWrites.back().dstBinding = static_cast<uint32_t>(descriptorWrites.size() - 1);
-            descriptorWrites.back().dstArrayElement = 0;
-            descriptorWrites.back().descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites.back().descriptorCount = parameters.transparentLayersCount;
-            descriptorWrites.back().pImageInfo = positionLayersImageInfo.data();
-        descriptorWrites.push_back(VkWriteDescriptorSet{});
-            descriptorWrites.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites.back().dstSet = selector.descriptorSets[i];
-            descriptorWrites.back().dstBinding = static_cast<uint32_t>(descriptorWrites.size() - 1);
-            descriptorWrites.back().dstArrayElement = 0;
-            descriptorWrites.back().descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites.back().descriptorCount = parameters.transparentLayersCount;
-            descriptorWrites.back().pImageInfo = depthLayersImageInfo.data();
-        vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+        utils::descriptorSet::Writes writes;
+        utils::descriptorSet::write(writes, descriptorSet, cursorInfo, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+        utils::descriptorSet::write(writes, descriptorSet, positionImageInfo);
+        utils::descriptorSet::write(writes, descriptorSet, depthImageInfo);
+        utils::descriptorSet::write(writes, descriptorSet, positionLayersImageInfo);
+        utils::descriptorSet::write(writes, descriptorSet, depthLayersImageInfo);
+        utils::descriptorSet::update(device, writes);
     }
 }
 

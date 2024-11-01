@@ -640,6 +640,11 @@ vkDefault::Buffer::operator const VkDeviceMemory* () const {
     return &memory;
 }
 
+
+VkDescriptorBufferInfo vkDefault::Buffer::descriptorBufferInfo() const {
+    return VkDescriptorBufferInfo{ descriptor, 0, size() };
+}
+
 VKDEFAULT_MAKE_SWAP(Buffer)
 VKDEFAULT_MAKE_DESCRIPTOR(Buffer, VkBuffer)
 

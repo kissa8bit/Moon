@@ -65,38 +65,17 @@ void RayTracingLink::createDescriptors(VkDevice device, const moon::utils::Attac
     descriptorPool = utils::vkDefault::DescriptorPool(device, { &descriptorSetLayout }, parameters.imageInfo.Count);
     descriptorSets = descriptorPool.allocateDescriptorSets(descriptorSetLayout, parameters.imageInfo.Count);
 
-    for (size_t image = 0; image < parameters.imageInfo.Count; image++)
-    {
-        VkDescriptorImageInfo imageInfo = aDatabase.descriptorImageInfo(parameters.in.color, image);
-        VkDescriptorImageInfo bloomImageInfo = aDatabase.descriptorImageInfo(parameters.in.bloom, image);
-        VkDescriptorImageInfo bbImageInfo = aDatabase.descriptorImageInfo(parameters.in.boundingBox, image);
+    for (size_t i = 0; i < parameters.imageInfo.Count; i++) {
+        auto descriptorSet = descriptorSets[i];
+        const auto imageInfo = aDatabase.descriptorImageInfo(parameters.in.color, i);
+        const auto bloomImageInfo = aDatabase.descriptorImageInfo(parameters.in.bloom, i);
+        const auto bbImageInfo = aDatabase.descriptorImageInfo(parameters.in.boundingBox, i);
 
-        std::vector<VkWriteDescriptorSet> descriptorWrites;
-        descriptorWrites.push_back(VkWriteDescriptorSet{});
-        descriptorWrites.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites.back().dstSet = descriptorSets[image];
-        descriptorWrites.back().dstBinding = static_cast<uint32_t>(descriptorWrites.size() - 1);
-        descriptorWrites.back().dstArrayElement = 0;
-        descriptorWrites.back().descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrites.back().descriptorCount = 1;
-        descriptorWrites.back().pImageInfo = &imageInfo;
-        descriptorWrites.push_back(VkWriteDescriptorSet{});
-        descriptorWrites.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites.back().dstSet = descriptorSets[image];
-        descriptorWrites.back().dstBinding = static_cast<uint32_t>(descriptorWrites.size() - 1);
-        descriptorWrites.back().dstArrayElement = 0;
-        descriptorWrites.back().descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrites.back().descriptorCount = 1;
-        descriptorWrites.back().pImageInfo = &bbImageInfo;
-        descriptorWrites.push_back(VkWriteDescriptorSet{});
-        descriptorWrites.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites.back().dstSet = descriptorSets[image];
-        descriptorWrites.back().dstBinding = static_cast<uint32_t>(descriptorWrites.size() - 1);
-        descriptorWrites.back().dstArrayElement = 0;
-        descriptorWrites.back().descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrites.back().descriptorCount = 1;
-        descriptorWrites.back().pImageInfo = &bloomImageInfo;
-        vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+        utils::descriptorSet::Writes writes;
+        utils::descriptorSet::write(writes, descriptorSet, imageInfo);
+        utils::descriptorSet::write(writes, descriptorSet, bloomImageInfo);
+        utils::descriptorSet::write(writes, descriptorSet, bbImageInfo);
+        utils::descriptorSet::update(device, writes);
     }
 }
 

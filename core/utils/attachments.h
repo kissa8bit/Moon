@@ -53,6 +53,13 @@ public:
     const VkFormat& format() const { return imageInfo.Format; }
     const uint32_t& count() const { return imageInfo.Count; }
     const VkClearValue& clearValue() const { return imageClearValue; }
+    VkDescriptorImageInfo descriptorImageInfo(size_t i) const {
+        VkDescriptorImageInfo imageInfo;
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo.imageView = imageView(i);
+        imageInfo.sampler = sampler();
+        return imageInfo;
+    }
 
     static VkAttachmentDescription imageDescription(VkFormat format);
     static VkAttachmentDescription imageDescription(VkFormat format, VkImageLayout layout);

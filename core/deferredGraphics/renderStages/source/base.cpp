@@ -15,11 +15,6 @@ void Graphics::Base::create(const workflows::ShaderNames& shadersNames, VkDevice
         bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
         bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
 
-    descriptorSetLayout = utils::vkDefault::DescriptorSetLayout(device, bindings);
-    objectDescriptorSetLayout = interfaces::Object::createBaseDescriptorSetLayout(device);
-    skeletonDescriptorSetLayout = interfaces::Skeleton::descriptorSetLayout(device);
-    materialDescriptorSetLayout = interfaces::Material::descriptorSetLayout(device);
-
     std::vector<VkBool32> transparencyData = {
         static_cast<VkBool32>(parameters.enableTransparency),
         static_cast<VkBool32>(parameters.transparencyPass)
@@ -73,10 +68,10 @@ void Graphics::Base::create(const workflows::ShaderNames& shadersNames, VkDevice
         pushConstantRange.back().offset = 0;
         pushConstantRange.back().size = sizeof(interfaces::Material::Buffer);
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts = {
-        descriptorSetLayout,
-        objectDescriptorSetLayout,
-        skeletonDescriptorSetLayout,
-        materialDescriptorSetLayout
+        descriptorSetLayout = utils::vkDefault::DescriptorSetLayout(device, bindings),
+        objectDescriptorSetLayout = interfaces::Object::createBaseDescriptorSetLayout(device),
+        skeletonDescriptorSetLayout = interfaces::Skeleton::descriptorSetLayout(device),
+        materialDescriptorSetLayout = interfaces::Material::descriptorSetLayout(device)
     };
     pipelineLayoutMap[interfaces::ObjectType::base] = utils::vkDefault::PipelineLayout(device, descriptorSetLayouts, pushConstantRange);
 
@@ -119,41 +114,21 @@ void Graphics::Base::create(const workflows::ShaderNames& shadersNames, VkDevice
 
 void Graphics::Base::update(VkDevice device, const utils::BuffersDatabase& bDatabase, const utils::AttachmentsDatabase& aDatabase)
 {
-    for (uint32_t i = 0; i < parameters.imageInfo.Count; i++)
-    {
-        VkDescriptorBufferInfo bufferInfo = bDatabase.descriptorBufferInfo(parameters.in.camera, i);
-        VkDescriptorImageInfo skyboxImageInfo = aDatabase.descriptorEmptyInfo();
+    for (uint32_t i = 0; i < parameters.imageInfo.Count; i++) {
+        auto descriptorSet = descriptorSets[i];
 
         std::string depthId = !parameters.transparencyPass || parameters.transparencyNumber == 0 ? "" :
-                                      (parameters.out.transparency + std::to_string(parameters.transparencyNumber - 1) + ".") + parameters.out.depth;
+            (parameters.out.transparency + std::to_string(parameters.transparencyNumber - 1) + ".") + parameters.out.depth;
+
+        VkDescriptorBufferInfo bufferInfo = bDatabase.descriptorBufferInfo(parameters.in.camera, i);
+        VkDescriptorImageInfo skyboxImageInfo = aDatabase.descriptorEmptyInfo();
         VkDescriptorImageInfo depthImageInfo = aDatabase.descriptorImageInfo(depthId, i);
 
-        std::vector<VkWriteDescriptorSet> descriptorWrites;
-        descriptorWrites.push_back(VkWriteDescriptorSet{});
-            descriptorWrites.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites.back().dstSet = descriptorSets[i];
-            descriptorWrites.back().dstBinding = static_cast<uint32_t>(descriptorWrites.size() - 1);
-            descriptorWrites.back().dstArrayElement = 0;
-            descriptorWrites.back().descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            descriptorWrites.back().descriptorCount = 1;
-            descriptorWrites.back().pBufferInfo = &bufferInfo;
-        descriptorWrites.push_back(VkWriteDescriptorSet{});
-            descriptorWrites.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites.back().dstSet = descriptorSets[i];
-            descriptorWrites.back().dstBinding = static_cast<uint32_t>(descriptorWrites.size() - 1);
-            descriptorWrites.back().dstArrayElement = 0;
-            descriptorWrites.back().descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites.back().descriptorCount = 1;
-            descriptorWrites.back().pImageInfo = &skyboxImageInfo;
-        descriptorWrites.push_back(VkWriteDescriptorSet{});
-            descriptorWrites.back().sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites.back().dstSet = descriptorSets.at(i);
-            descriptorWrites.back().dstBinding = static_cast<uint32_t>(descriptorWrites.size() - 1);
-            descriptorWrites.back().dstArrayElement = 0;
-            descriptorWrites.back().descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites.back().descriptorCount = 1;
-            descriptorWrites.back().pImageInfo = &depthImageInfo;
-        vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+        utils::descriptorSet::Writes writes;
+        utils::descriptorSet::write(writes, descriptorSet, bufferInfo);
+        utils::descriptorSet::write(writes, descriptorSet, skyboxImageInfo);
+        utils::descriptorSet::write(writes, descriptorSet, depthImageInfo);
+        utils::descriptorSet::update(device, writes);
     }
 }
 
