@@ -30,7 +30,7 @@ namespace debug {
 namespace validationLayer{
 
     bool checkSupport(
-            const std::vector<std::string>              validationLayers);
+            const std::vector<const char*>&             validationLayers);
 
     void setupDebugMessenger (
             VkInstance                                  instance,
@@ -122,6 +122,13 @@ namespace texture {
             uint32_t                        mipLevels,
             uint32_t                        baseArrayLayer,
             uint32_t                        arrayLayers);
+
+    void copy(
+            VkCommandBuffer                 commandBuffer,
+            VkImage                         srcImage,
+            VkImage                         dstImage,
+            VkExtent3D                      extent,
+            uint32_t                        layerCount);
 
     void copy(
             VkCommandBuffer                 commandBuffer,
@@ -322,6 +329,27 @@ namespace descriptorSet {
             VkDescriptorSet                             descriptorSet,
             const std::vector<VkDescriptorImageInfo>&   imageInfo,
             VkDescriptorType                            descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+
+
+#ifndef CONCAT
+#define CONCAT(a, b) CONCAT_INNER(a, b)
+#endif
+#ifndef CONCAT_INNER
+#define CONCAT_INNER(a, b) a##b
+#endif
+
+#ifndef WRITE_DESCRIPTOR_T
+#define WRITE_DESCRIPTOR_T(writes, descSet, desc, descType)                                                                                                          \
+    const auto CONCAT(desc_v, __LINE__) = desc;                                                                                                                \
+    utils::descriptorSet::write(writes, descSet, CONCAT(desc_v, __LINE__), descType);
+#endif
+
+#ifndef WRITE_DESCRIPTOR
+#define WRITE_DESCRIPTOR(writes, dsecSet, desc)                                                                                                          \
+    const auto CONCAT(desc_v, __LINE__) = desc;                                                                                                                \
+    utils::descriptorSet::write(writes, dsecSet, CONCAT(desc_v, __LINE__));
+#endif
+
 }
 
 }

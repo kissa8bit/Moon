@@ -11,11 +11,11 @@ Graphics::Base::Base(const GraphicsParameters& parameters, const interfaces::Obj
 
 void Graphics::Base::create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass) {
     std::vector<VkDescriptorSetLayoutBinding> bindings;
-        bindings.push_back(utils::vkDefault::bufferVertexLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
-        bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
-        bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
+    bindings.push_back(utils::vkDefault::bufferVertexLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
+    bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
+    bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
 
-    std::vector<VkBool32> transparencyData = {
+    const std::vector<VkBool32> transparencyData = {
         static_cast<VkBool32>(parameters.enableTransparency),
         static_cast<VkBool32>(parameters.transparencyPass)
     };
@@ -31,15 +31,15 @@ void Graphics::Base::create(const workflows::ShaderNames& shadersNames, VkDevice
     VkSpecializationInfo specializationInfo;
         specializationInfo.mapEntryCount = static_cast<uint32_t>(specializationMapEntry.size());
         specializationInfo.pMapEntries = specializationMapEntry.data();
-        specializationInfo.dataSize = sizeof(VkBool32) * transparencyData.size();
+        specializationInfo.dataSize = sizeof(decltype(transparencyData)::value_type) * transparencyData.size();
         specializationInfo.pData = transparencyData.data();
 
     const auto vertShader = utils::vkDefault::VertrxShaderModule(device, parameters.shadersPath / shadersNames.at(workflows::ShaderType::Vertex));
     const auto fragShader = utils::vkDefault::FragmentShaderModule(device, parameters.shadersPath / shadersNames.at(workflows::ShaderType::Fragment), specializationInfo);
     const std::vector<VkPipelineShaderStageCreateInfo> shaderStages = {vertShader, fragShader};
 
-    auto bindingDescription = interfaces::Vertex::getBindingDescription();
-    auto attributeDescriptions = interfaces::Vertex::getAttributeDescriptions();
+    const auto bindingDescription = interfaces::Vertex::getBindingDescription();
+    const auto attributeDescriptions = interfaces::Vertex::getAttributeDescriptions();
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
         vertexInputInfo.vertexBindingDescriptionCount = 1;
@@ -47,27 +47,27 @@ void Graphics::Base::create(const workflows::ShaderNames& shadersNames, VkDevice
         vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
         vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
-    VkViewport viewport = utils::vkDefault::viewport({0,0}, parameters.imageInfo.Extent);
-    VkRect2D scissor = utils::vkDefault::scissor({0,0}, parameters.imageInfo.Extent);
-    VkPipelineViewportStateCreateInfo viewportState = utils::vkDefault::viewportState(&viewport, &scissor);
-    VkPipelineInputAssemblyStateCreateInfo inputAssembly = utils::vkDefault::inputAssembly();
-    VkPipelineRasterizationStateCreateInfo rasterizer = utils::vkDefault::rasterizationState(VK_FRONT_FACE_COUNTER_CLOCKWISE);
-    VkPipelineMultisampleStateCreateInfo multisampling = utils::vkDefault::multisampleState();
-    VkPipelineDepthStencilStateCreateInfo depthStencil = utils::vkDefault::depthStencilEnable();
+    const VkViewport viewport = utils::vkDefault::viewport({0,0}, parameters.imageInfo.Extent);
+    const VkRect2D scissor = utils::vkDefault::scissor({0,0}, parameters.imageInfo.Extent);
+    const VkPipelineViewportStateCreateInfo viewportState = utils::vkDefault::viewportState(&viewport, &scissor);
+    const VkPipelineInputAssemblyStateCreateInfo inputAssembly = utils::vkDefault::inputAssembly();
+    const VkPipelineRasterizationStateCreateInfo rasterizer = utils::vkDefault::rasterizationState(VK_FRONT_FACE_COUNTER_CLOCKWISE);
+    const VkPipelineMultisampleStateCreateInfo multisampling = utils::vkDefault::multisampleState();
+    const VkPipelineDepthStencilStateCreateInfo depthStencil = utils::vkDefault::depthStencilEnable();
 
-    std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachment = {
+    const std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachment = {
         utils::vkDefault::colorBlendAttachmentState(VK_FALSE),
         utils::vkDefault::colorBlendAttachmentState(VK_FALSE),
         utils::vkDefault::colorBlendAttachmentState(VK_FALSE)
     };
-    VkPipelineColorBlendStateCreateInfo colorBlending = utils::vkDefault::colorBlendState(static_cast<uint32_t>(colorBlendAttachment.size()),colorBlendAttachment.data());
+    const VkPipelineColorBlendStateCreateInfo colorBlending = utils::vkDefault::colorBlendState(static_cast<uint32_t>(colorBlendAttachment.size()), colorBlendAttachment.data());
 
     std::vector<VkPushConstantRange> pushConstantRange;
     pushConstantRange.push_back(VkPushConstantRange{});
         pushConstantRange.back().stageFlags = VK_PIPELINE_STAGE_FLAG_BITS_MAX_ENUM;
         pushConstantRange.back().offset = 0;
         pushConstantRange.back().size = sizeof(interfaces::Material::Buffer);
-    std::vector<VkDescriptorSetLayout> descriptorSetLayouts = {
+    const std::vector<VkDescriptorSetLayout> descriptorSetLayouts = {
         descriptorSetLayout = utils::vkDefault::DescriptorSetLayout(device, bindings),
         objectDescriptorSetLayout = interfaces::Object::createBaseDescriptorSetLayout(device),
         skeletonDescriptorSetLayout = interfaces::Skeleton::descriptorSetLayout(device),
@@ -94,19 +94,28 @@ void Graphics::Base::create(const workflows::ShaderNames& shadersNames, VkDevice
         pipelineInfo.back().basePipelineHandle = VK_NULL_HANDLE;
     pipelineMap[interfaces::ObjectType::base] = utils::vkDefault::Pipeline(device, pipelineInfo);
 
-    utils::vkDefault::MaskType outliningMask = interfaces::ObjectType::base | interfaces::ObjectProperty::outlining;
-        depthStencil.stencilTestEnable = VK_TRUE;
-        depthStencil.back.compareOp = VK_COMPARE_OP_ALWAYS;
-        depthStencil.back.failOp = VK_STENCIL_OP_REPLACE;
-        depthStencil.back.depthFailOp = VK_STENCIL_OP_REPLACE;
-        depthStencil.back.passOp = VK_STENCIL_OP_REPLACE;
-        depthStencil.back.compareMask = 0xff;
-        depthStencil.back.writeMask = 0xff;
-        depthStencil.back.reference = 1;
-        depthStencil.front = depthStencil.back;
-    pipelineLayoutMap[outliningMask] = utils::vkDefault::PipelineLayout(device, descriptorSetLayouts, pushConstantRange);
-        pipelineInfo.back().layout = pipelineLayoutMap[outliningMask];
-    pipelineMap[outliningMask] = utils::vkDefault::Pipeline(device, pipelineInfo);
+
+    {
+        VkPipelineDepthStencilStateCreateInfo outliningDepthStencil = utils::vkDefault::depthStencilEnable();
+            outliningDepthStencil.stencilTestEnable = VK_TRUE;
+            outliningDepthStencil.back.compareOp = VK_COMPARE_OP_ALWAYS;
+            outliningDepthStencil.back.failOp = VK_STENCIL_OP_REPLACE;
+            outliningDepthStencil.back.depthFailOp = VK_STENCIL_OP_REPLACE;
+            outliningDepthStencil.back.passOp = VK_STENCIL_OP_REPLACE;
+            outliningDepthStencil.back.compareMask = 0xff;
+            outliningDepthStencil.back.writeMask = 0xff;
+            outliningDepthStencil.back.reference = 1;
+            outliningDepthStencil.front = outliningDepthStencil.back;
+
+        utils::vkDefault::MaskType outliningMask = interfaces::ObjectType::base | interfaces::ObjectProperty::outlining;
+        pipelineLayoutMap[outliningMask] = utils::vkDefault::PipelineLayout(device, descriptorSetLayouts, pushConstantRange);
+
+        std::vector<VkGraphicsPipelineCreateInfo> outliningpipelineInfo = pipelineInfo;
+        outliningpipelineInfo.back().layout = pipelineLayoutMap[outliningMask];
+        outliningpipelineInfo.back().pDepthStencilState = &outliningDepthStencil;
+
+        pipelineMap[outliningMask] = utils::vkDefault::Pipeline(device, outliningpipelineInfo);
+    }
 
     descriptorPool = utils::vkDefault::DescriptorPool(device, { &descriptorSetLayout }, parameters.imageInfo.Count);
     descriptorSets = descriptorPool.allocateDescriptorSets(descriptorSetLayout, parameters.imageInfo.Count);
@@ -120,14 +129,10 @@ void Graphics::Base::update(VkDevice device, const utils::BuffersDatabase& bData
         std::string depthId = !parameters.transparencyPass || parameters.transparencyNumber == 0 ? "" :
             (parameters.out.transparency + std::to_string(parameters.transparencyNumber - 1) + ".") + parameters.out.depth;
 
-        VkDescriptorBufferInfo bufferInfo = bDatabase.descriptorBufferInfo(parameters.in.camera, i);
-        VkDescriptorImageInfo skyboxImageInfo = aDatabase.descriptorEmptyInfo();
-        VkDescriptorImageInfo depthImageInfo = aDatabase.descriptorImageInfo(depthId, i);
-
         utils::descriptorSet::Writes writes;
-        utils::descriptorSet::write(writes, descriptorSet, bufferInfo);
-        utils::descriptorSet::write(writes, descriptorSet, skyboxImageInfo);
-        utils::descriptorSet::write(writes, descriptorSet, depthImageInfo);
+        WRITE_DESCRIPTOR(writes, descriptorSet, bDatabase.descriptorBufferInfo(parameters.in.camera, i));
+        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorEmptyInfo());
+        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(depthId, i));
         utils::descriptorSet::update(device, writes);
     }
 }

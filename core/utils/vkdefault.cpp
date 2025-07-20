@@ -50,7 +50,7 @@ VkRect2D vkDefault::scissor(VkOffset2D offset, VkExtent2D extent){
     return scissor;
 }
 
-VkPipelineViewportStateCreateInfo vkDefault::viewportState(VkViewport* viewport, VkRect2D* scissor){
+VkPipelineViewportStateCreateInfo vkDefault::viewportState(const VkViewport* viewport, const VkRect2D* scissor){
     VkPipelineViewportStateCreateInfo viewportState{};
         viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
         viewportState.viewportCount = 1;
@@ -145,7 +145,7 @@ VkPipelineColorBlendAttachmentState vkDefault::colorBlendAttachmentState(VkBool3
     return colorBlendAttachment;
 }
 
-VkPipelineColorBlendStateCreateInfo vkDefault::colorBlendState(uint32_t attachmentCount, VkPipelineColorBlendAttachmentState* pAttachments){
+VkPipelineColorBlendStateCreateInfo vkDefault::colorBlendState(uint32_t attachmentCount, const VkPipelineColorBlendAttachmentState* pAttachments){
     VkPipelineColorBlendStateCreateInfo colorBlending{};
         colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
         colorBlending.logicOpEnable = VK_FALSE;

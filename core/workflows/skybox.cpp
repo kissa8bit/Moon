@@ -125,10 +125,8 @@ void SkyboxGraphics::updateDescriptors(const utils::BuffersDatabase& bDatabase, 
     if (!parameters.enable || !created) return;
 
     for (uint32_t i = 0; i < parameters.imageInfo.Count; i++){
-        const auto bufferInfo = bDatabase.descriptorBufferInfo(parameters.in.camera, i);
-
         utils::descriptorSet::Writes writes;
-        utils::descriptorSet::write(writes, skybox.descriptorSets[i], bufferInfo);
+        WRITE_DESCRIPTOR(writes, skybox.descriptorSets[i], bDatabase.descriptorBufferInfo(parameters.in.camera, i));
         utils::descriptorSet::update(device, writes);
     }
 }

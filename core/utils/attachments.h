@@ -15,7 +15,8 @@ namespace moon::utils {
 struct Attachment {
     utils::vkDefault::Image image;
     utils::vkDefault::ImageView imageView;
-    VkImageLayout   layout{VK_IMAGE_LAYOUT_UNDEFINED};
+    utils::vkDefault::ImageInfo imageInfo;
+    VkImageLayout layout{VK_IMAGE_LAYOUT_UNDEFINED};
 
     Attachment() = default;
     Attachment(const Attachment & other) = delete;
@@ -24,7 +25,21 @@ struct Attachment {
     Attachment& operator=(Attachment&& other) noexcept;
     void swap(Attachment& other) noexcept;
 
-    Attachment(VkPhysicalDevice physicalDevice, VkDevice device, const utils::vkDefault::ImageInfo & imageInfo, VkImageUsageFlags usage);
+    Attachment(VkPhysicalDevice physicalDevice, VkDevice device, const utils::vkDefault::ImageInfo& imageInfo, VkImageUsageFlags usage);
+
+    void transitionLayout(VkCommandBuffer commandBuffer, VkImageLayout newLayout);
+    void copyFrom(VkCommandBuffer commandBuffer, Attachment& dst);
+    void copyTo(VkCommandBuffer commandBuffer, Attachment& dst);
+    void copyFrom(VkCommandBuffer commandBuffer, VkBuffer bfr);
+    void copyTo(VkCommandBuffer commandBuffer, VkBuffer bfr);
+    void clear(VkCommandBuffer commandBuffer, VkClearColorValue clearColorValue = { 0, 0, 0, 0 });
+    void blitDown(VkCommandBuffer commandBuffer, Attachment& dst, float blitFactor);
+    void blitUp(VkCommandBuffer commandBuffer, Attachment& dst, float blitFactor);
+    void downscale(VkCommandBuffer commandBuffer, Attachment& intermBfr, size_t count, float factor);
+    void createMipLevels(VkCommandBuffer commandBuffer);
+
+    static VkAttachmentDescription imageDescription(VkFormat format);
+    static VkAttachmentDescription imageDescription(VkFormat format, VkImageLayout layout);
 };
 
 class Attachments {

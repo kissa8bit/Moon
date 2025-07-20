@@ -39,7 +39,7 @@ bool debug::checkResult(bool result, std::string message) {
     return result;
 }
 
-bool validationLayer::checkSupport(const std::vector<std::string> validationLayers) {
+bool validationLayer::checkSupport(const std::vector<const char*>& validationLayers) {
     uint32_t layerCount;
     CHECK(vkEnumerateInstanceLayerProperties(&layerCount, nullptr));
 
@@ -47,10 +47,10 @@ bool validationLayer::checkSupport(const std::vector<std::string> validationLaye
     CHECK(vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data()));
 
     bool res = true;
-    for (const std::string& layerName : validationLayers){
+    for (const auto& layerName : validationLayers){
         bool layerFound = false;
         for(const auto& layerProperties: availableLayers){
-            layerFound |= (strcmp(layerName.c_str(), layerProperties.layerName) == 0);
+            layerFound |= (strcmp(layerName, layerProperties.layerName) == 0);
         }
         res &= layerFound;
     }
@@ -63,14 +63,14 @@ void validationLayer::destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebug
 }
 
 void validationLayer::setupDebugMessenger(VkInstance instance, VkDebugUtilsMessengerEXT* debugMessenger) {
-    auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-
-    VkDebugUtilsMessengerCreateInfoEXT createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-        createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-        createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-        createInfo.pfnUserCallback = debugCallback;
-    if(func != nullptr) func(instance, &createInfo, nullptr, debugMessenger);
+    if(auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT"); func != nullptr){
+        VkDebugUtilsMessengerCreateInfoEXT createInfo{};
+            createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+            createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+            createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+            createInfo.pfnUserCallback = debugCallback;
+        func(instance, &createInfo, nullptr, debugMessenger);
+    }
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL validationLayer::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT, VkDebugUtilsMessageTypeFlagsEXT, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void*) {
@@ -385,6 +385,22 @@ void texture::transitionLayout(VkCommandBuffer commandBuffer, VkImage image, VkI
         barrier.srcAccessMask = layoutDescription[oldLayout].first;
         barrier.dstAccessMask = layoutDescription[newLayout].first;
     vkCmdPipelineBarrier(commandBuffer, layoutDescription[oldLayout].second, layoutDescription[newLayout].second, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+}
+
+void texture::copy(VkCommandBuffer commandBuffer, VkImage srcImage, VkImage dstImage, VkExtent3D extent, uint32_t layerCount) {
+    VkImageCopy region{};
+    region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.srcSubresource.mipLevel = 0;
+    region.srcSubresource.baseArrayLayer = 0;
+    region.srcSubresource.layerCount = layerCount;
+    region.srcOffset = { 0, 0, 0 };
+    region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.dstSubresource.mipLevel = 0;
+    region.dstSubresource.baseArrayLayer = 0;
+    region.dstSubresource.layerCount = layerCount;
+    region.dstOffset = { 0, 0, 0 };
+    region.extent = extent;
+    vkCmdCopyImage(commandBuffer, srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 }
 
 void texture::copy(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage, VkExtent3D extent, uint32_t layerCount){

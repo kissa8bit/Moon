@@ -118,18 +118,13 @@ void PostProcessingGraphics::updateDescriptors(const utils::BuffersDatabase&, co
 
     for (uint32_t i = 0; i < parameters.imageInfo.Count; i++){
         auto descriptorSet = postProcessing.descriptorSets[i];
-        const auto layersImageInfo = aDatabase.descriptorImageInfo(parameters.in.baseColor, i);
-        const auto blurImageInfo = aDatabase.descriptorImageInfo(parameters.in.blur, i);
-        const auto bloomImageInfo = aDatabase.descriptorImageInfo(parameters.in.bloom, i);
-        const auto ssaoImageInfo = aDatabase.descriptorImageInfo(parameters.in.ssao, i);
-        const auto bbImageInfo = aDatabase.descriptorImageInfo(parameters.in.boundingBox, i);
 
         utils::descriptorSet::Writes writes;
-        utils::descriptorSet::write(writes, descriptorSet, layersImageInfo);
-        utils::descriptorSet::write(writes, descriptorSet, blurImageInfo);
-        utils::descriptorSet::write(writes, descriptorSet, bloomImageInfo);
-        utils::descriptorSet::write(writes, descriptorSet, ssaoImageInfo);
-        utils::descriptorSet::write(writes, descriptorSet, bbImageInfo);
+        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.baseColor, i));
+        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.blur, i));
+        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.bloom, i));
+        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.ssao, i));
+        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.boundingBox, i));
         utils::descriptorSet::update(device, writes);
     }
 }

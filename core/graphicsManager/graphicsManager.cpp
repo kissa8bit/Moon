@@ -30,12 +30,12 @@ VkResult GraphicsManager::createInstance(utils::Window* window){
         appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
         appInfo.apiVersion = VK_API_VERSION_1_0;
 
-    enableValidationLayers &= moon::utils::validationLayer::checkSupport(validationLayers);
-
     std::vector<const char*> extensions;
     if(window){
         extensions = window->getExtensions();
     }
+
+    bool enableValidationLayers = moon::utils::validationLayer::checkSupport(validationLayers);
     if(enableValidationLayers){
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
@@ -50,14 +50,15 @@ VkResult GraphicsManager::createInstance(utils::Window* window){
         createInfo.pApplicationInfo = &appInfo;
         createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
         createInfo.ppEnabledExtensionNames = extensions.data();
-        const auto pEnabledLayerNames = validationLayers.data()->c_str();
         createInfo.enabledLayerCount = enableValidationLayers ? static_cast<uint32_t>(validationLayers.size()) : 0;
-        createInfo.ppEnabledLayerNames = enableValidationLayers ? &pEnabledLayerNames : nullptr;
+        createInfo.ppEnabledLayerNames = enableValidationLayers ? validationLayers.data() : nullptr;
         createInfo.pNext = enableValidationLayers ? (VkDebugUtilsMessengerCreateInfoEXT*) &debugCreateInfo : nullptr;
-    VkResult result = VK_SUCCESS;
+
     instance = utils::vkDefault::Instance(createInfo);
 
-    if (enableValidationLayers) debugMessenger = utils::vkDefault::DebugUtilsMessenger(instance);
+    if (enableValidationLayers) {
+        debugMessenger = utils::vkDefault::DebugUtilsMessenger(instance);
+    }
 
     return VK_SUCCESS;
 }

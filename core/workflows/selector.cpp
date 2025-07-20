@@ -130,14 +130,10 @@ void SelectorGraphics::create(const utils::vkDefault::CommandPool& commandPool, 
 }
 
 void SelectorGraphics::updateDescriptors(const utils::BuffersDatabase& bDatabase, const utils::AttachmentsDatabase& aDatabase) {
-    if (!parameters.enable || !created) return;
+    if (!parameters.enable || !created || !cursor) return;
 
-    for (uint32_t i = 0; i < parameters.imageInfo.Count; i++)
-    {
+    for (uint32_t i = 0; i < parameters.imageInfo.Count; i++) {
         auto descriptorSet = selector.descriptorSets[i];
-        const auto cursorInfo = (*cursor)->descriptorBufferInfo();
-        const auto positionImageInfo = aDatabase.descriptorImageInfo(parameters.in.position, i);
-        const auto depthImageInfo = aDatabase.descriptorImageInfo(parameters.in.depth, i, parameters.in.defaultDepthTexture);
 
         std::vector<VkDescriptorImageInfo> positionLayersImageInfo(parameters.transparentLayersCount);
         std::vector<VkDescriptorImageInfo> depthLayersImageInfo(parameters.transparentLayersCount);
@@ -148,9 +144,9 @@ void SelectorGraphics::updateDescriptors(const utils::BuffersDatabase& bDatabase
         }
 
         utils::descriptorSet::Writes writes;
-        utils::descriptorSet::write(writes, descriptorSet, cursorInfo, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-        utils::descriptorSet::write(writes, descriptorSet, positionImageInfo);
-        utils::descriptorSet::write(writes, descriptorSet, depthImageInfo);
+        WRITE_DESCRIPTOR_T(writes, descriptorSet, (*cursor)->descriptorBufferInfo(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.position, i));
+        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.depth, i, parameters.in.defaultDepthTexture));
         utils::descriptorSet::write(writes, descriptorSet, positionLayersImageInfo);
         utils::descriptorSet::write(writes, descriptorSet, depthLayersImageInfo);
         utils::descriptorSet::update(device, writes);

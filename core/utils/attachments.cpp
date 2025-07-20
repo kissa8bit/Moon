@@ -26,12 +26,88 @@ void Attachment::swap(Attachment& other) noexcept {
     std::memcpy((void*)this, (void*)buff, sizeof(Attachment));
 }
 
-Attachment::Attachment(VkPhysicalDevice physicalDevice, VkDevice device, const utils::vkDefault::ImageInfo& imageInfo, VkImageUsageFlags usage) {
+Attachment::Attachment(VkPhysicalDevice physicalDevice, VkDevice device, const utils::vkDefault::ImageInfo& imageInfo, VkImageUsageFlags usage)
+    : imageInfo(imageInfo)
+{
     const auto depthFormats = image::depthFormats();
     const bool isDepth = std::any_of(depthFormats.begin(), depthFormats.end(), [&imageInfo](const VkFormat& format) {return imageInfo.Format == format; });
     const VkImageAspectFlagBits imageAspectFlagBits = isDepth ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
     image = utils::vkDefault::Image(physicalDevice, device, 0, { imageInfo.Extent.width, imageInfo.Extent.height, 1 }, 1, 1, VK_SAMPLE_COUNT_1_BIT, imageInfo.Format, VK_IMAGE_LAYOUT_UNDEFINED, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     imageView = utils::vkDefault::ImageView(device, image, VK_IMAGE_VIEW_TYPE_2D, imageInfo.Format, imageAspectFlagBits, 1, 0, 1);
+}
+
+
+void Attachment::transitionLayout(VkCommandBuffer commandBuffer, VkImageLayout newLayout)
+{
+    if (layout != newLayout)
+    {
+        texture::transitionLayout(commandBuffer, image, layout, newLayout, 1, 0, 1);
+        layout = newLayout;
+    }
+}
+
+void Attachment::copyFrom(VkCommandBuffer commandBuffer, Attachment& dst)
+{
+    transitionLayout(commandBuffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    dst.transitionLayout(commandBuffer, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    utils::texture::copy(commandBuffer, dst.image, image, VkExtent3D{ imageInfo.Extent.width, imageInfo.Extent.height, 1 }, 1);
+}
+
+void Attachment::copyTo(VkCommandBuffer commandBuffer, Attachment& dst)
+{
+    transitionLayout(commandBuffer, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    dst.transitionLayout(commandBuffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    utils::texture::copy(commandBuffer, image, dst.image, VkExtent3D{ imageInfo.Extent.width, imageInfo.Extent.height, 1 }, 1);
+}
+
+void Attachment::copyFrom(VkCommandBuffer commandBuffer, VkBuffer bfr)
+{
+    transitionLayout(commandBuffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    utils::texture::copy(commandBuffer, bfr, image, { imageInfo.Extent.width, imageInfo.Extent.height, 1 }, 1);
+}
+
+void Attachment::copyTo(VkCommandBuffer commandBuffer, VkBuffer bfr)
+{
+    transitionLayout(commandBuffer, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    texture::copy(commandBuffer, image, bfr, VkExtent3D{ imageInfo.Extent.width, imageInfo.Extent.height, 1 }, 1);
+}
+
+void Attachment::clear(VkCommandBuffer commandBuffer, VkClearColorValue clearColorValue)
+{
+    VkImageSubresourceRange ImageSubresourceRange{};
+    ImageSubresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    ImageSubresourceRange.baseMipLevel = 0;
+    ImageSubresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+    ImageSubresourceRange.baseArrayLayer = 0;
+    ImageSubresourceRange.layerCount = 1;
+
+    transitionLayout(commandBuffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    vkCmdClearColorImage(commandBuffer, image, layout, &clearColorValue, 1, &ImageSubresourceRange);
+}
+
+void Attachment::blitDown(VkCommandBuffer commandBuffer, Attachment& dst, float blitFactor)
+{
+    transitionLayout(commandBuffer, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    dst.transitionLayout(commandBuffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    dst.clear(commandBuffer);
+    utils::texture::blitDown(commandBuffer, image, 0, dst.image, 0, imageInfo.Extent.width, imageInfo.Extent.height, 0, 1, blitFactor);
+}
+
+void Attachment::blitUp(VkCommandBuffer commandBuffer, Attachment& dst, float blitFactor)
+{
+    transitionLayout(commandBuffer, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    dst.transitionLayout(commandBuffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    dst.clear(commandBuffer);
+    utils::texture::blitUp(commandBuffer, image, 0, dst.image, 0, imageInfo.Extent.width, imageInfo.Extent.height, 0, 1, blitFactor);
+}
+
+void Attachment::downscale(VkCommandBuffer commandBuffer, Attachment& intermBfr, size_t count, float factor)
+{
+    for (size_t i = count; i > 0; i--)
+    {
+        blitDown(commandBuffer, intermBfr, factor);
+        intermBfr.blitUp(commandBuffer, *this, factor);
+    }
 }
 
 Attachments::Attachments(Attachments&& other) noexcept {

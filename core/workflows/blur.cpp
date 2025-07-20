@@ -160,10 +160,8 @@ void GaussianBlur::updateDescriptors(const utils::BuffersDatabase&, const utils:
 
     auto updateDescriptorSets = [](VkDevice device, const utils::Attachments& image, const utils::vkDefault::DescriptorSets& descriptorSets) {
         for (uint32_t i = 0; i < image.count(); i++) {
-            const auto imageInfo = image.descriptorImageInfo(i);
-
             utils::descriptorSet::Writes writes;
-            utils::descriptorSet::write(writes, descriptorSets[i], imageInfo);
+            WRITE_DESCRIPTOR(writes, descriptorSets[i], image.descriptorImageInfo(i));
             utils::descriptorSet::update(device, writes);
         }
     };

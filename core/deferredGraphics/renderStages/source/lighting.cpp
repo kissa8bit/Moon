@@ -37,18 +37,12 @@ void Graphics::Lighting::update(VkDevice device, const utils::BuffersDatabase& b
     for (uint32_t i = 0; i < parameters.imageInfo.Count; i++){
         auto descriptorSet = descriptorSets[i];
 
-        VkDescriptorImageInfo positionInfo = aDatabase.descriptorImageInfo(parameters.out.position, i);
-        VkDescriptorImageInfo normalInfo = aDatabase.descriptorImageInfo(parameters.out.normal, i);
-        VkDescriptorImageInfo colorInfo = aDatabase.descriptorImageInfo(parameters.out.color, i);
-        VkDescriptorImageInfo depthInfo = aDatabase.descriptorImageInfo(parameters.out.depth, i);
-        VkDescriptorBufferInfo bufferInfo = bDatabase.descriptorBufferInfo(parameters.in.camera, i);
-
         utils::descriptorSet::Writes writes;
-        utils::descriptorSet::write(writes, descriptorSet, positionInfo, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
-        utils::descriptorSet::write(writes, descriptorSet, normalInfo, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
-        utils::descriptorSet::write(writes, descriptorSet, colorInfo, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
-        utils::descriptorSet::write(writes, descriptorSet, depthInfo, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
-        utils::descriptorSet::write(writes, descriptorSet, bufferInfo);
+        WRITE_DESCRIPTOR_T(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.out.position, i), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
+        WRITE_DESCRIPTOR_T(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.out.normal, i), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
+        WRITE_DESCRIPTOR_T(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.out.color, i), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
+        WRITE_DESCRIPTOR_T(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.out.depth, i), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
+        WRITE_DESCRIPTOR(writes, descriptorSet, bDatabase.descriptorBufferInfo(parameters.in.camera, i));
         utils::descriptorSet::update(device, writes);
     }
 }
@@ -58,12 +52,8 @@ void Graphics::Lighting::render(uint32_t frameNumber, VkCommandBuffer commandBuf
     for(auto& lightSource: *lightSources){
         const auto& depthMap = depthMaps->at(lightSource);
         uint8_t mask = lightSource->pipelineFlagBits();
-        lightSource->render(
-            frameNumber,
-            commandBuffer,
-            {descriptorSets[frameNumber], depthMap.descriptorSets()[frameNumber]},
-            pipelineLayoutMap.at(mask),
-            pipelineMap.at(mask));
+        const utils::vkDefault::DescriptorSets descriptors = { descriptorSets[frameNumber], depthMap.descriptorSets()[frameNumber] };
+        lightSource->render(frameNumber, commandBuffer, descriptors, pipelineLayoutMap.at(mask), pipelineMap.at(mask));
     }
 }
 

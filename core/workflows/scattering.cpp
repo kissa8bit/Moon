@@ -149,12 +149,10 @@ void Scattering::updateDescriptors(const utils::BuffersDatabase& bDatabase, cons
     for (uint32_t i = 0; i < parameters.imageInfo.Count; i++)
     {
         auto descriptorSet = lighting.descriptorSets[i];
-        const auto& depthInfos = aDatabase.descriptorImageInfo(parameters.in.depth, i);
-        const auto& bufferInfo = bDatabase.descriptorBufferInfo(parameters.in.camera, i);
 
         utils::descriptorSet::Writes writes;
-        utils::descriptorSet::write(writes, descriptorSet, bufferInfo);
-        utils::descriptorSet::write(writes, descriptorSet, depthInfos);
+        WRITE_DESCRIPTOR(writes, descriptorSet, bDatabase.descriptorBufferInfo(parameters.in.camera, i));
+        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.depth, i));
         utils::descriptorSet::update(device, writes);
     }
 }

@@ -14,10 +14,8 @@ namespace moon::graphicsManager {
 class GraphicsManager
 {
 private:
-    bool                                    enableValidationLayers = true;
-
-    const std::vector<std::string>          validationLayers = {"VK_LAYER_KHRONOS_validation"};
-    const std::vector<std::string>          deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+    const std::vector<const char*>          validationLayers{"VK_LAYER_KHRONOS_validation"};
+    const std::vector<std::string>          deviceExtensions{VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
     utils::vkDefault::Instance              instance;
     utils::vkDefault::DebugUtilsMessenger   debugMessenger;

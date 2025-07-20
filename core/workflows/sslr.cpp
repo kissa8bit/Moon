@@ -122,40 +122,21 @@ void SSLRGraphics::create(const utils::vkDefault::CommandPool& commandPool, util
 void SSLRGraphics::updateDescriptors(const utils::BuffersDatabase& bDatabase, const utils::AttachmentsDatabase& aDatabase) {
     if (!parameters.enable || !created) return;
 
-    for (uint32_t i = 0; i < parameters.imageInfo.Count; i++)
-    {
+    for (uint32_t i = 0; i < parameters.imageInfo.Count; i++) {
         auto descriptorSet = sslr.descriptorSets[i];
-        const auto bufferInfo = bDatabase.descriptorBufferInfo(parameters.in.camera, i);
-        const auto positionInfo = aDatabase.descriptorImageInfo(parameters.in.position, i);
-        const auto normalInfo = aDatabase.descriptorImageInfo(parameters.in.normal, i);
-        const auto imageInfo = aDatabase.descriptorImageInfo(parameters.in.color, i);
-        const auto depthInfo = aDatabase.descriptorImageInfo(parameters.in.depth, i);
 
-#define SSLRGraphics_updateDescriptors_getId(id)                                \
-    aDatabase.get(parameters.in.firstTransparency + parameters.in.id) ?         \
-        parameters.in.firstTransparency + parameters.in.id : parameters.in.id;  \
-
-        const auto layerPositionId = SSLRGraphics_updateDescriptors_getId(position);
-        const auto layerNormalId = SSLRGraphics_updateDescriptors_getId(normal);
-        const auto layerImageId = SSLRGraphics_updateDescriptors_getId(color);
-        const auto layerDepthId = SSLRGraphics_updateDescriptors_getId(depth);
-#undef SSLRGraphics_updateDescriptors_getId
-
-        const auto layerPositionInfo = aDatabase.descriptorImageInfo(layerPositionId, i);
-        const auto layerNormalInfo = aDatabase.descriptorImageInfo(layerNormalId, i);
-        const auto layerImageInfo = aDatabase.descriptorImageInfo(layerImageId, i);
-        const auto layerDepthInfo = aDatabase.descriptorImageInfo(layerDepthId, i, parameters.in.defaultDepthTexture);
+#define SSLR_getId(id) aDatabase.get(parameters.in.firstTransparency + parameters.in.id) ? parameters.in.firstTransparency + parameters.in.id : parameters.in.id
 
         utils::descriptorSet::Writes writes;
-        utils::descriptorSet::write(writes, descriptorSet, bufferInfo);
-        utils::descriptorSet::write(writes, descriptorSet, positionInfo);
-        utils::descriptorSet::write(writes, descriptorSet, normalInfo);
-        utils::descriptorSet::write(writes, descriptorSet, imageInfo);
-        utils::descriptorSet::write(writes, descriptorSet, depthInfo);
-        utils::descriptorSet::write(writes, descriptorSet, layerPositionInfo);
-        utils::descriptorSet::write(writes, descriptorSet, layerNormalInfo);
-        utils::descriptorSet::write(writes, descriptorSet, layerImageInfo);
-        utils::descriptorSet::write(writes, descriptorSet, layerDepthInfo);
+        WRITE_DESCRIPTOR(writes, descriptorSet, bDatabase.descriptorBufferInfo(parameters.in.camera, i));
+        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.position, i));
+        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.normal, i));
+        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.color, i));
+        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.depth, i));
+        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(SSLR_getId(position), i));
+        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(SSLR_getId(normal), i));
+        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(SSLR_getId(color), i));
+        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(SSLR_getId(depth), i, parameters.in.defaultDepthTexture));
         utils::descriptorSet::update(device, writes);
     }
 }

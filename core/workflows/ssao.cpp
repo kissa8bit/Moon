@@ -118,21 +118,15 @@ void SSAOGraphics::create(const utils::vkDefault::CommandPool& commandPool, util
 void SSAOGraphics::updateDescriptors(const utils::BuffersDatabase& bDatabase, const utils::AttachmentsDatabase& aDatabase) {
     if (!parameters.enable || !created) return;
 
-    for (uint32_t i = 0; i < parameters.imageInfo.Count; i++)
-    {
+    for (uint32_t i = 0; i < parameters.imageInfo.Count; i++) {
         auto descriptorSet = ssao.descriptorSets[i];
-        const auto bufferInfo = bDatabase.descriptorBufferInfo(parameters.in.camera, i);
-        const auto positionInfo = aDatabase.descriptorImageInfo(parameters.in.position, i);
-        const auto normalInfo = aDatabase.descriptorImageInfo(parameters.in.normal, i);
-        const auto imageInfo = aDatabase.descriptorImageInfo(parameters.in.color, i);
-        const auto depthInfo = aDatabase.descriptorImageInfo(parameters.in.depth, i, parameters.in.defaultDepthTexture);
 
         utils::descriptorSet::Writes writes;
-        utils::descriptorSet::write(writes, descriptorSet, bufferInfo);
-        utils::descriptorSet::write(writes, descriptorSet, positionInfo);
-        utils::descriptorSet::write(writes, descriptorSet, normalInfo);
-        utils::descriptorSet::write(writes, descriptorSet, imageInfo);
-        utils::descriptorSet::write(writes, descriptorSet, depthInfo);
+        WRITE_DESCRIPTOR(writes, descriptorSet, bDatabase.descriptorBufferInfo(parameters.in.camera, i));
+        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.position, i));
+        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.normal, i));
+        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.color, i));
+        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.depth, i, parameters.in.defaultDepthTexture));
         utils::descriptorSet::update(device, writes);
     }
 }

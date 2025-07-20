@@ -131,12 +131,9 @@ void BoundingBoxGraphics::create(const utils::vkDefault::CommandPool& commandPoo
 void BoundingBoxGraphics::updateDescriptors(const utils::BuffersDatabase& bDatabase, const utils::AttachmentsDatabase&) {
     if (!parameters.enable || !created) return;
 
-    for (uint32_t i = 0; i < parameters.imageInfo.Count; i++)
-    {
-        const auto bufferInfo = bDatabase.descriptorBufferInfo(parameters.in.camera, i);
-
+    for (uint32_t i = 0; i < parameters.imageInfo.Count; i++) {
         utils::descriptorSet::Writes writes;
-        utils::descriptorSet::write(writes, box.descriptorSets[i], bufferInfo);
+        WRITE_DESCRIPTOR(writes, box.descriptorSets[i], bDatabase.descriptorBufferInfo(parameters.in.camera, i));
         utils::descriptorSet::update(device, writes);
     }
 }
