@@ -103,7 +103,7 @@ bool setOutlighting(tests::ControledObject& obj, float width = 300.0f) {
         res = true;
     }
     ImGui::SetNextItemWidth(width);
-    if (enable && ImGui::ColorEdit4("color", (float*)&color, ImGuiColorEditFlags_NoDragDrop)) {
+    if (enable && ImGui::ColorEdit4("outlighting color", (float*)&color, ImGuiColorEditFlags_NoDragDrop)) {
         obj->setOutlining(enable, 0.03f, color);
         res = true;
     }

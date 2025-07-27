@@ -12,20 +12,16 @@ bool Object::getEnableShadow() const {
     return enableShadow;
 }
 
-void Object::setEnable(const bool& inenable) {
+void Object::setEnable(const bool inenable) {
     enable = inenable;
 }
 
-void Object::setEnableShadow(const bool& inenable) {
+void Object::setEnableShadow(const bool inenable) {
     enableShadow = inenable;
 }
 
-bool Object::outlining() const {
-    return (pipelineBitMask & interfaces::ObjectProperty::outlining);
-}
-
-Object::Object(uint8_t pipelineBitMask, Model* model, const Range& instanceRange)
-    : pipelineBitMask(pipelineBitMask), pModel(model), instance({ instanceRange })
+Object::Object(ObjectMask objectMask, Model* model, const Range& instanceRange)
+    : mask(objectMask), pModel(model), instance({ instanceRange })
 {}
 
 Model* Object::model() {
@@ -36,8 +32,8 @@ uint32_t Object::getInstanceNumber(uint32_t imageNumber) const {
     return instance.range.first + (instance.range.first > imageNumber ? imageNumber : 0);
 }
 
-uint8_t& Object::pipelineFlagBits() {
-    return pipelineBitMask;
+ObjectMask& Object::objectMask() {
+    return mask;
 }
 
 Range& Object::primitiveRange() { return primitive.range;}

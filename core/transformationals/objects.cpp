@@ -8,12 +8,12 @@
 
 namespace moon::interfaces {
 
-BaseObject::BaseObject(uint8_t pipelineBitMask, void* hostData, size_t hostDataSize)
-    : Object(pipelineBitMask), uniformBuffer(hostData, hostDataSize)
+BaseObject::BaseObject(ObjectMask objectMask, void* hostData, size_t hostDataSize)
+    : Object(objectMask), uniformBuffer(hostData, hostDataSize)
 {}
 
-BaseObject::BaseObject(uint8_t pipelineBitMask, void* hostData, size_t hostDataSize, interfaces::Model* model, uint32_t firstInstance, uint32_t instanceCount)
-    : Object(pipelineBitMask, model, {firstInstance, instanceCount}), uniformBuffer(hostData, hostDataSize)
+BaseObject::BaseObject(ObjectMask objectMask, void* hostData, size_t hostDataSize, interfaces::Model* model, uint32_t firstInstance, uint32_t instanceCount)
+    : Object(objectMask, model, {firstInstance, instanceCount}), uniformBuffer(hostData, hostDataSize)
 {}
 
 void BaseObject::update(uint32_t frameNumber, VkCommandBuffer commandBuffer) {
@@ -42,8 +42,8 @@ utils::Buffers& BaseObject::buffers() {
     return uniformBuffer.device;
 }
 
-SkyboxObject::SkyboxObject(uint8_t pipelineBitMask, void* hostData, size_t hostDataSize, const utils::vkDefault::Paths& texturePaths, const float& mipLevel)
-    : BaseObject(pipelineBitMask, hostData, hostDataSize), texturePaths(texturePaths) {
+SkyboxObject::SkyboxObject(ObjectMask objectMask, void* hostData, size_t hostDataSize, const utils::vkDefault::Paths& texturePaths, const float& mipLevel)
+    : BaseObject(objectMask, hostData, hostDataSize), texturePaths(texturePaths) {
     setMipLevel(mipLevel);
 }
 
@@ -85,8 +85,7 @@ void SkyboxObject::create(const utils::PhysicalDevice& device, VkCommandPool com
 namespace moon::transformational {
 
 Object::Object(interfaces::Model* model, uint32_t firstInstance, uint32_t instanceCount) {
-    uint8_t pipelineBitMask = interfaces::ObjectType::base | interfaces::ObjectProperty::non;
-    pObject = std::make_unique<interfaces::BaseObject>(pipelineBitMask , &buffer, sizeof(buffer), model, firstInstance, instanceCount);
+    pObject = std::make_unique<interfaces::BaseObject>(interfaces::ObjectMask(interfaces::ObjectType::base), &buffer, sizeof(buffer), model, firstInstance, instanceCount);
 
     if (model) {
         for (auto instance = 0; instance < instanceCount; ++instance) {
@@ -97,8 +96,7 @@ Object::Object(interfaces::Model* model, uint32_t firstInstance, uint32_t instan
 }
 
 Object::Object(const utils::vkDefault::Paths& texturePaths, const float& mipLevel) {
-    uint8_t pipelineBitMask = interfaces::ObjectType::skybox | interfaces::ObjectProperty::non;
-    pObject = std::make_unique<interfaces::SkyboxObject>(pipelineBitMask, &buffer, sizeof(buffer), texturePaths, mipLevel);
+    pObject = std::make_unique<interfaces::SkyboxObject>(interfaces::ObjectMask(interfaces::ObjectType::skybox), &buffer, sizeof(buffer), texturePaths, mipLevel);
 }
 
 Object& Object::update() {
@@ -129,16 +127,11 @@ Object& Object::setBloom(std::optional<math::vec4> constant, std::optional<math:
     return *this;
 }
 
-Object& Object::setOutlining(const bool& enable, const float& width, const math::vec4& color) {
+Object& Object::setOutlining(const bool enable, const float width, const math::vec4& color) {
     buffer.outlining.width = width > 0.0f ? width : buffer.outlining.width;
     buffer.outlining.color = math::dot(color, color) > 0.0f ? color : buffer.outlining.color;
     utils::vkDefault::raiseFlags(pObject->buffers());
-
-    auto& pipelineFlagBits = pObject->pipelineFlagBits();
-    pipelineFlagBits &= ~interfaces::ObjectProperty::outlining;
-    if (enable) {
-        pipelineFlagBits |= interfaces::ObjectProperty::outlining;
-    }
+    pObject->objectMask().set(interfaces::ObjectProperty::outlining, enable);
     return *this;
 }
 

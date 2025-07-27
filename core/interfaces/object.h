@@ -12,60 +12,139 @@
 
 namespace moon::interfaces {
 
-enum ObjectType : uint8_t {
-    base = 0x1,
-    skybox = 0x2
-};
+	class ObjectType {
+	public:
+		using Type = uint32_t;
+		enum Value : Type {
+			non = 0x0,
+			base = 1ul << 0,
+			skybox = 1ul << 1,
+		};
 
-enum ObjectProperty : uint8_t {
-    non = 0x0,
-    outlining = 1<<4
-};
+		ObjectType() = default;
+		ObjectType(Value value) : value(value) {}
+		ObjectType(Type value) : value(static_cast<Value>(value)) {}
 
-class Object {
-protected:
-    bool enable{true};
-    bool enableShadow{true};
+		operator Value() const { return value; }
+		explicit operator bool() const = delete;
 
-    struct{ Range range{}; } primitive;
-    struct { Range range{}; } instance;
+		bool operator==(ObjectType r) const { return value == r.value; }
+		bool operator!=(ObjectType r) const { return value != r.value; }
 
-    uint8_t pipelineBitMask{ 0 };
-    Model* pModel{nullptr};
+		bool has(Value type) const { return (value & type) == type; }
+		ObjectType& set(Value type, bool enable) { value = static_cast<Value>((value & ~type) | (enable ? type : 0ul)); return *this; }
 
-    utils::vkDefault::DescriptorSetLayout descriptorSetLayout;
-    utils::vkDefault::DescriptorPool descriptorPool;
-    utils::vkDefault::DescriptorSets descriptors;
+	private:
+		Value value{};
+	};
 
-public:
-    Object() = default;
-    Object(uint8_t pipelineBitMask, Model* model = nullptr, const Range& instanceRange = {0,1});
+	class ObjectProperty {
+	public:
+		using Type = uint32_t;
+		enum Value : Type {
+			non = 0x0,
+			outlining = 1ul << 0,
+		};
 
-    virtual ~Object() = default;
+		ObjectProperty() = default;
+		ObjectProperty(Value value) : value(value) {}
+		ObjectProperty(Type value) : value(static_cast<Value>(value)) {}
 
-    Model* model();
-    uint32_t getInstanceNumber(uint32_t imageNumber) const;
+		operator Value() const { return value; }
+		explicit operator bool() const = delete;
 
-    void setEnable(const bool& enable);
-    void setEnableShadow(const bool& enable);
-    bool getEnable() const;
-    bool getEnableShadow() const;
-    bool outlining() const;
+		bool operator==(ObjectProperty r) const { return value == r.value; }
+		bool operator!=(ObjectProperty r) const { return value != r.value; }
 
-    uint8_t& pipelineFlagBits();
-    Range& primitiveRange();
-    bool comparePrimitive(uint32_t primitiveIndex) const;
-    const VkDescriptorSet& getDescriptorSet(uint32_t i) const;
+		bool has(Value prop) const { return (value & prop) == prop; }
+		ObjectProperty& set(Value type, bool enable) { value = static_cast<Value>((value & ~type) | (enable ? type : 0ul)); return *this; }
 
-    virtual utils::Buffers& buffers() = 0;
-    virtual void create(const utils::PhysicalDevice& device, VkCommandPool commandPool, uint32_t imageCount) = 0;
-    virtual void update(uint32_t frameNumber, VkCommandBuffer commandBuffer) = 0;
+	private:
+		Value value{};
+	};
 
-    static utils::vkDefault::DescriptorSetLayout createBaseDescriptorSetLayout(VkDevice device);
-    static utils::vkDefault::DescriptorSetLayout createSkyboxDescriptorSetLayout(VkDevice device);
-};
+	class ObjectMask {
+	public:
+		using Type = uint64_t;
 
-using Objects = std::vector<interfaces::Object*>;
+		struct Hasher
+		{
+			Type operator()(const ObjectMask& mask) const {
+				return static_cast<Type>(mask);
+			}
+		};
+
+		ObjectMask(ObjectType type = ObjectType::non, ObjectProperty prop = ObjectProperty::non)
+			: mask((Type)type | (Type)prop << 32)
+		{}
+
+		operator Type() const {
+			return mask;
+		}
+
+		ObjectType type() const {
+			return static_cast<ObjectType>(mask & 0x00000000FFFFFFFF);
+		}
+
+		ObjectProperty property() const {
+			return static_cast<ObjectProperty>((mask >> 32) & 0x00000000FFFFFFFF);
+		}
+
+		ObjectMask& set(ObjectType::Value objectType, bool enable) {
+			return *this = ObjectMask(type().set(objectType, enable), property());
+		}
+
+		ObjectMask& set(ObjectProperty::Value objectProperty, bool enable) {
+			return *this = ObjectMask(type(), property().set(objectProperty, enable));
+		}
+
+	private:
+		Type mask{ 0 };
+	};
+
+	class Object {
+	protected:
+		bool enable{ true };
+		bool enableShadow{ true };
+
+		struct { Range range{}; } primitive;
+		struct { Range range{}; } instance;
+
+		ObjectMask mask{};
+		Model* pModel{ nullptr };
+
+		utils::vkDefault::DescriptorSetLayout descriptorSetLayout;
+		utils::vkDefault::DescriptorPool descriptorPool;
+		utils::vkDefault::DescriptorSets descriptors;
+
+	public:
+		Object() = default;
+		Object(ObjectMask objectMask, Model* model = nullptr, const Range& instanceRange = { 0,1 });
+
+		virtual ~Object() = default;
+
+		Model* model();
+		uint32_t getInstanceNumber(uint32_t imageNumber) const;
+
+		void setEnable(const bool enable);
+		void setEnableShadow(const bool enable);
+		bool getEnable() const;
+		bool getEnableShadow() const;
+
+		ObjectMask& objectMask();
+		Range& primitiveRange();
+		bool comparePrimitive(uint32_t primitiveIndex) const;
+		const VkDescriptorSet& getDescriptorSet(uint32_t i) const;
+
+		virtual utils::Buffers& buffers() = 0;
+		virtual void create(const utils::PhysicalDevice& device, VkCommandPool commandPool, uint32_t imageCount) = 0;
+		virtual void update(uint32_t frameNumber, VkCommandBuffer commandBuffer) = 0;
+
+		static utils::vkDefault::DescriptorSetLayout createBaseDescriptorSetLayout(VkDevice device);
+		static utils::vkDefault::DescriptorSetLayout createSkyboxDescriptorSetLayout(VkDevice device);
+	};
+
+	using Objects = std::vector<interfaces::Object*>;
 
 }
 #endif // OBJECT_H

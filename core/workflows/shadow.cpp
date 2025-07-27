@@ -162,13 +162,18 @@ void ShadowGraphics::render(uint32_t frameNumber, VkCommandBuffer commandBuffer,
 
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shadow.pipeline);
     for(const auto& object: *shadow.objects){
-        if(object && (interfaces::ObjectType::base & object->pipelineFlagBits()) && object->getEnable() && object->getEnableShadow()){
-            if (auto model = object->model(); model) {
-                uint32_t primitives = 0;
-                utils::vkDefault::DescriptorSets descriptorSets = { lightSource->getDescriptorSet(frameNumber), object->getDescriptorSet(frameNumber) };
-                model->render(object->getInstanceNumber(frameNumber), commandBuffer, shadow.pipelineLayout, descriptorSets, primitives);
-            }
-        }
+        if(!object || !object->getEnable() || !object->getEnableShadow()) continue;
+
+        const auto mask = object->objectMask();
+        const auto property = mask.property();
+        const auto type = mask.type();
+        const auto model = object->model();
+
+        if (!model || !type.has(interfaces::ObjectType::Value::base)) continue;
+
+        uint32_t primitives = 0;
+        utils::vkDefault::DescriptorSets descriptorSets = { lightSource->getDescriptorSet(frameNumber), object->getDescriptorSet(frameNumber) };
+        model->render(object->getInstanceNumber(frameNumber), commandBuffer, shadow.pipelineLayout, descriptorSets, primitives);
     }
 
     vkCmdEndRenderPass(commandBuffer);

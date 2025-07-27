@@ -23,7 +23,7 @@ private:
     ScatteringParameters& parameters;
     utils::Attachments frame;
 
-    struct Lighting : Workbody{
+    struct Lighting : Workbody {
         const ScatteringParameters& parameters;
 
         utils::vkDefault::DescriptorSetLayout     shadowDescriptorSetLayout;

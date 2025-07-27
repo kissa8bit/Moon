@@ -45,8 +45,13 @@ private:
         const GraphicsParameters& parameters;
         const interfaces::Objects* objects{ nullptr };
 
-        utils::vkDefault::PipelineLayoutMap     pipelineLayoutMap;
-        utils::vkDefault::PipelineMap           pipelineMap;
+        struct PipelineDesc {
+            utils::vkDefault::PipelineLayout pipelineLayout;
+            utils::vkDefault::Pipeline pipeline;
+        };
+        using PipelineDescs = std::unordered_map<interfaces::ObjectMask, PipelineDesc, interfaces::ObjectMask::Hasher>;
+
+        PipelineDescs                           pipelineDescs;
         utils::vkDefault::DescriptorSetLayout   descriptorSetLayout;
         utils::vkDefault::DescriptorSetLayout   objectDescriptorSetLayout;
         utils::vkDefault::DescriptorSetLayout   skeletonDescriptorSetLayout;

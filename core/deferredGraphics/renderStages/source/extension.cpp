@@ -90,15 +90,17 @@ void Graphics::OutliningExtension::render(uint32_t frameNumber, VkCommandBuffer 
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
     for(const auto& object: *parent.objects){
         if (!object) continue;
-        if (!object->outlining()) continue;
 
-        const auto pipelineFlagBits = object->pipelineFlagBits();
+        const auto mask = object->objectMask();
+        const auto property = mask.property();
+        const auto type = mask.type();
         const auto model = object->model();
 
-        if (!model) continue;
-        if (!(object->getEnable() && (interfaces::ObjectType::base & pipelineFlagBits))) continue;
+        if (!model || !object->getEnable()) continue;
+        if (!type.has(interfaces::ObjectType::Value::base)) continue;
+        if (!property.has(interfaces::ObjectProperty::Value::outlining)) continue;
 
-        utils::vkDefault::DescriptorSets descriptorSets = { parent.descriptorSets[frameNumber], object->getDescriptorSet(frameNumber) };
+        const utils::vkDefault::DescriptorSets descriptorSets = { parent.descriptorSets[frameNumber], object->getDescriptorSet(frameNumber) };
 
         uint32_t primirives = 0;
         model->render(object->getInstanceNumber(frameNumber), commandBuffer, pipelineLayout, descriptorSets, primirives);

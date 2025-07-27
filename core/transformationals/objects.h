@@ -26,8 +26,8 @@ protected:
 
 public:
     virtual ~BaseObject() {};
-    BaseObject(uint8_t pipelineBitMask, void* hostData, size_t hostDataSize);
-    BaseObject(uint8_t pipelineBitMask, void* hostData, size_t hostDataSize, interfaces::Model* model, uint32_t firstInstance, uint32_t instanceCount);
+    BaseObject(ObjectMask objectMask, void* hostData, size_t hostDataSize);
+    BaseObject(ObjectMask objectMask, void* hostData, size_t hostDataSize, interfaces::Model* model, uint32_t firstInstance, uint32_t instanceCount);
     utils::Buffers& buffers() override;
 };
 
@@ -40,7 +40,7 @@ private:
     void createDescriptors(const utils::PhysicalDevice& device, uint32_t imageCount);
 
 public:
-    SkyboxObject(uint8_t pipelineBitMask, void* hostData, size_t hostDataSize, const utils::vkDefault::Paths& texturePaths, const float& mipLevel);
+    SkyboxObject(ObjectMask objectMask, void* hostData, size_t hostDataSize, const utils::vkDefault::Paths& texturePaths, const float& mipLevel);
     SkyboxObject& setMipLevel(float mipLevel);
 };
 
@@ -56,6 +56,7 @@ private:
             alignas(16) math::vec4 constant{0.0f};
             alignas(16) math::vec4 factor{1.0f};
         };
+
         struct Outlining {
             alignas(16) math::vec4 color{ 0.0f };
             alignas(4) float width{ 0.0f };
@@ -79,7 +80,7 @@ public:
     DEFAULT_TRANSFORMATIONAL_OVERRIDE(Object)
     DEFAULT_TRANSFORMATIONAL_GETTERS()
 
-    Object& setOutlining(const bool& enable, const float& width = 0, const math::vec4& color = { 0.0f });
+    Object& setOutlining(const bool enable, const float width = 0, const math::vec4& color = { 0.0f });
     Object& setBase(std::optional<math::vec4> constant = std::nullopt, std::optional<math::vec4> factor = std::nullopt);
     Object& setBloom(std::optional<math::vec4> constant = std::nullopt, std::optional<math::vec4> factor = std::nullopt);
 

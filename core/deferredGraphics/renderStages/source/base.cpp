@@ -62,6 +62,9 @@ void Graphics::Base::create(const workflows::ShaderNames& shadersNames, VkDevice
     };
     const VkPipelineColorBlendStateCreateInfo colorBlending = utils::vkDefault::colorBlendState(static_cast<uint32_t>(colorBlendAttachment.size()), colorBlendAttachment.data());
 
+    interfaces::ObjectMask baseMask(interfaces::ObjectType::base);
+    auto& pipelineDesc = pipelineDescs[baseMask];
+
     std::vector<VkPushConstantRange> pushConstantRange;
     pushConstantRange.push_back(VkPushConstantRange{});
         pushConstantRange.back().stageFlags = VK_PIPELINE_STAGE_FLAG_BITS_MAX_ENUM;
@@ -73,7 +76,7 @@ void Graphics::Base::create(const workflows::ShaderNames& shadersNames, VkDevice
         skeletonDescriptorSetLayout = interfaces::Skeleton::descriptorSetLayout(device),
         materialDescriptorSetLayout = interfaces::Material::descriptorSetLayout(device)
     };
-    pipelineLayoutMap[interfaces::ObjectType::base] = utils::vkDefault::PipelineLayout(device, descriptorSetLayouts, pushConstantRange);
+    pipelineDesc.pipelineLayout = utils::vkDefault::PipelineLayout(device, descriptorSetLayouts, pushConstantRange);
 
     std::vector<VkGraphicsPipelineCreateInfo> pipelineInfo;
     pipelineInfo.push_back(VkGraphicsPipelineCreateInfo{});
@@ -87,13 +90,12 @@ void Graphics::Base::create(const workflows::ShaderNames& shadersNames, VkDevice
         pipelineInfo.back().pRasterizationState = &rasterizer;
         pipelineInfo.back().pMultisampleState = &multisampling;
         pipelineInfo.back().pColorBlendState = &colorBlending;
-        pipelineInfo.back().layout = pipelineLayoutMap[interfaces::ObjectType::base];
+        pipelineInfo.back().layout = pipelineDesc.pipelineLayout;
         pipelineInfo.back().renderPass = renderPass;
         pipelineInfo.back().subpass = 0;
         pipelineInfo.back().pDepthStencilState = &depthStencil;
         pipelineInfo.back().basePipelineHandle = VK_NULL_HANDLE;
-    pipelineMap[interfaces::ObjectType::base] = utils::vkDefault::Pipeline(device, pipelineInfo);
-
+    pipelineDesc.pipeline = utils::vkDefault::Pipeline(device, pipelineInfo);
 
     {
         VkPipelineDepthStencilStateCreateInfo outliningDepthStencil = utils::vkDefault::depthStencilEnable();
@@ -107,14 +109,15 @@ void Graphics::Base::create(const workflows::ShaderNames& shadersNames, VkDevice
             outliningDepthStencil.back.reference = 1;
             outliningDepthStencil.front = outliningDepthStencil.back;
 
-        utils::vkDefault::MaskType outliningMask = interfaces::ObjectType::base | interfaces::ObjectProperty::outlining;
-        pipelineLayoutMap[outliningMask] = utils::vkDefault::PipelineLayout(device, descriptorSetLayouts, pushConstantRange);
+        interfaces::ObjectMask outliningMask(interfaces::ObjectType::base, interfaces::ObjectProperty::outlining);
+        auto& pipelineDesc = pipelineDescs[outliningMask];
+        pipelineDesc.pipelineLayout = utils::vkDefault::PipelineLayout(device, descriptorSetLayouts, pushConstantRange);
 
         std::vector<VkGraphicsPipelineCreateInfo> outliningpipelineInfo = pipelineInfo;
-        outliningpipelineInfo.back().layout = pipelineLayoutMap[outliningMask];
+        outliningpipelineInfo.back().layout = pipelineDesc.pipelineLayout;
         outliningpipelineInfo.back().pDepthStencilState = &outliningDepthStencil;
 
-        pipelineMap[outliningMask] = utils::vkDefault::Pipeline(device, outliningpipelineInfo);
+        pipelineDesc.pipeline = utils::vkDefault::Pipeline(device, outliningpipelineInfo);
     }
 
     descriptorPool = utils::vkDefault::DescriptorPool(device, { &descriptorSetLayout }, parameters.imageInfo.Count);
@@ -142,20 +145,22 @@ void Graphics::Base::render(uint32_t frameNumber, VkCommandBuffer commandBuffers
     if (!objects) return;
 
     for(const auto& object: *objects){
-        if(!object) continue;
+        if(!object || !object->getEnable()) continue;
 
-        const auto pipelineFlagBits = object->pipelineFlagBits();
+        const auto mask = object->objectMask();
+        const auto type = mask.type();
         const auto model = object->model();
 
-        if(!model) continue;
-        if(!(object->getEnable() && (interfaces::ObjectType::base & pipelineFlagBits))) continue;
+        if (!model || !type.has(interfaces::ObjectType::Value::base)) continue;
 
-        vkCmdBindPipeline(commandBuffers, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineMap.at(pipelineFlagBits));
+        const auto& pipelineDesc = pipelineDescs.at(mask);
+
+        vkCmdBindPipeline(commandBuffers, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineDesc.pipeline);
 
         const utils::vkDefault::DescriptorSets descriptors = {descriptorSets[frameNumber], object->getDescriptorSet(frameNumber)};
 
         object->primitiveRange().first = primitiveCount;
-        model->render(object->getInstanceNumber(frameNumber), commandBuffers, pipelineLayoutMap.at(pipelineFlagBits), descriptors, primitiveCount);
+        model->render(object->getInstanceNumber(frameNumber), commandBuffers, pipelineDesc.pipelineLayout, descriptors, primitiveCount);
         object->primitiveRange().setLast(primitiveCount);
     }
 }
