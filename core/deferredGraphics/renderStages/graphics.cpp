@@ -124,7 +124,7 @@ void Graphics::createFramebuffers() {
             framebufferInfo.width = parameters.imageInfo.Extent.width;
             framebufferInfo.height = parameters.imageInfo.Extent.height;
             framebufferInfo.layers = 1;
-        framebuffers[imageIndex] = utils::vkDefault::Framebuffer(device, framebufferInfo);
+        framebuffers.at(imageIndex) = utils::vkDefault::Framebuffer(device, framebufferInfo);
     }
 }
 
@@ -174,25 +174,23 @@ void Graphics::updateCommandBuffer(uint32_t frameNumber){
     VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         renderPassInfo.renderPass = renderPass;
-        renderPassInfo.framebuffer = framebuffers[frameNumber];
+        renderPassInfo.framebuffer = framebuffers.at(frameNumber);
         renderPassInfo.renderArea.offset = {0,0};
         renderPassInfo.renderArea.extent = parameters.imageInfo.Extent;
         renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
         renderPassInfo.pClearValues = clearValues.data();
 
-    vkCmdBeginRenderPass(commandBuffers[frameNumber], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(commandBuffers.at(frameNumber), &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        uint32_t primitiveCount = 0;
+        base.render(frameNumber,commandBuffers.at(frameNumber));
+        outlining.render(frameNumber,commandBuffers.at(frameNumber));
 
-        base.render(frameNumber,commandBuffers[frameNumber], primitiveCount);
-        outlining.render(frameNumber,commandBuffers[frameNumber]);
+    vkCmdNextSubpass(commandBuffers.at(frameNumber), VK_SUBPASS_CONTENTS_INLINE);
 
-    vkCmdNextSubpass(commandBuffers[frameNumber], VK_SUBPASS_CONTENTS_INLINE);
+        lighting.render(frameNumber,commandBuffers.at(frameNumber));
+        ambientLighting.render(frameNumber,commandBuffers.at(frameNumber));
 
-        lighting.render(frameNumber,commandBuffers[frameNumber]);
-        ambientLighting.render(frameNumber,commandBuffers[frameNumber]);
-
-    vkCmdEndRenderPass(commandBuffers[frameNumber]);
+    vkCmdEndRenderPass(commandBuffers.at(frameNumber));
 }
 
 }

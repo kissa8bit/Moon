@@ -63,19 +63,19 @@ void DeferredLink::createDescriptors(VkDevice device, const utils::vkDefault::Im
     descriptorPool = utils::vkDefault::DescriptorPool(device, {&descriptorSetLayout}, info.Count);
     descriptorSets = descriptorPool.allocateDescriptorSets(descriptorSetLayout, info.Count);
 
-    if (CHECK_M(attachment, std::string("[ Link::createDescriptors ] attachment is nullptr"))) {
-        for (size_t i = 0; i < info.Count; i++) {
-            utils::descriptorSet::Writes writes;
-            WRITE_DESCRIPTOR(writes, descriptorSets[i], attachment->descriptorImageInfo(i));
-            utils::descriptorSet::update(device, writes);
-        }
+    if (!CHECK_M(attachment, std::string("[ Link::createDescriptors ] attachment is nullptr"))) return;
+
+    for (size_t i = 0; i < info.Count; i++) {
+        utils::descriptorSet::Writes writes;
+        WRITE_DESCRIPTOR(writes, descriptorSets.at(i), attachment->descriptorImageInfo(i));
+        utils::descriptorSet::update(device, writes);
     }
 }
 
 void DeferredLink::draw(VkCommandBuffer commandBuffer, uint32_t imageNumber) const {
     vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(position), &position);
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[imageNumber], 0, nullptr);
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets.at(imageNumber), 0, nullptr);
     vkCmdDraw(commandBuffer, 6, 1, 0, 0);
 }
 

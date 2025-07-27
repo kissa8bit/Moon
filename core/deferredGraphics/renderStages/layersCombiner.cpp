@@ -163,17 +163,6 @@ void LayersCombiner::updateDescriptors(
 
     for (uint32_t i = 0; i < parameters.imageInfo.Count; i++)
     {
-        VkDescriptorBufferInfo bufferInfo = bDatabase.descriptorBufferInfo(parameters.in.camera, i);
-        VkDescriptorImageInfo colorImageInfo = aDatabase.descriptorImageInfo(parameters.in.color, i);
-        VkDescriptorImageInfo bloomImageInfo = aDatabase.descriptorImageInfo(parameters.in.bloom, i);
-        VkDescriptorImageInfo positionImageInfo = aDatabase.descriptorImageInfo(parameters.in.position, i);
-        VkDescriptorImageInfo normalImageInfo = aDatabase.descriptorImageInfo(parameters.in.normal, i);
-        VkDescriptorImageInfo depthImageInfo = aDatabase.descriptorImageInfo(parameters.in.depth, i, parameters.in.defaultDepthTexture);
-        VkDescriptorImageInfo skyboxImageInfo = aDatabase.descriptorImageInfo(parameters.in.skyboxColor, i);
-        VkDescriptorImageInfo skyboxBloomImageInfo = aDatabase.descriptorImageInfo(parameters.in.skyboxBloom, i);
-        VkDescriptorImageInfo scatteringImageInfo = aDatabase.descriptorImageInfo(parameters.in.scattering, i);
-        VkDescriptorImageInfo sslrImageInfo = aDatabase.descriptorImageInfo(parameters.in.sslr, i);
-
         std::vector<VkDescriptorImageInfo> colorLayersImageInfos(parameters.transparentLayersCount);
         std::vector<VkDescriptorImageInfo> bloomLayersImageInfos(parameters.transparentLayersCount);
         std::vector<VkDescriptorImageInfo> positionLayersImageInfos(parameters.transparentLayersCount);
@@ -183,31 +172,31 @@ void LayersCombiner::updateDescriptors(
         for(uint32_t index = 0; index < parameters.transparentLayersCount; index++){
             std::string key = parameters.in.transparency + std::to_string(index) + ".";
 
-            colorLayersImageInfos[index] = aDatabase.descriptorImageInfo(key + parameters.in.color, i);
-            bloomLayersImageInfos[index] = aDatabase.descriptorImageInfo(key + parameters.in.bloom, i);
-            positionLayersImageInfos[index] = aDatabase.descriptorImageInfo(key + parameters.in.position, i);
-            normalLayersImageInfos[index] = aDatabase.descriptorImageInfo(key + parameters.in.normal, i);
-            depthLayersImageInfos[index] = aDatabase.descriptorImageInfo(key + parameters.in.depth, i, parameters.in.defaultDepthTexture);
+            colorLayersImageInfos.at(index) = aDatabase.descriptorImageInfo(key + parameters.in.color, i);
+            bloomLayersImageInfos.at(index) = aDatabase.descriptorImageInfo(key + parameters.in.bloom, i);
+            positionLayersImageInfos.at(index) = aDatabase.descriptorImageInfo(key + parameters.in.position, i);
+            normalLayersImageInfos.at(index) = aDatabase.descriptorImageInfo(key + parameters.in.normal, i);
+            depthLayersImageInfos.at(index) = aDatabase.descriptorImageInfo(key + parameters.in.depth, i, parameters.in.defaultDepthTexture);
         }
 
-        auto descriptorSet = combiner.descriptorSets[i];
+        auto descriptorSet = combiner.descriptorSets.at(i);
 
         utils::descriptorSet::Writes writes;
-        utils::descriptorSet::write(writes, descriptorSet, bufferInfo);
-        utils::descriptorSet::write(writes, descriptorSet, colorImageInfo);
-        utils::descriptorSet::write(writes, descriptorSet, bloomImageInfo);
-        utils::descriptorSet::write(writes, descriptorSet, positionImageInfo);
-        utils::descriptorSet::write(writes, descriptorSet, normalImageInfo);
-        utils::descriptorSet::write(writes, descriptorSet, depthImageInfo);
+        WRITE_DESCRIPTOR(writes, descriptorSet, bDatabase.descriptorBufferInfo(parameters.in.camera, i));
+        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.color, i));
+        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.bloom, i));
+        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.position, i));
+        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.normal, i));
+        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.depth, i, parameters.in.defaultDepthTexture));
         utils::descriptorSet::write(writes, descriptorSet, colorLayersImageInfos);
         utils::descriptorSet::write(writes, descriptorSet, bloomLayersImageInfos);
         utils::descriptorSet::write(writes, descriptorSet, positionLayersImageInfos);
         utils::descriptorSet::write(writes, descriptorSet, normalLayersImageInfos);
         utils::descriptorSet::write(writes, descriptorSet, depthLayersImageInfos);
-        utils::descriptorSet::write(writes, descriptorSet, skyboxImageInfo);
-        utils::descriptorSet::write(writes, descriptorSet, skyboxBloomImageInfo);
-        utils::descriptorSet::write(writes, descriptorSet, scatteringImageInfo);
-        utils::descriptorSet::write(writes, descriptorSet, sslrImageInfo);
+        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.skyboxColor, i));
+        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.skyboxBloom, i));
+        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.scattering, i));
+        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.sslr, i));
         utils::descriptorSet::update(device, writes);
     }
 }
@@ -220,25 +209,25 @@ void LayersCombiner::updateCommandBuffer(uint32_t frameNumber){
     VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         renderPassInfo.renderPass = renderPass;
-        renderPassInfo.framebuffer = framebuffers[frameNumber];
+        renderPassInfo.framebuffer = framebuffers.at(frameNumber);
         renderPassInfo.renderArea.offset = {0,0};
         renderPassInfo.renderArea.extent = parameters.imageInfo.Extent;
         renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
         renderPassInfo.pClearValues = clearValues.data();
 
-    vkCmdBeginRenderPass(commandBuffers[frameNumber], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(commandBuffers.at(frameNumber), &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
         LayersCombinerPushConst pushConst{};
             pushConst.enableScatteringRefraction = static_cast<int>(parameters.enableScatteringRefraction);
             pushConst.enableTransparentLayers = static_cast<int>(parameters.enableTransparentLayers);
             pushConst.blurDepth = parameters.blurDepth;
-        vkCmdPushConstants(commandBuffers[frameNumber], combiner.pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(LayersCombinerPushConst), &pushConst);
+        vkCmdPushConstants(commandBuffers.at(frameNumber), combiner.pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(LayersCombinerPushConst), &pushConst);
 
-        vkCmdBindPipeline(commandBuffers[frameNumber], VK_PIPELINE_BIND_POINT_GRAPHICS, combiner.pipeline);
-        vkCmdBindDescriptorSets(commandBuffers[frameNumber], VK_PIPELINE_BIND_POINT_GRAPHICS, combiner.pipelineLayout, 0, 1, &combiner.descriptorSets[frameNumber], 0, nullptr);
-        vkCmdDraw(commandBuffers[frameNumber], 6, 1, 0, 0);
+        vkCmdBindPipeline(commandBuffers.at(frameNumber), VK_PIPELINE_BIND_POINT_GRAPHICS, combiner.pipeline);
+        vkCmdBindDescriptorSets(commandBuffers.at(frameNumber), VK_PIPELINE_BIND_POINT_GRAPHICS, combiner.pipelineLayout, 0, 1, &combiner.descriptorSets.at(frameNumber), 0, nullptr);
+        vkCmdDraw(commandBuffers.at(frameNumber), 6, 1, 0, 0);
 
-    vkCmdEndRenderPass(commandBuffers[frameNumber]);
+    vkCmdEndRenderPass(commandBuffers.at(frameNumber));
 }
 
 }

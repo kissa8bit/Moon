@@ -63,7 +63,7 @@ private:
 
         void create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass);
         void update(VkDevice device, const utils::BuffersDatabase& bDatabase, const utils::AttachmentsDatabase& aDatabase);
-        void render(uint32_t frameNumber, VkCommandBuffer commandBuffers, uint32_t& primitiveCount) const;
+        void render(uint32_t frameNumber, VkCommandBuffer commandBuffers) const;
     } base;
 
     struct OutliningExtension {

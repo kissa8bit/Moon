@@ -127,7 +127,7 @@ void Graphics::Base::create(const workflows::ShaderNames& shadersNames, VkDevice
 void Graphics::Base::update(VkDevice device, const utils::BuffersDatabase& bDatabase, const utils::AttachmentsDatabase& aDatabase)
 {
     for (uint32_t i = 0; i < parameters.imageInfo.Count; i++) {
-        auto descriptorSet = descriptorSets[i];
+        auto descriptorSet = descriptorSets.at(i);
 
         std::string depthId = !parameters.transparencyPass || parameters.transparencyNumber == 0 ? "" :
             (parameters.out.transparency + std::to_string(parameters.transparencyNumber - 1) + ".") + parameters.out.depth;
@@ -140,10 +140,11 @@ void Graphics::Base::update(VkDevice device, const utils::BuffersDatabase& bData
     }
 }
 
-void Graphics::Base::render(uint32_t frameNumber, VkCommandBuffer commandBuffers, uint32_t& primitiveCount) const
+void Graphics::Base::render(uint32_t frameNumber, VkCommandBuffer commandBuffers) const
 {
     if (!objects) return;
 
+    uint32_t primitiveCount = 0;
     for(const auto& object: *objects){
         if(!object || !object->getEnable()) continue;
 

@@ -19,7 +19,6 @@ void Graphics::Lighting::create(VkDevice device, VkRenderPass renderPass) {
         bindings.push_back(utils::vkDefault::bufferVertexLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
 
     descriptorSetLayout = utils::vkDefault::DescriptorSetLayout(device, bindings);
-    lightDescriptorSetLayoutMap[interfaces::Light::Type::spot] = interfaces::Light::createDescriptorSetLayout(device);
     shadowDescriptorSetLayout = utils::DepthMap::createDescriptorSetLayout(device);
 
     const workflows::ShaderNames shaderNames = {

@@ -100,7 +100,7 @@ void Graphics::OutliningExtension::render(uint32_t frameNumber, VkCommandBuffer 
         if (!type.has(interfaces::ObjectType::Value::base)) continue;
         if (!property.has(interfaces::ObjectProperty::Value::outlining)) continue;
 
-        const utils::vkDefault::DescriptorSets descriptorSets = { parent.descriptorSets[frameNumber], object->getDescriptorSet(frameNumber) };
+        const utils::vkDefault::DescriptorSets descriptorSets = { parent.descriptorSets.at(frameNumber), object->getDescriptorSet(frameNumber) };
 
         uint32_t primirives = 0;
         model->render(object->getInstanceNumber(frameNumber), commandBuffer, pipelineLayout, descriptorSets, primirives);

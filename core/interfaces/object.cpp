@@ -43,7 +43,7 @@ bool Object::comparePrimitive(uint32_t primitiveIndex) const {
 }
 
 const VkDescriptorSet& Object::getDescriptorSet(uint32_t i) const {
-    return descriptors[i];
+    return descriptors.at(i);
 }
 
 utils::vkDefault::DescriptorSetLayout Object::createBaseDescriptorSetLayout(VkDevice device){
