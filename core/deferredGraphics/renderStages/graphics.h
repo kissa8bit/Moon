@@ -49,7 +49,7 @@ private:
             utils::vkDefault::PipelineLayout pipelineLayout;
             utils::vkDefault::Pipeline pipeline;
         };
-        using PipelineDescs = std::unordered_map<interfaces::ObjectMask, PipelineDesc, interfaces::ObjectMask::Hasher>;
+        using PipelineDescs = std::unordered_map<interfaces::ObjectType, PipelineDesc, interfaces::ObjectType::Hasher>;
 
         PipelineDescs                           pipelineDescs;
         utils::vkDefault::DescriptorSetLayout   descriptorSetLayout;
@@ -83,16 +83,21 @@ private:
         const interfaces::Lights* lightSources{ nullptr };
         const interfaces::DepthMaps* depthMaps{ nullptr };
 
+        struct PipelineDesc {
+            utils::vkDefault::DescriptorSetLayout descriptorSetLayout;
+            utils::vkDefault::PipelineLayout pipelineLayout;
+            utils::vkDefault::Pipeline pipeline;
+        };
+        using PipelineDescs = std::unordered_map<interfaces::LightType, PipelineDesc, interfaces::LightType::Hasher>;
+
+        PipelineDescs                               pipelineDescs;
         utils::vkDefault::DescriptorSetLayout       descriptorSetLayout;
         utils::vkDefault::DescriptorSetLayout       shadowDescriptorSetLayout;
-        utils::vkDefault::DescriptorSetLayoutMap    lightDescriptorSetLayoutMap;
-        utils::vkDefault::PipelineLayoutMap         pipelineLayoutMap;
-        utils::vkDefault::PipelineMap               pipelineMap;
         utils::vkDefault::DescriptorPool            descriptorPool;
         utils::vkDefault::DescriptorSets            descriptorSets;
 
         Lighting(const GraphicsParameters& parameters, const interfaces::Lights* lightSources, const interfaces::DepthMaps* depthMaps);
-        void createPipeline(uint8_t mask, const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass);
+        void createPipeline(interfaces::LightType type, const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass);
 
         void create(VkDevice device, VkRenderPass renderPass);
         void update(VkDevice device, const utils::BuffersDatabase& bDatabase, const utils::AttachmentsDatabase& aDatabase);

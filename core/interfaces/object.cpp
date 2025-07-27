@@ -4,22 +4,6 @@
 
 namespace moon::interfaces {
 
-bool Object::getEnable() const {
-    return enable;
-}
-
-bool Object::getEnableShadow() const {
-    return enableShadow;
-}
-
-void Object::setEnable(const bool inenable) {
-    enable = inenable;
-}
-
-void Object::setEnableShadow(const bool inenable) {
-    enableShadow = inenable;
-}
-
 Object::Object(ObjectMask objectMask, Model* model, const Range& instanceRange)
     : mask(objectMask), pModel(model), instance({ instanceRange })
 {}

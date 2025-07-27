@@ -4,7 +4,7 @@
 
 namespace moon::deferredGraphics {
 
-void Graphics::Lighting::createPipeline(uint8_t mask, const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass){
+void Graphics::Lighting::createPipeline(interfaces::LightType type, const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass){
     const auto vertShader = utils::vkDefault::VertrxShaderModule(device, parameters.shadersPath / shadersNames.at(workflows::ShaderType::Vertex));
     const auto fragShader = utils::vkDefault::FragmentShaderModule(device, parameters.shadersPath / shadersNames.at(workflows::ShaderType::Fragment));
     const std::vector<VkPipelineShaderStageCreateInfo> shaderStages = { vertShader, fragShader };
@@ -35,12 +35,14 @@ void Graphics::Lighting::createPipeline(uint8_t mask, const workflows::ShaderNam
     };
     VkPipelineColorBlendStateCreateInfo colorBlending = utils::vkDefault::colorBlendState(static_cast<uint32_t>(colorBlendAttachment.size()),colorBlendAttachment.data());
 
+    auto& pipelineDesc = pipelineDescs[type];
+
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts = {
         descriptorSetLayout,
         shadowDescriptorSetLayout,
-        lightDescriptorSetLayoutMap[mask] = interfaces::Light::createDescriptorSetLayout(device)
+        pipelineDesc.descriptorSetLayout = interfaces::Light::createDescriptorSetLayout(device)
     };
-    pipelineLayoutMap[mask] = utils::vkDefault::PipelineLayout(device, descriptorSetLayouts);
+    pipelineDesc.pipelineLayout = utils::vkDefault::PipelineLayout(device, descriptorSetLayouts);
 
     std::vector<VkGraphicsPipelineCreateInfo> pipelineInfo;
     pipelineInfo.push_back(VkGraphicsPipelineCreateInfo{});
@@ -54,12 +56,12 @@ void Graphics::Lighting::createPipeline(uint8_t mask, const workflows::ShaderNam
         pipelineInfo.back().pRasterizationState = &rasterizer;
         pipelineInfo.back().pMultisampleState = &multisampling;
         pipelineInfo.back().pColorBlendState = &colorBlending;
-        pipelineInfo.back().layout = pipelineLayoutMap[mask];
+        pipelineInfo.back().layout = pipelineDesc.pipelineLayout;
         pipelineInfo.back().renderPass = renderPass;
         pipelineInfo.back().subpass = 1;
         pipelineInfo.back().basePipelineHandle = VK_NULL_HANDLE;
         pipelineInfo.back().pDepthStencilState = &depthStencil;
-    pipelineMap[mask] = utils::vkDefault::Pipeline(device, pipelineInfo);
+    pipelineDesc.pipeline = utils::vkDefault::Pipeline(device, pipelineInfo);
 }
 
 }

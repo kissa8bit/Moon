@@ -29,7 +29,7 @@ struct Material {
         float       roughnessFactor{ 0.0f };
         float       alphaMask{ 0.0f };
         float       alphaMaskCutoff{ 0.0f };
-        uint32_t    primitive;
+        uint32_t    primitive{ 0 };
 
         Buffer(const Material& material, uint32_t primitive);
     };

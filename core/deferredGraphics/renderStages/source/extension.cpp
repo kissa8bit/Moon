@@ -96,9 +96,10 @@ void Graphics::OutliningExtension::render(uint32_t frameNumber, VkCommandBuffer 
         const auto type = mask.type();
         const auto model = object->model();
 
-        if (!model || !object->getEnable()) continue;
+        if (!model) continue;
+        if (!property.has(interfaces::ObjectProperty::enable)) continue;
         if (!type.has(interfaces::ObjectType::Value::base)) continue;
-        if (!property.has(interfaces::ObjectProperty::Value::outlining)) continue;
+        if (!type.has(interfaces::ObjectType::Value::outlining)) continue;
 
         const utils::vkDefault::DescriptorSets descriptorSets = { parent.descriptorSets.at(frameNumber), object->getDescriptorSet(frameNumber) };
 

@@ -22,6 +22,13 @@ public:
         square
     };
 
+    struct Props
+    {
+        bool enableShadow;
+        bool enableScattering;
+        operator interfaces::LightProperty() const;
+    };
+
 private:
     utils::UniformBuffer uniformBuffer;
 
@@ -34,7 +41,7 @@ private:
     void createDescriptors(const utils::PhysicalDevice& device, uint32_t imageCount);
 
 public:
-    SpotLight(uint8_t pipelineBitMask, void* hostData, size_t hostDataSize, bool enableShadow, bool enableScattering, const std::filesystem::path& texturePaths = "");
+    SpotLight(void* hostData, size_t hostDataSize, const Props& props, const std::filesystem::path& texturePaths = "");
     utils::Buffers& buffers() override;
 };
 

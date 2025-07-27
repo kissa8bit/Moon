@@ -86,6 +86,8 @@ namespace moon::transformational {
 
 Object::Object(interfaces::Model* model, uint32_t firstInstance, uint32_t instanceCount) {
     pObject = std::make_unique<interfaces::BaseObject>(interfaces::ObjectMask(interfaces::ObjectType::base), &buffer, sizeof(buffer), model, firstInstance, instanceCount);
+    pObject->objectMask().set(interfaces::ObjectProperty::enable, true);
+    pObject->objectMask().set(interfaces::ObjectProperty::enableShadow, true);
 
     if (model) {
         for (auto instance = 0; instance < instanceCount; ++instance) {
@@ -97,6 +99,7 @@ Object::Object(interfaces::Model* model, uint32_t firstInstance, uint32_t instan
 
 Object::Object(const utils::vkDefault::Paths& texturePaths, const float& mipLevel) {
     pObject = std::make_unique<interfaces::SkyboxObject>(interfaces::ObjectMask(interfaces::ObjectType::skybox), &buffer, sizeof(buffer), texturePaths, mipLevel);
+    pObject->objectMask().set(interfaces::ObjectProperty::enable, true);
 }
 
 Object& Object::update() {
@@ -131,7 +134,7 @@ Object& Object::setOutlining(const bool enable, const float width, const math::v
     buffer.outlining.width = width > 0.0f ? width : buffer.outlining.width;
     buffer.outlining.color = math::dot(color, color) > 0.0f ? color : buffer.outlining.color;
     utils::vkDefault::raiseFlags(pObject->buffers());
-    pObject->objectMask().set(interfaces::ObjectProperty::outlining, enable);
+    pObject->objectMask().set(interfaces::ObjectType::outlining, enable);
     return *this;
 }
 

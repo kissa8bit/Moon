@@ -62,7 +62,7 @@ void Graphics::Base::create(const workflows::ShaderNames& shadersNames, VkDevice
     };
     const VkPipelineColorBlendStateCreateInfo colorBlending = utils::vkDefault::colorBlendState(static_cast<uint32_t>(colorBlendAttachment.size()), colorBlendAttachment.data());
 
-    interfaces::ObjectMask baseMask(interfaces::ObjectType::base);
+    interfaces::ObjectType baseMask{interfaces::ObjectType::base};
     auto& pipelineDesc = pipelineDescs[baseMask];
 
     std::vector<VkPushConstantRange> pushConstantRange;
@@ -109,7 +109,7 @@ void Graphics::Base::create(const workflows::ShaderNames& shadersNames, VkDevice
             outliningDepthStencil.back.reference = 1;
             outliningDepthStencil.front = outliningDepthStencil.back;
 
-        interfaces::ObjectMask outliningMask(interfaces::ObjectType::base, interfaces::ObjectProperty::outlining);
+        interfaces::ObjectType outliningMask{interfaces::ObjectType::base | interfaces::ObjectType::outlining};
         auto& pipelineDesc = pipelineDescs[outliningMask];
         pipelineDesc.pipelineLayout = utils::vkDefault::PipelineLayout(device, descriptorSetLayouts, pushConstantRange);
 
@@ -146,19 +146,22 @@ void Graphics::Base::render(uint32_t frameNumber, VkCommandBuffer commandBuffers
 
     uint32_t primitiveCount = 0;
     for(const auto& object: *objects){
-        if(!object || !object->getEnable()) continue;
+        if(!object) continue;
 
         const auto mask = object->objectMask();
         const auto type = mask.type();
+        const auto property = mask.property();
         const auto model = object->model();
 
-        if (!model || !type.has(interfaces::ObjectType::Value::base)) continue;
+        if (!model) continue;
+        if (!property.has(interfaces::ObjectProperty::enable)) continue;
+        if (!type.has(interfaces::ObjectType::Value::base)) continue;
 
-        const auto& pipelineDesc = pipelineDescs.at(mask);
+        const auto& pipelineDesc = pipelineDescs.at(type);
 
         vkCmdBindPipeline(commandBuffers, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineDesc.pipeline);
 
-        const utils::vkDefault::DescriptorSets descriptors = {descriptorSets[frameNumber], object->getDescriptorSet(frameNumber)};
+        const utils::vkDefault::DescriptorSets descriptors = {descriptorSets.at(frameNumber), object->getDescriptorSet(frameNumber)};
 
         object->primitiveRange().first = primitiveCount;
         model->render(object->getInstanceNumber(frameNumber), commandBuffers, pipelineDesc.pipelineLayout, descriptors, primitiveCount);

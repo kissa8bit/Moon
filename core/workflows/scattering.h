@@ -25,20 +25,24 @@ private:
 
     struct Lighting : Workbody {
         const ScatteringParameters& parameters;
-
-        utils::vkDefault::DescriptorSetLayout     shadowDescriptorSetLayout;
-        utils::vkDefault::DescriptorSetLayoutMap  lightDescriptorSetLayoutMap;
-        utils::vkDefault::PipelineLayoutMap       pipelineLayoutMap;
-        utils::vkDefault::PipelineMap             pipelinesMap;
-
         const interfaces::Lights* lightSources{ nullptr };
         const interfaces::DepthMaps* depthMaps{ nullptr };
+
+        struct PipelineDesc {
+            utils::vkDefault::DescriptorSetLayout descriptorSetLayout;
+            utils::vkDefault::PipelineLayout pipelineLayout;
+            utils::vkDefault::Pipeline pipeline;
+        };
+        using PipelineDescs = std::unordered_map<interfaces::LightType, PipelineDesc, interfaces::LightType::Hasher>;
+
+        PipelineDescs                             pipelineDescs;
+        utils::vkDefault::DescriptorSetLayout     shadowDescriptorSetLayout;
 
         Lighting(const ScatteringParameters& parameters, const interfaces::Lights* lightSources, const interfaces::DepthMaps* depthMaps)
             : parameters(parameters), lightSources(lightSources), depthMaps(depthMaps)
         {}
 
-        void createPipeline(uint8_t mask, const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass pRenderPass);
+        void createPipeline(interfaces::LightType type, const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass pRenderPass);
         void create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass) override;
         void render(uint32_t frameNumber, VkCommandBuffer commandBuffers);
     }lighting;

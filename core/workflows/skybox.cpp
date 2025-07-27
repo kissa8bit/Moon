@@ -150,11 +150,13 @@ void SkyboxGraphics::updateCommandBuffer(uint32_t frameNumber){
     vkCmdBindPipeline(commandBuffers[frameNumber], VK_PIPELINE_BIND_POINT_GRAPHICS, skybox.pipeline);
     for(const auto& object: *skybox.objects)
     {
-        if (!object || !object->getEnable()) continue;
+        if (!object) continue;
 
         const auto mask = object->objectMask();
         const auto type = mask.type();
+        const auto property = mask.property();
 
+        if (!property.has(interfaces::ObjectProperty::enable)) continue;
         if (!type.has(interfaces::ObjectType::Value::skybox)) continue;
 
         utils::vkDefault::DescriptorSets descriptorSets = { skybox.descriptorSets[frameNumber], object->getDescriptorSet(frameNumber) };

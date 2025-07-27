@@ -25,7 +25,7 @@ void Graphics::Lighting::create(VkDevice device, VkRenderPass renderPass) {
         {workflows::ShaderType::Vertex, "spotLightingPass/spotLightingVert.spv"},
         {workflows::ShaderType::Fragment, "spotLightingPass/spotLightingFrag.spv"}
     };
-    createPipeline(interfaces::Light::Type::spot, shaderNames, device, renderPass);
+    createPipeline(interfaces::LightType::spot, shaderNames, device, renderPass);
 
     descriptorPool = utils::vkDefault::DescriptorPool(device, { &descriptorSetLayout }, parameters.imageInfo.Count);
     descriptorSets = descriptorPool.allocateDescriptorSets(descriptorSetLayout, parameters.imageInfo.Count);
@@ -48,11 +48,18 @@ void Graphics::Lighting::update(VkDevice device, const utils::BuffersDatabase& b
 
 void Graphics::Lighting::render(uint32_t frameNumber, VkCommandBuffer commandBuffer) const
 {
-    for(auto& lightSource: *lightSources){
+    for(const auto& lightSource: *lightSources){
+        if (!lightSource) continue;
+
         const auto& depthMap = depthMaps->at(lightSource);
-        uint8_t mask = lightSource->pipelineFlagBits();
-        const utils::vkDefault::DescriptorSets descriptors = { descriptorSets[frameNumber], depthMap.descriptorSets()[frameNumber] };
-        lightSource->render(frameNumber, commandBuffer, descriptors, pipelineLayoutMap.at(mask), pipelineMap.at(mask));
+
+        const auto mask = lightSource->lightMask();
+        const auto type = mask.type();
+
+        const auto& pipelineDesc = pipelineDescs.at(type);
+
+        const utils::vkDefault::DescriptorSets descriptors = { descriptorSets.at(frameNumber), depthMap.descriptorSets().at(frameNumber) };
+        lightSource->render(frameNumber, commandBuffer, descriptors, pipelineDesc.pipelineLayout, pipelineDesc.pipeline);
     }
 }
 

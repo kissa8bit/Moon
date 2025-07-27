@@ -62,16 +62,15 @@ void Scattering::Lighting::create(const workflows::ShaderNames& shadersNames, Vk
         bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
     descriptorSetLayout = utils::vkDefault::DescriptorSetLayout(device, bindings);
 
-    lightDescriptorSetLayoutMap[interfaces::Light::Type::spot] = interfaces::Light::createDescriptorSetLayout(device);
     shadowDescriptorSetLayout = utils::DepthMap::createDescriptorSetLayout(device);
 
-    createPipeline(interfaces::Light::Type::spot, shadersNames, device, renderPass);
+    createPipeline(interfaces::LightType::spot, shadersNames, device, renderPass);
 
     descriptorPool = utils::vkDefault::DescriptorPool(device, { &descriptorSetLayout }, parameters.imageInfo.Count);
     descriptorSets = descriptorPool.allocateDescriptorSets(descriptorSetLayout, parameters.imageInfo.Count);
 }
 
-void Scattering::Lighting::createPipeline(uint8_t mask, const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass) {
+void Scattering::Lighting::createPipeline(interfaces::LightType type, const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass) {
     const auto vertShader = utils::vkDefault::VertrxShaderModule(device, parameters.shadersPath / shadersNames.at(workflows::ShaderType::Vertex));
     const auto fragShader = utils::vkDefault::FragmentShaderModule(device, parameters.shadersPath / shadersNames.at(workflows::ShaderType::Fragment));
     const std::vector<VkPipelineShaderStageCreateInfo> shaderStages = { vertShader, fragShader };
@@ -96,6 +95,8 @@ void Scattering::Lighting::createPipeline(uint8_t mask, const workflows::ShaderN
         colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_MIN;
     VkPipelineColorBlendStateCreateInfo colorBlending = utils::vkDefault::colorBlendState(1,&colorBlendAttachment);
 
+    auto& pipelineDesc = pipelineDescs[type];
+
     std::vector<VkPushConstantRange> pushConstantRange;
     pushConstantRange.push_back(VkPushConstantRange{});
         pushConstantRange.back().stageFlags = VK_PIPELINE_STAGE_FLAG_BITS_MAX_ENUM;
@@ -104,9 +105,9 @@ void Scattering::Lighting::createPipeline(uint8_t mask, const workflows::ShaderN
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts = {
         descriptorSetLayout,
         shadowDescriptorSetLayout,
-        lightDescriptorSetLayoutMap[mask]
+        pipelineDesc.descriptorSetLayout = interfaces::Light::createDescriptorSetLayout(device)
     };
-    pipelineLayoutMap[mask] = utils::vkDefault::PipelineLayout(device, descriptorSetLayouts, pushConstantRange);
+    pipelineDesc.pipelineLayout = utils::vkDefault::PipelineLayout(device, descriptorSetLayouts, pushConstantRange);
 
     std::vector<VkGraphicsPipelineCreateInfo> pipelineInfo;
     pipelineInfo.push_back(VkGraphicsPipelineCreateInfo{});
@@ -120,12 +121,12 @@ void Scattering::Lighting::createPipeline(uint8_t mask, const workflows::ShaderN
         pipelineInfo.back().pRasterizationState = &rasterizer;
         pipelineInfo.back().pMultisampleState = &multisampling;
         pipelineInfo.back().pColorBlendState = &colorBlending;
-        pipelineInfo.back().layout = pipelineLayoutMap[mask];
+        pipelineInfo.back().layout = pipelineDesc.pipelineLayout;
         pipelineInfo.back().renderPass = renderPass;
         pipelineInfo.back().subpass = 0;
         pipelineInfo.back().basePipelineHandle = VK_NULL_HANDLE;
         pipelineInfo.back().pDepthStencilState = &depthStencil;
-    pipelinesMap[mask] = utils::vkDefault::Pipeline(device, pipelineInfo);
+    pipelineDesc.pipeline = utils::vkDefault::Pipeline(device, pipelineInfo);
 }
 
 void Scattering::create(const utils::vkDefault::CommandPool& commandPool, utils::AttachmentsDatabase& aDatabase) {
@@ -174,18 +175,23 @@ void Scattering::updateCommandBuffer(uint32_t frameNumber){
     vkCmdBeginRenderPass(commandBuffers[frameNumber], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
     for(auto& lightSource: *lighting.lightSources){
-        if(lightSource->isScatteringEnable()){
-            ScatteringPushConst pushConst{ parameters.imageInfo.Extent.width, parameters.imageInfo.Extent.height};
-            vkCmdPushConstants(commandBuffers[frameNumber], lighting.pipelineLayoutMap[lightSource->pipelineFlagBits()], VK_SHADER_STAGE_ALL, 0, sizeof(ScatteringPushConst), &pushConst);
-            uint8_t mask = lightSource->pipelineFlagBits();
-            const auto& depthMap = lighting.depthMaps->at(lightSource);
-            lightSource->render(
-                frameNumber,
-                commandBuffers[frameNumber],
-                {lighting.descriptorSets[frameNumber], depthMap.descriptorSets()[frameNumber]},
-                lighting.pipelineLayoutMap[mask],
-                lighting.pipelinesMap[mask]);
-        }
+        if (!lightSource) continue;
+
+        const auto mask = lightSource->lightMask();
+        const auto type = mask.type();
+        const auto property = mask.property();
+
+        if(!property.has(interfaces::LightProperty::enableScattering)) continue;
+
+        const auto& pipelineDesc = lighting.pipelineDescs.at(type);
+
+        ScatteringPushConst pushConst{ parameters.imageInfo.Extent.width, parameters.imageInfo.Extent.height};
+        vkCmdPushConstants(commandBuffers[frameNumber], pipelineDesc.pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(ScatteringPushConst), &pushConst);
+
+        const auto& depthMap = lighting.depthMaps->at(lightSource);
+        const utils::vkDefault::DescriptorSets descriptors = { lighting.descriptorSets.at(frameNumber), depthMap.descriptorSets().at(frameNumber) };
+
+        lightSource->render(frameNumber, commandBuffers.at(frameNumber), descriptors, pipelineDesc.pipelineLayout, pipelineDesc.pipeline);
     }
 
     vkCmdEndRenderPass(commandBuffers[frameNumber]);

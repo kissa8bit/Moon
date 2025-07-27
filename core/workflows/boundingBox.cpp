@@ -164,12 +164,17 @@ void BoundingBoxGraphics::BoundingBox::render(uint32_t frameNumber, VkCommandBuf
 
     vkCmdBindPipeline(commandBuffers, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
     for(const auto& object: *objects){
-        if(object && object->getEnable()){
-            if (auto model = object->model(); model) {
-                utils::vkDefault::DescriptorSets descriptors = { descriptorSets[frameNumber], object->getDescriptorSet(frameNumber) };
-                model->renderBB(object->getInstanceNumber(frameNumber), commandBuffers, pipelineLayout, descriptors);
-            }
-        }
+        if (!object) continue;
+
+        const auto mask = object->objectMask();
+        const auto property = mask.property();
+        const auto model = object->model();
+
+        if (!property.has(interfaces::ObjectProperty::enable)) continue;
+        if (!model) continue;
+
+        utils::vkDefault::DescriptorSets descriptors = { descriptorSets[frameNumber], object->getDescriptorSet(frameNumber) };
+        model->renderBB(object->getInstanceNumber(frameNumber), commandBuffers, pipelineLayout, descriptors);
     }
 }
 

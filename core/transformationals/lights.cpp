@@ -7,8 +7,15 @@
 
 namespace moon::interfaces {
 
-SpotLight::SpotLight(uint8_t pipelineBitMask, void* hostData, size_t hostDataSize, bool enableShadow, bool enableScattering, const std::filesystem::path& texturePath)
-    : Light(pipelineBitMask, enableShadow, enableScattering), uniformBuffer(hostData, hostDataSize), texturePath(texturePath) {}
+SpotLight::Props::operator interfaces::LightProperty() const {
+    interfaces::LightProperty props;
+    props.set(interfaces::LightProperty::enableShadow, enableShadow);
+    props.set(interfaces::LightProperty::enableScattering, enableScattering);
+    return props;
+}
+
+SpotLight::SpotLight(void* hostData, size_t hostDataSize, const Props& props, const std::filesystem::path& texturePath)
+    : Light(LightMask(LightType::spot, props)), uniformBuffer(hostData, hostDataSize), texturePath(texturePath) {}
 
 void SpotLight::create(const utils::PhysicalDevice& device, VkCommandPool commandPool, uint32_t imageCount) {
     uniformBuffer = utils::UniformBuffer(device, imageCount, uniformBuffer.host, uniformBuffer.size);
@@ -69,16 +76,14 @@ Light::Light(const math::vec4& color, const math::mat4& projection, bool enableS
 {
     buffer.color = color;
     buffer.proj = transpose(projection);
-    uint8_t pipelineBitMask = interfaces::Light::Type::spot;
-    pLight = std::make_unique<interfaces::SpotLight>(pipelineBitMask, &buffer, sizeof(buffer), enableShadow, enableScattering);
+    pLight = std::make_unique<interfaces::SpotLight>(&buffer, sizeof(buffer), interfaces::SpotLight::Props{enableShadow, enableScattering});
 }
 
 Light::Light(const std::filesystem::path& texturePath, const math::mat4& projection, bool enableShadow, bool enableScattering, interfaces::SpotLight::Type type):
     type(type)
 {
     buffer.proj = transpose(projection);
-    uint8_t pipelineBitMask = interfaces::Light::Type::spot;
-    pLight = std::make_unique<interfaces::SpotLight>(pipelineBitMask, &buffer, sizeof(buffer), enableShadow, enableScattering, texturePath);
+    pLight = std::make_unique<interfaces::SpotLight>(&buffer, sizeof(buffer), interfaces::SpotLight::Props{enableShadow, enableScattering}, texturePath);
 }
 
 Light& Light::update() {
@@ -172,8 +177,6 @@ IsotropicLight& IsotropicLight::setDrop(const float& val){
 IsotropicLight& IsotropicLight::setPower(const float& val) {
     GENERATE_SETTER(setPower)
 }
-
-#undef GENERATE_SETTER
 
 std::vector<interfaces::Light*> IsotropicLight::getLights() const {
     std::vector<interfaces::Light*> pLights;

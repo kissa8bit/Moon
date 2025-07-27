@@ -324,13 +324,16 @@ void DeferredGraphics::remove(interfaces::Camera* cameraObject){
 }
 
 void DeferredGraphics::bind(interfaces::Light* lightSource){
+    if(!lightSource) return;
+
     lightSource->create(*device, commandPool, resourceCount);
     lights.push_back(lightSource);
 
     if (depthMaps.find(lightSource) == depthMaps.end()) {
         utils::vkDefault::ImageInfo shadowsInfo{ resourceCount, VK_FORMAT_D32_SFLOAT, VkExtent2D{1024,1024}, params.MSAASamples };
+        const auto lightProps = lightSource->lightMask().property();
         depthMaps[lightSource] = utils::DepthMap(*device, commandPool, shadowsInfo);
-        depthMaps[lightSource].update(lightSource->isShadowEnable() && workflowsParameters["Shadow"]->enable);
+        depthMaps[lightSource].update(lightProps.has(interfaces::LightProperty::enableShadow) && workflowsParameters["Shadow"]->enable);
     }
 
     workflows["Shadow"]->raiseUpdateFlags();

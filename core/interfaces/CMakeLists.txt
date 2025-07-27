@@ -19,6 +19,7 @@ set(HEADERS
     light.h
     model.h
     object.h
+    masksGeneration.h
 )
 
 add_library(interfaces STATIC ${SOURCES} ${HEADERS})

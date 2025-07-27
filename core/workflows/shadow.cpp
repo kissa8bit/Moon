@@ -99,7 +99,9 @@ void ShadowGraphics::create(const utils::vkDefault::CommandPool& commandPool, ut
         created = true;
     }
     for (auto& [light, depthMap] : *shadow.depthMaps) {
-        depthMap.update(light->isShadowEnable() && parameters.enable);
+        if(!light) continue;
+        const auto lightProps = light->lightMask().property();
+        depthMap.update(lightProps.has(interfaces::LightProperty::enableShadow) && parameters.enable);
     }
 }
 
@@ -119,9 +121,8 @@ void ShadowGraphics::updateCommandBuffer(uint32_t frameNumber) {
     updateFramebuffersMap();
 
     for(const auto& [light, depthMap] : *shadow.depthMaps){
-        if (!light->isShadowEnable()){
-            continue;
-        }
+        if (!light) continue;
+        if (const auto lightProps = light->lightMask().property(); !lightProps.has(interfaces::LightProperty::enableShadow)) continue;
 
         if(framebuffersMap.find(&depthMap) == framebuffersMap.end()) {
             framebuffersMap[&depthMap].resize(parameters.imageInfo.Count);
@@ -162,14 +163,17 @@ void ShadowGraphics::render(uint32_t frameNumber, VkCommandBuffer commandBuffer,
 
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shadow.pipeline);
     for(const auto& object: *shadow.objects){
-        if(!object || !object->getEnable() || !object->getEnableShadow()) continue;
+        if(!object) continue;
 
         const auto mask = object->objectMask();
         const auto property = mask.property();
         const auto type = mask.type();
         const auto model = object->model();
 
-        if (!model || !type.has(interfaces::ObjectType::Value::base)) continue;
+        if (!property.has(interfaces::ObjectProperty::enable)) continue;
+        if (!property.has(interfaces::ObjectProperty::enableShadow)) continue;
+        if (!type.has(interfaces::ObjectType::Value::base)) continue;
+        if (!model) continue;
 
         uint32_t primitives = 0;
         utils::vkDefault::DescriptorSets descriptorSets = { lightSource->getDescriptorSet(frameNumber), object->getDescriptorSet(frameNumber) };

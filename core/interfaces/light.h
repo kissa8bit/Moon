@@ -9,35 +9,43 @@
 #include <device.h>
 #include <depthMap.h>
 
+#include "masksGeneration.h"
+
 namespace moon::interfaces {
+
+#define LightType_Value		    \
+	enum Value : uint32_t {		\
+        spot = 0x1              \
+	};
+FLAG_GENERATOR(LightType, LightType_Value)
+#undef LightType_Value
+
+#define LightProperty_Value		        \
+	enum Value : uint32_t {			    \
+		non = 0x0,					    \
+		enableShadow = 1ul << 0,		\
+		enableScattering = 1ul << 1,	\
+	};
+FLAG_GENERATOR(LightProperty, LightProperty_Value)
+#undef LightProperty_Value
+
+MASK_GENERATOR(LightMask, LightType, LightProperty)
 
 class Light
 {
 protected:
-    uint8_t pipelineBitMask{ 0 };
-    bool enableShadow{false};
-    bool enableScattering{false};
+    LightMask mask{};
 
     utils::vkDefault::DescriptorSetLayout descriptorSetLayout;
     utils::vkDefault::DescriptorPool descriptorPool;
     utils::vkDefault::DescriptorSets descriptorSets;
 
 public:
-    enum Type : uint8_t {
-        spot = 0x1
-    };
-
-    Light(uint8_t pipelineBitMask, bool enableShadow, bool enableScattering);
+    Light(LightMask lightMask);
 
     virtual ~Light() = default;
 
-    void setEnableShadow(bool enable);
-    void setEnableScattering(bool enable);
-
-    bool isShadowEnable() const;
-    bool isScatteringEnable() const;
-
-    uint8_t& pipelineFlagBits();
+    LightMask& lightMask();
     const VkDescriptorSet& getDescriptorSet(uint32_t i) const;
 
     virtual utils::Buffers& buffers() = 0;

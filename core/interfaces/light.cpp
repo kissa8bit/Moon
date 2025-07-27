@@ -5,31 +5,17 @@
 
 namespace moon::interfaces {
 
-Light::Light(uint8_t pipelineBitMask, bool enableShadow, bool enableScattering)
-    : pipelineBitMask(pipelineBitMask), enableShadow(enableShadow), enableScattering(enableScattering) {}
+Light::Light(LightMask lightMask)
+    : mask(lightMask)
+{}
 
-void Light::setEnableShadow(bool enable){
-    enableShadow = enable;
-}
-
-void Light::setEnableScattering(bool enable){
-    enableScattering = enable;
-}
-
-bool Light::isShadowEnable() const{
-    return enableShadow;
-}
-
-bool Light::isScatteringEnable() const{
-    return enableScattering;
-}
 
 const VkDescriptorSet& Light::getDescriptorSet(uint32_t i) const {
     return descriptorSets[i];
 }
 
-uint8_t& Light::pipelineFlagBits() {
-    return pipelineBitMask;
+LightMask& Light::lightMask() {
+    return mask;
 }
 
 utils::vkDefault::DescriptorSetLayout Light::createDescriptorSetLayout(VkDevice device){
