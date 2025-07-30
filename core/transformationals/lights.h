@@ -41,7 +41,7 @@ private:
     void createDescriptors(const utils::PhysicalDevice& device, uint32_t imageCount);
 
 public:
-    SpotLight(void* hostData, size_t hostDataSize, const Props& props, const std::filesystem::path& texturePaths = "");
+    SpotLight(void* hostData, size_t hostDataSize, const Props& props, interfaces::SpotLight::Type type = interfaces::SpotLight::Type::circle, const std::filesystem::path& texturePaths = "");
     utils::Buffers& buffers() override;
 };
 
@@ -63,7 +63,6 @@ private:
 
     std::unique_ptr<interfaces::Light> pLight;
 
-    interfaces::SpotLight::Type type{ interfaces::SpotLight::Type::circle };
     float lightPowerFactor{ 10.0f };
     float lightDropFactor{ 1.0f };
 

@@ -13,9 +13,10 @@
 
 namespace moon::interfaces {
 
-#define LightType_Value		    \
-	enum Value : uint32_t {		\
-        spot = 0x1              \
+#define LightType_Value		            \
+	enum Value : uint32_t {		        \
+        spotCircle = 1ul << 0,          \
+        spotSquare = 1ul << 1,          \
 	};
 FLAG_GENERATOR(LightType, LightType_Value)
 #undef LightType_Value

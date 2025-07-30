@@ -14,8 +14,23 @@ SpotLight::Props::operator interfaces::LightProperty() const {
     return props;
 }
 
-SpotLight::SpotLight(void* hostData, size_t hostDataSize, const Props& props, const std::filesystem::path& texturePath)
-    : Light(LightMask(LightType::spot, props)), uniformBuffer(hostData, hostDataSize), texturePath(texturePath) {}
+interfaces::LightType toLightType(SpotLight::Type type)
+{
+    interfaces::LightType res{};
+    switch (type)
+    {
+    case SpotLight::Type::circle:
+        res = interfaces::LightType::spotCircle;
+        break;
+    case SpotLight::Type::square:
+        res = interfaces::LightType::spotSquare;
+        break;
+    }
+    return res;
+}
+
+SpotLight::SpotLight(void* hostData, size_t hostDataSize, const Props& props, interfaces::SpotLight::Type type, const std::filesystem::path& texturePath)
+    : Light(LightMask(toLightType(type), props)), uniformBuffer(hostData, hostDataSize), texturePath(texturePath) {}
 
 void SpotLight::create(const utils::PhysicalDevice& device, VkCommandPool commandPool, uint32_t imageCount) {
     uniformBuffer = utils::UniformBuffer(device, imageCount, uniformBuffer.host, uniformBuffer.size);
@@ -72,24 +87,22 @@ utils::Buffers& SpotLight::buffers() {
 namespace moon::transformational {
 
 Light::Light(const math::vec4& color, const math::mat4& projection, bool enableShadow, bool enableScattering, interfaces::SpotLight::Type type)
-    : type(type)
 {
     buffer.color = color;
     buffer.proj = transpose(projection);
-    pLight = std::make_unique<interfaces::SpotLight>(&buffer, sizeof(buffer), interfaces::SpotLight::Props{enableShadow, enableScattering});
+    pLight = std::make_unique<interfaces::SpotLight>(&buffer, sizeof(buffer), interfaces::SpotLight::Props{enableShadow, enableScattering}, type);
 }
 
-Light::Light(const std::filesystem::path& texturePath, const math::mat4& projection, bool enableShadow, bool enableScattering, interfaces::SpotLight::Type type):
-    type(type)
+Light::Light(const std::filesystem::path& texturePath, const math::mat4& projection, bool enableShadow, bool enableScattering, interfaces::SpotLight::Type type)
 {
     buffer.proj = transpose(projection);
-    pLight = std::make_unique<interfaces::SpotLight>(&buffer, sizeof(buffer), interfaces::SpotLight::Props{enableShadow, enableScattering}, texturePath);
+    pLight = std::make_unique<interfaces::SpotLight>(&buffer, sizeof(buffer), interfaces::SpotLight::Props{enableShadow, enableScattering}, type, texturePath);
 }
 
 Light& Light::update() {
     math::mat4 transformMatrix = convert(convert(m_rotation, m_translation));
     buffer.view = transpose(inverse(math::mat4(m_globalTransformation * transformMatrix * math::scale(m_scaling))));
-    buffer.props = moon::math::vec4(static_cast<float>(type), lightPowerFactor, lightDropFactor, 0.0f);
+    buffer.props = moon::math::vec4(0.0, lightPowerFactor, lightDropFactor, 0.0f);
     utils::vkDefault::raiseFlags(pLight->buffers());
     return *this;
 }

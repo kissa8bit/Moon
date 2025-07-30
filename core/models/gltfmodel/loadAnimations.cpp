@@ -224,7 +224,6 @@ void GltfModel::loadAnimations(const tinygltf::Model& gltfModel){
                 GLTFMODEL_LOADANIMATIONS_SAMPLER_CASE(TINYGLTF_TYPE_VEC3, 3)
                 GLTFMODEL_LOADANIMATIONS_SAMPLER_CASE(TINYGLTF_TYPE_VEC4, 4)
             }
-            #undef GLTFMODEL_LOADANIMATIONS_SAMPLER_CASE
         }
 
         for (auto& instance : instances) {

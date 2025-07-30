@@ -198,7 +198,7 @@ intersectionOutput findPyramidIntersection(const in vec4 viewPosition, const in 
     return outputStatus;
 }
 
-bool outsidePyramidCondition(vec3 coordinates, float type)
+bool outsidePyramidCondition(vec3 coordinates)
 {
     return abs(coordinates.x) < 1.0f && abs(coordinates.y) < 1.0f && abs(coordinates.z) < 1.0f;
 }
@@ -207,7 +207,7 @@ vec4 findPyramidPointColor(const in vec3 point, sampler2D shadowMap, sampler2D l
     vec4 color = vec4(0.0f);
 
     vec3 coordinates = coordinatesInLocalBasis(lightProjViewMatrix,vec4(point.xyz,1.0f));
-    if(outsidePyramidCondition(vec3(2.0f*coordinates.x - 1.0f, 2.0f*coordinates.y - 1.0f,coordinates.z), 1.0f) && coordinates.z<texture(shadowMap, coordinates.xy).x){
+    if(outsidePyramidCondition(vec3(2.0f*coordinates.x - 1.0f, 2.0f*coordinates.y - 1.0f,coordinates.z)) && coordinates.z<texture(shadowMap, coordinates.xy).x){
         float drop = dropFactor * lightDrop(length(lightPosition - point));
         drop = drop > 0.0f ? drop : 1.0f;
 

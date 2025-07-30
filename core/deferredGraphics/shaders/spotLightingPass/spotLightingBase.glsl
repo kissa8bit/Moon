@@ -19,12 +19,12 @@ vec4 calcLight(
     const in vec4 baseColorTexture,
     const in vec4 eyePosition,
     sampler2D shadowMap,
-    sampler2D lightTexture
+    sampler2D lightTexture,
+    float type
 ) {
     vec4 outColor = baseColorTexture;
 
     if(!checkZeroNormal(normal.xyz)) {
-        float type = light.prop.x;
         float lightPowerFactor = light.prop.y;
         float lightDropFactor = light.prop.z;
         vec3 lightPosition = viewPosition(light.view);

@@ -21,11 +21,20 @@ void Graphics::Lighting::create(VkDevice device, VkRenderPass renderPass) {
     descriptorSetLayout = utils::vkDefault::DescriptorSetLayout(device, bindings);
     shadowDescriptorSetLayout = utils::DepthMap::createDescriptorSetLayout(device);
 
-    const workflows::ShaderNames shaderNames = {
-        {workflows::ShaderType::Vertex, "spotLightingPass/spotLightingVert.spv"},
-        {workflows::ShaderType::Fragment, "spotLightingPass/spotLightingFrag.spv"}
-    };
-    createPipeline(interfaces::LightType::spot, shaderNames, device, renderPass);
+    {
+        const workflows::ShaderNames shaderNames = {
+            {workflows::ShaderType::Vertex, "spotLightingPass/spotLightingCircleVert.spv"},
+            {workflows::ShaderType::Fragment, "spotLightingPass/spotLightingCircleFrag.spv"}
+        };
+        createPipeline(interfaces::LightType::spotCircle, shaderNames, device, renderPass);
+    }
+    {
+        const workflows::ShaderNames shaderNames = {
+            {workflows::ShaderType::Vertex, "spotLightingPass/spotLightingSquareVert.spv"},
+            {workflows::ShaderType::Fragment, "spotLightingPass/spotLightingSquareFrag.spv"}
+        };
+        createPipeline(interfaces::LightType::spotSquare, shaderNames, device, renderPass);
+    }
 
     descriptorPool = utils::vkDefault::DescriptorPool(device, { &descriptorSetLayout }, parameters.imageInfo.Count);
     descriptorSets = descriptorPool.allocateDescriptorSets(descriptorSetLayout, parameters.imageInfo.Count);

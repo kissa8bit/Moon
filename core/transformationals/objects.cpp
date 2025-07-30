@@ -167,8 +167,7 @@ bool Object::AnimationControl::update(size_t frameNumber, float dtime) {
     if (auto animationsIt = animationsMap.find(frameNumber); animationsIt != animationsMap.end()) {
         auto& [_, animations] = *animationsIt;
 
-        if (animations.size() == 0) return false;
-        if (animIndex < 0) return animations.front()->update(0);
+        if (animations.size() == 0 || animIndex < 0) return false;
 
         auto animation = animations.at(animIndex);
         if (!animation) return false;

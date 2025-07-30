@@ -29,6 +29,6 @@ void main() {
     vec4 emissiveTexture = vec4(emissiveAndAO.xyz, 1.0f);
     float ao = emissiveAndAO.a;
 
-    outColor = ao * calcLight(position, normal, color, eyePosition, shadowMap, lightTexture);
+    outColor = ao * calcLight(position, normal, color, eyePosition, shadowMap, lightTexture, 0.0f);
     outBloom = SRGBtoLINEAR(emissiveTexture) + (checkBrightness(outColor) ? outColor : vec4(0.0));
 }

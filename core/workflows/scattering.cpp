@@ -56,20 +56,6 @@ void Scattering::createFramebuffers()
     }
 }
 
-void Scattering::Lighting::create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass) {
-    std::vector<VkDescriptorSetLayoutBinding> bindings;
-        bindings.push_back(utils::vkDefault::bufferVertexLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
-        bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
-    descriptorSetLayout = utils::vkDefault::DescriptorSetLayout(device, bindings);
-
-    shadowDescriptorSetLayout = utils::DepthMap::createDescriptorSetLayout(device);
-
-    createPipeline(interfaces::LightType::spot, shadersNames, device, renderPass);
-
-    descriptorPool = utils::vkDefault::DescriptorPool(device, { &descriptorSetLayout }, parameters.imageInfo.Count);
-    descriptorSets = descriptorPool.allocateDescriptorSets(descriptorSetLayout, parameters.imageInfo.Count);
-}
-
 void Scattering::Lighting::createPipeline(interfaces::LightType type, const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass) {
     const auto vertShader = utils::vkDefault::VertrxShaderModule(device, parameters.shadersPath / shadersNames.at(workflows::ShaderType::Vertex));
     const auto fragShader = utils::vkDefault::FragmentShaderModule(device, parameters.shadersPath / shadersNames.at(workflows::ShaderType::Fragment));
@@ -131,17 +117,37 @@ void Scattering::Lighting::createPipeline(interfaces::LightType type, const work
 
 void Scattering::create(const utils::vkDefault::CommandPool& commandPool, utils::AttachmentsDatabase& aDatabase) {
     commandBuffers = commandPool.allocateCommandBuffers(parameters.imageInfo.Count);
-    if(parameters.enable && !created){
-        createAttachments(aDatabase);
-        createRenderPass();
-        createFramebuffers();
+    if(!parameters.enable || created) return;
+
+    createAttachments(aDatabase);
+    createRenderPass();
+    createFramebuffers();
+
+    std::vector<VkDescriptorSetLayoutBinding> bindings;
+        bindings.push_back(utils::vkDefault::bufferVertexLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
+        bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
+    lighting.descriptorSetLayout = utils::vkDefault::DescriptorSetLayout(device, bindings);
+    lighting.shadowDescriptorSetLayout = utils::DepthMap::createDescriptorSetLayout(device);
+
+    {
         const workflows::ShaderNames shaderNames = {
-            {workflows::ShaderType::Vertex, "scattering/scatteringVert.spv"},
-            {workflows::ShaderType::Fragment, "scattering/scatteringFrag.spv"}
+            {workflows::ShaderType::Vertex, "scattering/scatteringSpotCircleVert.spv"},
+            {workflows::ShaderType::Fragment, "scattering/scatteringSpotCircleFrag.spv"}
         };
-        lighting.create(shaderNames, device, renderPass);
-        created = true;
+        lighting.createPipeline(interfaces::LightType::spotCircle, shaderNames, device, renderPass);
     }
+    {
+        const workflows::ShaderNames shaderNames = {
+            {workflows::ShaderType::Vertex, "scattering/scatteringSpotSquareVert.spv"},
+            {workflows::ShaderType::Fragment, "scattering/scatteringSpotSquareFrag.spv"}
+        };
+        lighting.createPipeline(interfaces::LightType::spotSquare, shaderNames, device, renderPass);
+    }
+
+    lighting.descriptorPool = utils::vkDefault::DescriptorPool(device, { &lighting.descriptorSetLayout }, parameters.imageInfo.Count);
+    lighting.descriptorSets = lighting.descriptorPool.allocateDescriptorSets(lighting.descriptorSetLayout, parameters.imageInfo.Count);
+
+    created = true;
 }
 
 void Scattering::updateDescriptors(const utils::BuffersDatabase& bDatabase, const utils::AttachmentsDatabase& aDatabase) {

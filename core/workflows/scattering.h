@@ -43,7 +43,7 @@ private:
         {}
 
         void createPipeline(interfaces::LightType type, const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass pRenderPass);
-        void create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass) override;
+        void create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass) override {}
         void render(uint32_t frameNumber, VkCommandBuffer commandBuffers);
     }lighting;
 
