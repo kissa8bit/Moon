@@ -20,7 +20,8 @@ namespace moon::interfaces { class Model;}
 namespace moon::graphicsManager { class GraphicsManager;}
 namespace moon::imguiGraphics { class ImguiGraphics;}
 namespace moon::deferredGraphics { class DeferredGraphics;}
-namespace moon::transformational { class Light; class IsotropicLight; class Object; class Group; class Camera; class SkyboxObject;}
+namespace moon::transformational { class Light; class Object; class Group; class Camera; class SkyboxObject;}
+namespace moon::entities { class IsotropicLight;}
 
 class testScene : public scene
 {
@@ -46,7 +47,7 @@ private:
     std::unordered_map<std::string, std::shared_ptr<moon::transformational::Object>> staticObjects;
     std::unordered_map<std::string, std::shared_ptr<moon::transformational::Object>> skyboxObjects;
     std::unordered_map<std::string, std::shared_ptr<moon::transformational::Group>> groups;
-    std::unordered_map<std::string, std::shared_ptr<moon::transformational::IsotropicLight>> lightPoints;
+    std::unordered_map<std::string, std::shared_ptr<moon::entities::IsotropicLight>> lightPoints;
     std::vector<std::shared_ptr<moon::transformational::Light>> lightSources;
 
     moon::tests::ControledObject controledObject;

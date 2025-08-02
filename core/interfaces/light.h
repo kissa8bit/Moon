@@ -8,6 +8,7 @@
 #include <vkdefault.h>
 #include <device.h>
 #include <depthMap.h>
+#include <linearAlgebra.h>
 
 #include "masksGeneration.h"
 
@@ -53,6 +54,8 @@ public:
     virtual void create(const utils::PhysicalDevice& device, VkCommandPool commandPool, uint32_t imageCount) = 0;
     virtual void update(uint32_t frameNumber, VkCommandBuffer commandBuffer) = 0;
     virtual void render(uint32_t frameNumber, VkCommandBuffer commandBuffer, const utils::vkDefault::DescriptorSets& descriptorSet, VkPipelineLayout pipelineLayout, VkPipeline pipeline) = 0;
+
+    virtual void setTransformation(const math::mat4& transformation) = 0;
 
     static utils::vkDefault::DescriptorSetLayout createDescriptorSetLayout(VkDevice device);
 };
