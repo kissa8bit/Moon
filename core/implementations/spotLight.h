@@ -51,8 +51,6 @@ private:
     utils::Buffers& buffers() override;
 };
 
-interfaces::LightType toLightType(SpotLight::Type type);
-
 } // moon::implementations
 
 #endif // MOON_IMPLEMENTATIONS_SPOT_LIGHT_H

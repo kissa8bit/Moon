@@ -15,92 +15,28 @@
 
 #include <math/linearAlgebra.h>
 
-namespace moon::interfaces {
-
-class BaseObject : public interfaces::Object {
-protected:
-    utils::UniformBuffer uniformBuffer;
-
-    void create(const utils::PhysicalDevice& device, VkCommandPool commandPool, uint32_t imageCount) override;
-    void update(uint32_t frameNumber, VkCommandBuffer commandBuffer) override;
-    void createDescriptors(const utils::PhysicalDevice& device, uint32_t imageCount);
-
-public:
-    virtual ~BaseObject() {};
-    BaseObject(ObjectMask objectMask, void* hostData, size_t hostDataSize);
-    BaseObject(ObjectMask objectMask, void* hostData, size_t hostDataSize, interfaces::Model* model, uint32_t firstInstance, uint32_t instanceCount);
-    utils::Buffers& buffers() override;
-};
-
-class SkyboxObject : public BaseObject {
-private:
-    utils::vkDefault::Paths texturePaths;
-    utils::CubeTexture texture;
-
-    void create(const utils::PhysicalDevice& device, VkCommandPool commandPool, uint32_t imageCount) override;
-    void createDescriptors(const utils::PhysicalDevice& device, uint32_t imageCount);
-
-public:
-    SkyboxObject(ObjectMask objectMask, void* hostData, size_t hostDataSize, const utils::vkDefault::Paths& texturePaths, const float& mipLevel);
-    SkyboxObject& setMipLevel(float mipLevel);
-};
-
-}
-
 namespace moon::transformational {
 
 class Object : public Transformational
 {
-private:
-    struct {
-        struct ColorLinearProperties {
-            alignas(16) math::vec4 constant{0.0f};
-            alignas(16) math::vec4 factor{1.0f};
-        };
-
-        struct Outlining {
-            alignas(16) math::vec4 color{ 0.0f };
-            alignas(4) float width{ 0.0f };
-        };
-
-        alignas(16) math::mat4 modelMatrix;
-        ColorLinearProperties base;
-        ColorLinearProperties bloom;
-        Outlining outlining;
-    } buffer;
+protected:
+    std::unique_ptr<interfaces::Object> pObject;
 
     DEFAULT_TRANSFORMATIONAL()
 
-    std::unique_ptr<interfaces::Object> pObject;
+    Object() = default;
 
 public:
-    Object() = default;
-    Object(interfaces::Model* model, uint32_t firstInstance = 0, uint32_t instanceCount = 1);
-    Object(const utils::vkDefault::Paths& texturePaths, const float& mipLevel = 1.0f);
+    virtual ~Object() override = default;
+
+    Object(const Object&) = delete;
+    Object& operator=(const Object&) = delete;
+
+    Object(Object&&) = default;
+    Object& operator=(Object&&) = default;
 
     DEFAULT_TRANSFORMATIONAL_OVERRIDE(Object)
     DEFAULT_TRANSFORMATIONAL_GETTERS()
-
-    Object& setOutlining(const bool enable, const float width = 0, const math::vec4& color = { 0.0f });
-    Object& setBase(std::optional<math::vec4> constant = std::nullopt, std::optional<math::vec4> factor = std::nullopt);
-    Object& setBloom(std::optional<math::vec4> constant = std::nullopt, std::optional<math::vec4> factor = std::nullopt);
-
-    class AnimationControl {
-    private:
-        size_t total{0};
-        std::map<size_t, std::vector<interfaces::Animation*>> animationsMap;
-        float time{0};
-        float startOffset{ 0 };
-        int animIndex{ -1 };
-
-        friend class Object;
-
-    public:
-        size_t size() const;
-        size_t current() const;
-        void set(int animIndex, float changeTime = 0);
-        bool update(size_t frameNumber, float dtime);
-    } animationControl;
 
     operator interfaces::Object* () const;
 };

@@ -12,6 +12,12 @@ class BaseCamera : public transformational::Camera
 public:
     BaseCamera(const float& angle, const float& aspect, const float& n, const float& f = std::numeric_limits<float>::max());
 
+    BaseCamera(const BaseCamera&) = delete;
+    BaseCamera& operator=(const BaseCamera&) = delete;
+
+    BaseCamera(BaseCamera&&) = default;
+    BaseCamera& operator=(BaseCamera&&) = default;
+
     BaseCamera& setProjMatrix(const math::mat4& proj);
     math::mat4 getProjMatrix() const;
     math::mat4 getViewMatrix() const;

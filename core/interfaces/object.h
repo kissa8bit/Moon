@@ -38,11 +38,11 @@ MASK_GENERATOR(ObjectMask, ObjectType, ObjectProperty)
 
 class Object {
 protected:
+	ObjectMask mask{};
+
+	Model* pModel{ nullptr };
 	struct { Range range{}; } primitive;
 	struct { Range range{}; } instance;
-
-	ObjectMask mask{};
-	Model* pModel{ nullptr };
 
 	utils::vkDefault::DescriptorSetLayout descriptorSetLayout;
 	utils::vkDefault::DescriptorPool descriptorPool;
@@ -66,8 +66,7 @@ public:
 	virtual void create(const utils::PhysicalDevice& device, VkCommandPool commandPool, uint32_t imageCount) = 0;
 	virtual void update(uint32_t frameNumber, VkCommandBuffer commandBuffer) = 0;
 
-	static utils::vkDefault::DescriptorSetLayout createBaseDescriptorSetLayout(VkDevice device);
-	static utils::vkDefault::DescriptorSetLayout createSkyboxDescriptorSetLayout(VkDevice device);
+	virtual void setTransformation(const math::mat4& transformation) = 0;
 };
 
 using Objects = std::vector<interfaces::Object*>;

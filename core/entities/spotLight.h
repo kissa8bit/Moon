@@ -32,6 +32,13 @@ public:
     };
 
     SpotLight(const Coloring& coloring, const math::mat4& projection, const Props& props = {}, implementations::SpotLight::Type type = implementations::SpotLight::Type::circle);
+    ~SpotLight() override = default;
+
+    SpotLight(const SpotLight&) = delete;
+    SpotLight& operator=(const SpotLight&) = delete;
+
+    SpotLight(SpotLight&&) = default;
+    SpotLight& operator=(SpotLight&&) = default;
 
     SpotLight& setColor(const math::vec4& color);
     SpotLight& setDrop(const float& drop);

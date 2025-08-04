@@ -14,13 +14,11 @@ layout (set = 1, binding = 0) uniform LocalUniformBuffer
     mat4 matrix;
     vec4 constColor;
     vec4 colorFactor;
-    vec4 bloomColor;
-    vec4 bloomFactor;
 } local;
 
-layout(location = 0)	out vec3 outUVW;
-layout(location = 1)	out vec4 constColor;
-layout(location = 2)	out vec4 colorFactor;
+layout(location = 0) out vec3 outUVW;
+layout(location = 1) out vec4 constColor;
+layout(location = 2) out vec4 colorFactor;
 
 vec3 vertex[36] = vec3[](
     vec3(-1.0f,-1.0f,-1.0f),

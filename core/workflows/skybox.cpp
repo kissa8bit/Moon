@@ -3,6 +3,8 @@
 #include <utils/operations.h>
 #include <utils/vkdefault.h>
 
+#include <implementations/skyboxObject.h>
+
 namespace moon::workflows {
 
 SkyboxGraphics::SkyboxGraphics(SkyboxParameters& parameters, const interfaces::Objects* objects) :
@@ -61,8 +63,6 @@ void SkyboxGraphics::Skybox::create(const workflows::ShaderNames& shadersNames, 
         bindings.push_back(utils::vkDefault::bufferVertexLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
     descriptorSetLayout = utils::vkDefault::DescriptorSetLayout(device, bindings);
 
-    objectDescriptorSetLayout = interfaces::Object::createSkyboxDescriptorSetLayout(device);
-
     const auto vertShader = utils::vkDefault::VertrxShaderModule(device, parameters.shadersPath / shadersNames.at(workflows::ShaderType::Vertex));
     const auto fragShader = utils::vkDefault::FragmentShaderModule(device, parameters.shadersPath / shadersNames.at(workflows::ShaderType::Fragment));
     const std::vector<VkPipelineShaderStageCreateInfo> shaderStages = { vertShader, fragShader };
@@ -81,7 +81,10 @@ void SkyboxGraphics::Skybox::create(const workflows::ShaderNames& shadersNames, 
         utils::vkDefault::colorBlendAttachmentState(VK_TRUE)};
     VkPipelineColorBlendStateCreateInfo colorBlending = utils::vkDefault::colorBlendState(static_cast<uint32_t>(colorBlendAttachment.size()),colorBlendAttachment.data());
 
-    std::vector<VkDescriptorSetLayout> descriptorSetLayouts = {descriptorSetLayout, objectDescriptorSetLayout};
+    std::vector<VkDescriptorSetLayout> descriptorSetLayouts = {
+        descriptorSetLayout,
+        objectDescriptorSetLayout = implementations::SkyboxObject::createDescriptorSetLayout(device)
+    };
     pipelineLayout = utils::vkDefault::PipelineLayout(device, descriptorSetLayouts);
 
     std::vector<VkGraphicsPipelineCreateInfo> pipelineInfo;

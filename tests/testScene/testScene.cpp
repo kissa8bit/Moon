@@ -18,6 +18,8 @@
 
 #include <entities/baseCamera.h>
 #include <entities/spotLight.h>
+#include <entities/baseObject.h>
+#include <entities/skyboxObject.h>
 
 #ifdef IMGUI_GRAPHICS
 #include "testSceneGui.h"
@@ -194,12 +196,14 @@ void testScene::makeGui() {
         static float changeTime = 0.5f;
         ImGui::SliderFloat("change animation time", &changeTime, 0.0f, 1.0f);
 
-        if (controledObject && controledObject->animationControl.size() > 0) {
+        auto pBaseObject = dynamic_cast<moon::entities::BaseObject*>(controledObject.ptr);
+
+        if (pBaseObject && pBaseObject->animationControl.size() > 0) {
             static const char* animationsList[] = { "-1", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
-            int selected = controledObject->animationControl.current() + 1;
+            int selected = pBaseObject->animationControl.current() + 1;
             ImGui::SetNextItemWidth(150.0f);
-            if (ImGui::Combo("animations list", &selected, animationsList, std::min(IM_ARRAYSIZE(animationsList), (int)controledObject->animationControl.size() + 1))) {
-                controledObject->animationControl.set(selected - 1, changeTime);
+            if (ImGui::Combo("animations list", &selected, animationsList, std::min(IM_ARRAYSIZE(animationsList), (int)pBaseObject->animationControl.size() + 1))) {
+                pBaseObject->animationControl.set(selected - 1, changeTime);
             }
         }
 
@@ -293,7 +297,9 @@ void testScene::updateFrame(uint32_t frameNumber, float inFrameTime)
     objects["helmet"]->update();
 
     std::for_each(std::execution::par_unseq, objects.begin(), objects.end(), [frameNumber, animationTime](auto& object) {
-        object.second->animationControl.update(frameNumber, animationTime);
+        auto pBaseObject = dynamic_cast<moon::entities::BaseObject*>(object.second.get());
+        if(!pBaseObject) return;
+        pBaseObject->animationControl.update(frameNumber, animationTime);
     });
 }
 
@@ -338,96 +344,96 @@ void testScene::createModels()
 void testScene::createObjects()
 {
     auto resourceCount = app.getResourceCount();
-    staticObjects["sponza"] = std::make_shared<moon::transformational::Object>(models["sponza"].get());
+    staticObjects["sponza"] = std::make_shared<moon::entities::BaseObject>(models["sponza"].get());
     staticObjects["sponza"]->rotate(moon::math::radians(90.0f),{1.0f,0.0f,0.0f}).scale({3.0f,3.0f,3.0f});
 
-    objects["bee0"] = std::make_shared<moon::transformational::Object>(models["bee"].get(), 0, resourceCount);
+    objects["bee0"] = std::make_shared<moon::entities::BaseObject>(models["bee"].get(), 0, resourceCount);
     objects["bee0"]->translate({5.0f,0.0f,0.0f}).rotate(moon::math::radians(90.0f),{1.0f,0.0f,0.0f}).scale({0.2f,0.2f,0.2f});
-    objects["bee0"]->animationControl.set(0);
+    static_cast<moon::entities::BaseObject*>(objects["bee0"].get())->animationControl.set(0);
 
-    objects["bee1"] = std::make_shared<moon::transformational::Object>(models["bee"].get(), resourceCount, resourceCount);
-    objects["bee1"]->translate({-5.0f,0.0f,0.0f}).rotate(moon::math::radians(90.0f),{1.0f,0.0f,0.0f}).scale({0.2f,0.2f,0.2f}).setBase(moon::math::vec4(0.0f,0.0f,0.0f,-0.7f));
-    objects["bee1"]->animationControl.set(1);
+    objects["bee1"] = std::make_shared<moon::entities::BaseObject>(models["bee"].get(), resourceCount, resourceCount);
+    objects["bee1"]->translate({-5.0f,0.0f,0.0f}).rotate(moon::math::radians(90.0f),{1.0f,0.0f,0.0f}).scale({0.2f,0.2f,0.2f});
+    static_cast<moon::entities::BaseObject*>(objects["bee1"].get())->setColor(moon::math::vec4(0.0f, 0.0f, 0.0f, -0.7f)).animationControl.set(1);
 
-    objects["butterfly"] = std::make_shared<moon::transformational::Object>(models["butterfly"].get(), 0, resourceCount);
+    objects["butterfly"] = std::make_shared<moon::entities::BaseObject>(models["butterfly"].get(), 0, resourceCount);
     objects["butterfly"]->rotate(moon::math::radians(90.0f), { 1.0f,0.0f,0.0f }).scale({ 20.2f,20.2f,20.2f });
-    objects["butterfly"]->animationControl.set(0);
+    static_cast<moon::entities::BaseObject*>(objects["butterfly"].get())->animationControl.set(0);
 
-    objects["duck"] = std::make_shared<moon::transformational::Object>(models["duck"].get());
+    objects["duck"] = std::make_shared<moon::entities::BaseObject>(models["duck"].get());
     objects["duck"]->translate({0.0f,6.3f,12.1f}).rotate(moon::math::radians(90.0f),{1.0f,0.0f,0.0f}).rotate(moon::math::radians(-45.0f), { 0.0f,0.0f,1.0f });
-    objects["duck"]->setBase(moon::math::vec4(0.0f,0.0f,0.0f,-0.8f));
+    static_cast<moon::entities::BaseObject*>(objects["duck"].get())->setColor(moon::math::vec4(0.0f,0.0f,0.0f,-0.8f));
 
-    objects["lightBox"] = std::make_shared<moon::transformational::Object>(models["box"].get());
-    objects["lightBox"]->setBloom(moon::math::vec4(1.0f,1.0f,1.0f,1.0f));
+    objects["lightBox"] = std::make_shared<moon::entities::BaseObject>(models["box"].get());
+    static_cast<moon::entities::BaseObject*>(objects["lightBox"].get())->setBloom(moon::math::vec4(1.0f,1.0f,1.0f,1.0f));
     groups["lightBox"] = std::make_shared<moon::transformational::Group>();
     groups["lightBox"]->add(objects["lightBox"].get());
 
-    objects["dragon"] = std::make_shared<moon::transformational::Object>(models["DragonAttenuation"].get());
+    objects["dragon"] = std::make_shared<moon::entities::BaseObject>(models["DragonAttenuation"].get());
     objects["dragon"]->scale(1.0f).rotate(moon::math::quat(0.5f, 0.5f, -0.5f, -0.5f)).translate(moon::math::vec3(26.0f, 11.0f, 11.0f));
 
-    objects["helmet"] = std::make_shared<moon::transformational::Object>(models["DamagedHelmet"].get());
+    objects["helmet"] = std::make_shared<moon::entities::BaseObject>(models["DamagedHelmet"].get());
     objects["helmet"]->scale(1.0f).rotate(moon::math::quat(0.5f, 0.5f, -0.5f, -0.5f));
 
-    objects["octopus"] = std::make_shared<moon::transformational::Object>(models["octopus"].get(), 0, resourceCount);
+    objects["octopus"] = std::make_shared<moon::entities::BaseObject>(models["octopus"].get(), 0, resourceCount);
     objects["octopus"]->rotate(moon::math::radians(90.0f), { 1.0f,0.0f,0.0f }).scale({ 3.0f,3.0f,3.0f }).translate({27.0f, -2.0f, 10.0f});
-    objects["octopus"]->animationControl.set(0);
+    static_cast<moon::entities::BaseObject*>(objects["octopus"].get())->animationControl.set(0);
 
-    objects["robot"] = std::make_shared<moon::transformational::Object>(models["robot"].get(), 0, resourceCount);
+    objects["robot"] = std::make_shared<moon::entities::BaseObject>(models["robot"].get(), 0, resourceCount);
     objects["robot"]->scale(25.0f).rotate(moon::math::quat(0.5f, 0.5f, -0.5f, -0.5f)).rotate(moon::math::radians(180.0f), {0.0f, 0.0f, 1.0f}).translate(moon::math::vec3(-30.0f, 11.0f, 10.0f));
-    objects["robot"]->animationControl.set(1);
+    static_cast<moon::entities::BaseObject*>(objects["robot"].get())->animationControl.set(1);
 
-    objects["skeleton"] = std::make_shared<moon::transformational::Object>(models["skeleton"].get(), 0, resourceCount);
+    objects["skeleton"] = std::make_shared<moon::entities::BaseObject>(models["skeleton"].get(), 0, resourceCount);
     objects["skeleton"]->scale(3.0f).rotate(moon::math::quat(0.5f, 0.5f, -0.5f, -0.5f)).rotate(moon::math::radians(180.0f), { 0.0f, 0.0f, 1.0f }).translate(moon::math::vec3(-30.0f, 6.0f, 10.0f));
-    objects["skeleton"]->animationControl.set(0);
+    static_cast<moon::entities::BaseObject*>(objects["skeleton"].get())->animationControl.set(0);
 
-    objects["RecursiveSkeletons"] = std::make_shared<moon::transformational::Object>(models["RecursiveSkeletons"].get());
+    objects["RecursiveSkeletons"] = std::make_shared<moon::entities::BaseObject>(models["RecursiveSkeletons"].get());
     objects["RecursiveSkeletons"]->scale(0.02f).rotate(moon::math::radians(90.0f), { 1.0f,0.0f,0.0f }).translate(moon::math::vec3(-30.0f, -10.0f, 10.0f));
-    objects["RecursiveSkeletons"]->animationControl.set(0);
+    static_cast<moon::entities::BaseObject*>(objects["RecursiveSkeletons"].get())->animationControl.set(0);
 
-    objects["SimpleSkin"] = std::make_shared<moon::transformational::Object>(models["SimpleSkin"].get());
+    objects["SimpleSkin"] = std::make_shared<moon::entities::BaseObject>(models["SimpleSkin"].get());
     objects["SimpleSkin"]->scale(2.0f).rotate(moon::math::radians(90.0f), { 1.0f,0.0f,0.0f }).rotate(moon::math::radians(90.0f), { 0.0f,0.0f,1.0f }).translate(moon::math::vec3(-34.0f, -7.0f, 10.0f));
-    objects["SimpleSkin"]->animationControl.set(0);
+    static_cast<moon::entities::BaseObject*>(objects["SimpleSkin"].get())->animationControl.set(0);
 
-    objects["RiggedFigure"] = std::make_shared<moon::transformational::Object>(models["RiggedFigure"].get());
+    objects["RiggedFigure"] = std::make_shared<moon::entities::BaseObject>(models["RiggedFigure"].get());
     objects["RiggedFigure"]->scale(1.0f).rotate(moon::math::radians(-90.0f), { 1.0f,0.0f,0.0f }).rotate(moon::math::radians(90.0f), { 0.0f,0.0f,1.0f }).translate(moon::math::vec3(-32.0f, -5.0f, 10.0f));
-    objects["RiggedFigure"]->animationControl.set(0);
+    static_cast<moon::entities::BaseObject*>(objects["RiggedFigure"].get())->animationControl.set(0);
 
-    objects["InterpolationTest"] = std::make_shared<moon::transformational::Object>(models["InterpolationTest"].get());
+    objects["InterpolationTest"] = std::make_shared<moon::entities::BaseObject>(models["InterpolationTest"].get());
     objects["InterpolationTest"]->scale(0.5f).rotate(moon::math::radians(90.0f), { 1.0f,0.0f,0.0f }).rotate(moon::math::radians(90.0f), { 0.0f,0.0f,1.0f }).translate(moon::math::vec3(-32.0f, 0.0f, 13.0f));
-    objects["InterpolationTest"]->animationControl.set(0);
+    static_cast<moon::entities::BaseObject*>(objects["InterpolationTest"].get())->animationControl.set(0);
 
-    objects["AlphaBlendModeTest"] = std::make_shared<moon::transformational::Object>(models["AlphaBlendModeTest"].get());
+    objects["AlphaBlendModeTest"] = std::make_shared<moon::entities::BaseObject>(models["AlphaBlendModeTest"].get());
     objects["AlphaBlendModeTest"]->rotate(moon::math::radians(90.0f), { 1.0f,0.0f,0.0f }).rotate(moon::math::radians(-90.0f), { 0.0f,0.0f,1.0f }).translate({-24.0f, 3.25f, 12.2f}).scale({0.3f,0.3f, 0.3f});
 
-    objects["teapot"] = std::make_shared<moon::transformational::Object>(models["teapot"].get());
+    objects["teapot"] = std::make_shared<moon::entities::BaseObject>(models["teapot"].get());
     objects["teapot"]->translate({ 21.0f, 3.25f, 12.2f }).scale({ 0.5f });
-    objects["teapot"]->setBase(moon::math::vec4(0.5f,0.5f,0.5f,1.0f));
+    static_cast<moon::entities::BaseObject*>(objects["teapot"].get())->setColor(moon::math::vec4(0.5f, 0.5f, 0.5f, 1.0f));
 
-    objects["ufo_light_0"] = std::make_shared<moon::transformational::Object>(models["ufo"].get());
+    objects["ufo_light_0"] = std::make_shared<moon::entities::BaseObject>(models["ufo"].get());
     objects["ufo_light_0"]->rotate(moon::math::radians(90.0f),{1.0f,0.0f,0.0f});
     groups["ufo_light_0"] = std::make_shared<moon::transformational::Group>();
     groups["ufo_light_0"]->rotate(moon::math::radians(45.0f), moon::math::vec3(1.0f,0.0f,0.0f)).rotate(moon::math::radians(45.0f), moon::math::vec3(0.0f,0.0f,-1.0f)).translate(moon::math::vec3(24.0f, 7.5f, 18.0f));
     groups["ufo_light_0"]->add(objects["ufo_light_0"].get());
 
-    objects["ufo_light_1"] = std::make_shared<moon::transformational::Object>(models["ufo"].get());
+    objects["ufo_light_1"] = std::make_shared<moon::entities::BaseObject>(models["ufo"].get());
     objects["ufo_light_1"]->rotate(moon::math::radians(90.0f),{1.0f,0.0f,0.0f});
     groups["ufo_light_1"] = std::make_shared<moon::transformational::Group>();
     groups["ufo_light_1"]->rotate(moon::math::radians(45.0f), moon::math::vec3(-1.0f,0.0f,0.0f)).rotate(moon::math::radians(45.0f), moon::math::vec3(0.0f,0.0f,1.0f)).translate(moon::math::vec3(24.0f, -7.5f, 18.0f));
     groups["ufo_light_1"]->add(objects["ufo_light_1"].get());
 
-    objects["ufo_light_2"] = std::make_shared<moon::transformational::Object>(models["ufo"].get());
+    objects["ufo_light_2"] = std::make_shared<moon::entities::BaseObject>(models["ufo"].get());
     objects["ufo_light_2"]->rotate(moon::math::radians(90.0f),{1.0f,0.0f,0.0f});
     groups["ufo_light_2"] = std::make_shared<moon::transformational::Group>();
     groups["ufo_light_2"]->rotate(moon::math::radians(30.0f), moon::math::vec3(-1.0f,0.0f,0.0f)).rotate(moon::math::radians(30.0f), moon::math::vec3(0.0f,0.0f,1.0f)).translate(moon::math::vec3(-32.0f, 13.0f, 19.0f));
     groups["ufo_light_2"]->add(objects["ufo_light_2"].get());
 
-    objects["ufo_light_3"] = std::make_shared<moon::transformational::Object>(models["ufo"].get());
+    objects["ufo_light_3"] = std::make_shared<moon::entities::BaseObject>(models["ufo"].get());
     objects["ufo_light_3"]->rotate(moon::math::radians(90.0f),{1.0f,0.0f,0.0f});
     groups["ufo_light_3"] = std::make_shared<moon::transformational::Group>();
     groups["ufo_light_3"]->rotate(moon::math::radians(30.0f), moon::math::vec3(1.0f,0.0f,0.0f)).rotate(moon::math::radians(30.0f), moon::math::vec3(0.0f,0.0f,-1.0f)).translate(moon::math::vec3(-32.0f, 7.0f, 19.0f));
     groups["ufo_light_3"]->add(objects["ufo_light_3"].get());
 
-    objects["ufo_light_4"] = std::make_shared<moon::transformational::Object>(models["ufo"].get());
+    objects["ufo_light_4"] = std::make_shared<moon::entities::BaseObject>(models["ufo"].get());
     objects["ufo_light_4"]->rotate(moon::math::radians(90.0f),{1.0f,0.0f,0.0f});
     groups["ufo_light_4"] = std::make_shared<moon::transformational::Group>();
     groups["ufo_light_4"]->rotate(moon::math::radians(30.0f), moon::math::vec3(-1.0f,0.0f,0.0f)).rotate(moon::math::radians(30.0f), moon::math::vec3(0.0f,0.0f,-1.0f)).translate(moon::math::vec3(-26.0f, 13.0f, 19.0f));
@@ -435,14 +441,16 @@ void testScene::createObjects()
 
     uint32_t ufoCounter = 0;
     for(auto key = "ufo" + std::to_string(ufoCounter); ufoCounter < 4; ufoCounter++, key = "ufo" + std::to_string(ufoCounter)){
-        objects[key] = std::make_shared<moon::transformational::Object>(models["ufo"].get());
+        objects[key] = std::make_shared<moon::entities::BaseObject>(models["ufo"].get());
         objects[key]->rotate(moon::math::radians(90.0f),{1.0f,0.0f,0.0f});
-        objects[key]->setBase(moon::math::vec4(0.0f,0.0f,0.0f,-0.8f));
+        if(auto pBaseObject = dynamic_cast<moon::entities::BaseObject*>(objects[key].get()); pBaseObject){
+            pBaseObject->setColor(moon::math::vec4(0.0f, 0.0f, 0.0f, -0.8f));
+        }
         groups[key] = std::make_shared<moon::transformational::Group>();
         groups[key]->add(objects["ufo" + std::to_string(ufoCounter)].get());
     }
 
-    skyboxObjects["lake"] = std::make_shared<moon::transformational::Object>(
+    skyboxObjects["lake"] = std::make_shared<moon::entities::SkyboxObject>(
         moon::utils::vkDefault::Paths{
             ExternalPath / "dependences/texture/skybox/left.jpg",
             ExternalPath / "dependences/texture/skybox/right.jpg",
@@ -453,7 +461,7 @@ void testScene::createObjects()
     });
     skyboxObjects["lake"]->scale({200.0f,200.0f,200.0f});
 
-    skyboxObjects["stars"] = std::make_shared<moon::transformational::Object>(
+    skyboxObjects["stars"] = std::make_shared<moon::entities::SkyboxObject>(
         moon::utils::vkDefault::Paths{
             ExternalPath / "dependences/texture/skybox1/left.png",
             ExternalPath / "dependences/texture/skybox1/right.png",
@@ -534,16 +542,20 @@ void testScene::mouseEvent()
     mouse.pose = xy;
 
     if(mouse.control->released(GLFW_MOUSE_BUTTON_LEFT)){
-        if (controledObject) controledObject->setOutlining(false);
+        auto pBaseObject = dynamic_cast<moon::entities::BaseObject*>(controledObject.ptr);
+        if (pBaseObject) pBaseObject->setOutlining(false);
         bool hit = false;
         for(auto& [key, object]: objects){
             if(moon::interfaces::Object* pObject = *object.get(); pObject->comparePrimitive(primitiveNumber)){
                 if(controledObject.ptr == object.get()) break;
-                controledObject.ptr = object.get();
-                controledObject.name = key;
-                controledObject->setOutlining(controledObject.outlighting.enable, 0.03f, controledObject.outlighting.color);
-                hit = true;
-                break;
+                auto pBaseObject = dynamic_cast<moon::entities::BaseObject*>(object.get());
+                if(pBaseObject){
+                    controledObject.ptr = object.get();
+                    controledObject.name = key;
+                    pBaseObject->setOutlining(controledObject.outlighting.enable, 0.03f, controledObject.outlighting.color);
+                    hit = true;
+                    break;
+                }
             }
         }
         if(!hit) controledObject = moon::tests::ControledObject();
@@ -620,7 +632,7 @@ void testScene::keyboardEvent()
         std::uniform_real_distribution dist(0.3f, 1.0f);
         moon::math::vec4 newColor = moon::math::vec4(dist(device), dist(device), dist(device), 1.0f);
 
-        objects["new_ufo" + std::to_string(ufoCounter)] = std::make_shared<moon::transformational::Object>(models["ufo"].get());
+        objects["new_ufo" + std::to_string(ufoCounter)] = std::make_shared<moon::entities::BaseObject>(models["ufo"].get());
         objects["new_ufo" + std::to_string(ufoCounter)]->rotate(moon::math::radians(90.0f),{1.0f,0.0f,0.0f});
 
         groups["ufo_gr" + std::to_string(ufoCounter)] = std::make_shared<moon::transformational::Group>();

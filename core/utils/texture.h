@@ -112,11 +112,11 @@ public:
     CubeTexture& operator=(CubeTexture&&) noexcept = default;
     CubeTexture(Texture&& texture);
 #ifdef USE_STB_IMAGE
-    CubeTexture(const utils::vkDefault::Paths&     path,
-                VkPhysicalDevice        physicalDevice,
-                VkDevice                device,
-                VkCommandBuffer         commandBuffer,
-                const TextureSampler&   textureSampler = TextureSampler{});
+    CubeTexture(const utils::vkDefault::Paths&      path,
+                VkPhysicalDevice                    physicalDevice,
+                VkDevice                            device,
+                VkCommandBuffer                     commandBuffer,
+                const TextureSampler&               textureSampler = TextureSampler{});
 #endif
 };
 

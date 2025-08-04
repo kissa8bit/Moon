@@ -6,6 +6,7 @@
 
 #include <interfaces/model.h>
 #include <interfaces/object.h>
+#include <implementations/baseObject.h>
 
 namespace moon::deferredGraphics {
 
@@ -74,7 +75,7 @@ void Graphics::Base::create(const workflows::ShaderNames& shadersNames, VkDevice
         pushConstantRange.back().size = sizeof(interfaces::Material::Buffer);
     const std::vector<VkDescriptorSetLayout> descriptorSetLayouts = {
         descriptorSetLayout = utils::vkDefault::DescriptorSetLayout(device, bindings),
-        objectDescriptorSetLayout = interfaces::Object::createBaseDescriptorSetLayout(device),
+        objectDescriptorSetLayout = implementations::BaseObject::createDescriptorSetLayout(device),
         skeletonDescriptorSetLayout = interfaces::Skeleton::descriptorSetLayout(device),
         materialDescriptorSetLayout = interfaces::Material::descriptorSetLayout(device)
     };

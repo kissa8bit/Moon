@@ -40,4 +40,4 @@ set(ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 add_library(workflows STATIC ${SOURCES} ${HEADERS})
 target_include_directories(workflows PUBLIC ${ROOT_DIR})
-target_link_libraries(workflows PUBLIC interfaces utils)
+target_link_libraries(workflows PUBLIC implementations interfaces utils)

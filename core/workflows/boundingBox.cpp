@@ -3,6 +3,8 @@
 #include <utils/vkdefault.h>
 #include <utils/operations.h>
 
+#include <implementations/BaseObject.h>
+
 namespace moon::workflows {
 
 BoundingBoxGraphics::BoundingBoxGraphics(BoundingBoxParameters& parameters, const interfaces::Objects* objects) : parameters(parameters), box(parameters, objects) {}
@@ -52,7 +54,7 @@ void BoundingBoxGraphics::BoundingBox::create(const workflows::ShaderNames& shad
     bindings.push_back(utils::vkDefault::bufferVertexLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
 
     descriptorSetLayout = utils::vkDefault::DescriptorSetLayout(device, bindings);
-    objectDescriptorSetLayout = interfaces::Object::createBaseDescriptorSetLayout(device);
+    objectDescriptorSetLayout = implementations::BaseObject::createDescriptorSetLayout(device);
     skeletonDescriptorSetLayout = interfaces::Skeleton::descriptorSetLayout(device);
 
     const auto vertShader = utils::vkDefault::VertrxShaderModule(device, parameters.shadersPath / shadersNames.at(workflows::ShaderType::Vertex));

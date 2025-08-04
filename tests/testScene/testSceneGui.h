@@ -8,6 +8,7 @@
 #include <controledObject.h>
 
 #include <entities/baseCamera.h>
+#include <entities/baseObject.h>
 #include <transformationals/cameras.h>
 #include <transformationals/objects.h>
 #include <deferredGraphics/deferredGraphics.h>
@@ -95,18 +96,21 @@ bool switchers(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> graphic
 }
 
 bool setOutlighting(tests::ControledObject& obj, float width = 300.0f) {
+    auto pBaseObject = dynamic_cast<entities::BaseObject*>(obj.ptr);
+    if(!pBaseObject) return false;
+
     bool res = false;
     ImGui::BeginGroup();
     auto& outlighting = obj.outlighting;
     auto& enable = outlighting.enable;
     auto& color = outlighting.color;
     if (ImGui::RadioButton("outlighting", enable)) {
-        obj->setOutlining(enable = !enable);
+        pBaseObject->setOutlining(enable = !enable);
         res = true;
     }
     ImGui::SetNextItemWidth(width);
     if (enable && ImGui::ColorEdit4("outlighting color", (float*)&color, ImGuiColorEditFlags_NoDragDrop)) {
-        obj->setOutlining(enable, 0.03f, color);
+        pBaseObject->setOutlining(enable, 0.03f, color);
         res = true;
     }
     ImGui::EndGroup();
@@ -127,6 +131,9 @@ void rotationmManipulator(transformational::Object& obj, const moon::entities::B
 }
 
 bool setColors(moon::transformational::Object* obecjt, float width = 300.0f) {
+    auto pBaseObject = dynamic_cast<entities::BaseObject*>(obecjt);
+    if (!pBaseObject) return false;
+
     static moon::math::vec4 constColor = { 0.0f };
     static moon::math::vec4 colorFactor = { 1.0f };
     ImGui::SetNextItemWidth(width);
@@ -134,7 +141,7 @@ bool setColors(moon::transformational::Object* obecjt, float width = 300.0f) {
     ImGui::SetNextItemWidth(width);
     ImGui::ColorEdit4("color factor", (float*)&colorFactor, ImGuiColorEditFlags_NoDragDrop);
     if (ImGui::Button("update")) {
-        obecjt->setBase(constColor, colorFactor);
+        pBaseObject->setColor(constColor, colorFactor);
         return true;
     }
     return false;

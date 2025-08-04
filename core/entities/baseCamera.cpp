@@ -5,8 +5,10 @@
 namespace moon::entities {
 
 BaseCamera::BaseCamera(const float& angle, const float& aspect, const float& near, const float& far)
-    : Camera(interfaces::CameraType::base)
+    : transformational::Camera()
 {
+    pCamera = std::make_unique<implementations::BaseCamera>();
+
     setProjMatrix(math::perspective(math::radians(angle), aspect, near, far));
 }
 

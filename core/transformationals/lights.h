@@ -18,8 +18,16 @@ protected:
 
     DEFAULT_TRANSFORMATIONAL()
 
+    Light() = default;
+
 public:
-    Light(interfaces::LightType type);
+    virtual ~Light() override = default;
+
+    Light(const Light&) = delete;
+    Light& operator=(const Light&) = delete;
+
+    Light(Light&& other) { std::swap(pLight, other.pLight); };
+    Light& operator=(Light&& other) { std::swap(pLight, other.pLight); return *this;};
 
     DEFAULT_TRANSFORMATIONAL_OVERRIDE(Light)
     DEFAULT_TRANSFORMATIONAL_GETTERS()

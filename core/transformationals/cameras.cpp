@@ -9,15 +9,6 @@
 
 namespace moon::transformational {
 
-Camera::Camera(interfaces::CameraType type) {
-	switch (type)
-	{
-	case interfaces::CameraType::base:
-		pCamera = std::make_unique<implementations::BaseCamera>();
-		break;
-	}
-}
-
 Camera& Camera::update() {
 	if (pCamera) {
 		const math::mat4 transformMatrix = m_globalTransformation * convert(convert(m_rotation, m_translation));

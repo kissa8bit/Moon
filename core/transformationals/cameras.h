@@ -18,8 +18,16 @@ protected:
 
     DEFAULT_TRANSFORMATIONAL()
 
+    Camera() = default;
+
 public:
-    Camera(interfaces::CameraType type);
+    virtual ~Camera() override = default;
+
+    Camera(const Camera&) = delete;
+    Camera& operator=(const Camera&) = delete;
+
+    Camera(Camera&&) = default;
+    Camera& operator=(Camera&&) = default;
 
     DEFAULT_TRANSFORMATIONAL_OVERRIDE(Camera)
     DEFAULT_TRANSFORMATIONAL_GETTERS()

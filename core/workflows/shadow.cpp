@@ -4,6 +4,8 @@
 #include <utils/vkdefault.h>
 #include <utils/depthMap.h>
 
+#include <implementations/baseObject.h>
+
 namespace moon::workflows {
 
 ShadowGraphics::ShadowGraphics(ShadowGraphicsParameters& parameters, const interfaces::Objects* objects, interfaces::DepthMaps* depthMaps) :
@@ -23,7 +25,7 @@ void ShadowGraphics::createRenderPass()
 
 void ShadowGraphics::Shadow::create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass) {
     lightDescriptorSetLayout = interfaces::Light::createDescriptorSetLayout(device);
-    objectDescriptorSetLayout = interfaces::Object::createBaseDescriptorSetLayout(device);
+    objectDescriptorSetLayout = implementations::BaseObject::createDescriptorSetLayout(device);
     skeletonDescriptorSetLayout = interfaces::Skeleton::descriptorSetLayout(device);
     materialDescriptorSetLayout = interfaces::Material::descriptorSetLayout(device);
 

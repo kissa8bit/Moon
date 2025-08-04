@@ -30,18 +30,4 @@ const VkDescriptorSet& Object::getDescriptorSet(uint32_t i) const {
     return descriptors.at(i);
 }
 
-utils::vkDefault::DescriptorSetLayout Object::createBaseDescriptorSetLayout(VkDevice device){
-    std::vector<VkDescriptorSetLayoutBinding> binding;
-        binding.push_back(utils::vkDefault::bufferVertexLayoutBinding(static_cast<uint32_t>(binding.size()), 1));
-        binding.back().stageFlags |= VK_SHADER_STAGE_FRAGMENT_BIT;
-    return utils::vkDefault::DescriptorSetLayout(device, binding);
-}
-
-utils::vkDefault::DescriptorSetLayout Object::createSkyboxDescriptorSetLayout(VkDevice device) {
-    std::vector<VkDescriptorSetLayoutBinding> binding;
-        binding.push_back(utils::vkDefault::bufferVertexLayoutBinding(static_cast<uint32_t>(binding.size()), 1));
-        binding.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(binding.size()), 1));
-    return utils::vkDefault::DescriptorSetLayout(device, binding);
-}
-
 }

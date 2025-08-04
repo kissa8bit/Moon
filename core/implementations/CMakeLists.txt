@@ -11,11 +11,15 @@ endif()
 set(SOURCES
     spotLight.cpp
     baseCamera.cpp
+    baseObject.cpp
+    skyboxObject.cpp
 )
 
 set(HEADERS
     spotLight.h
     baseCamera.h
+    baseObject.h
+    skyboxObject.h
 )
 
 set(ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/..)
