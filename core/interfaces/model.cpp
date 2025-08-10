@@ -49,6 +49,34 @@ void Mesh::render(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout
     }
 }
 
+VkVertexInputBindingDescription SimpleVertex::getBindingDescription() {
+    return VkVertexInputBindingDescription{ 0, sizeof(SimpleVertex), VK_VERTEX_INPUT_RATE_VERTEX };
+}
+
+std::vector<VkVertexInputAttributeDescription> SimpleVertex::getAttributeDescriptions() {
+    std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
+    attributeDescriptions.push_back(VkVertexInputAttributeDescription{ static_cast<uint32_t>(attributeDescriptions.size()),0,VK_FORMAT_R32G32B32_SFLOAT,offsetof(SimpleVertex, pos) });
+    attributeDescriptions.push_back(VkVertexInputAttributeDescription{ static_cast<uint32_t>(attributeDescriptions.size()),0,VK_FORMAT_R32G32B32_SFLOAT,offsetof(SimpleVertex, normal) });
+    attributeDescriptions.push_back(VkVertexInputAttributeDescription{ static_cast<uint32_t>(attributeDescriptions.size()),0,VK_FORMAT_R32G32_SFLOAT,offsetof(SimpleVertex, uv0) });
+
+    return attributeDescriptions;
+}
+
+VkVertexInputBindingDescription PBRVertex::getBindingDescription() {
+    return VkVertexInputBindingDescription{ 0, sizeof(PBRVertex), VK_VERTEX_INPUT_RATE_VERTEX };
+}
+
+std::vector<VkVertexInputAttributeDescription> PBRVertex::getAttributeDescriptions() {
+    std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
+    attributeDescriptions.push_back(VkVertexInputAttributeDescription{ static_cast<uint32_t>(attributeDescriptions.size()),0,VK_FORMAT_R32G32B32_SFLOAT,offsetof(PBRVertex, pos) });
+    attributeDescriptions.push_back(VkVertexInputAttributeDescription{ static_cast<uint32_t>(attributeDescriptions.size()),0,VK_FORMAT_R32G32B32_SFLOAT,offsetof(PBRVertex, normal) });
+    attributeDescriptions.push_back(VkVertexInputAttributeDescription{ static_cast<uint32_t>(attributeDescriptions.size()),0,VK_FORMAT_R32G32_SFLOAT,offsetof(PBRVertex, uv0) });
+    attributeDescriptions.push_back(VkVertexInputAttributeDescription{ static_cast<uint32_t>(attributeDescriptions.size()),0,VK_FORMAT_R32G32_SFLOAT,offsetof(PBRVertex, uv1) });
+    attributeDescriptions.push_back(VkVertexInputAttributeDescription{ static_cast<uint32_t>(attributeDescriptions.size()),0,VK_FORMAT_R32G32B32_SFLOAT,offsetof(PBRVertex, tangent) });
+
+    return attributeDescriptions;
+}
+
 VkVertexInputBindingDescription Vertex::getBindingDescription(){
     return VkVertexInputBindingDescription{0, sizeof(Vertex), VK_VERTEX_INPUT_RATE_VERTEX};
 }
@@ -59,10 +87,9 @@ std::vector<VkVertexInputAttributeDescription> Vertex::getAttributeDescriptions(
     attributeDescriptions.push_back(VkVertexInputAttributeDescription{static_cast<uint32_t>(attributeDescriptions.size()),0,VK_FORMAT_R32G32B32_SFLOAT,offsetof(Vertex, normal)});
     attributeDescriptions.push_back(VkVertexInputAttributeDescription{static_cast<uint32_t>(attributeDescriptions.size()),0,VK_FORMAT_R32G32_SFLOAT,offsetof(Vertex, uv0)});
     attributeDescriptions.push_back(VkVertexInputAttributeDescription{static_cast<uint32_t>(attributeDescriptions.size()),0,VK_FORMAT_R32G32_SFLOAT,offsetof(Vertex, uv1)});
-    attributeDescriptions.push_back(VkVertexInputAttributeDescription{static_cast<uint32_t>(attributeDescriptions.size()),0,VK_FORMAT_R32G32B32A32_SFLOAT,offsetof(Vertex, joint0)});
-    attributeDescriptions.push_back(VkVertexInputAttributeDescription{static_cast<uint32_t>(attributeDescriptions.size()),0,VK_FORMAT_R32G32B32A32_SFLOAT,offsetof(Vertex, weight0)});
+    attributeDescriptions.push_back(VkVertexInputAttributeDescription{static_cast<uint32_t>(attributeDescriptions.size()),0,VK_FORMAT_R32G32B32A32_SFLOAT,offsetof(Vertex, joint)});
+    attributeDescriptions.push_back(VkVertexInputAttributeDescription{static_cast<uint32_t>(attributeDescriptions.size()),0,VK_FORMAT_R32G32B32A32_SFLOAT,offsetof(Vertex, weight)});
     attributeDescriptions.push_back(VkVertexInputAttributeDescription{static_cast<uint32_t>(attributeDescriptions.size()),0,VK_FORMAT_R32G32B32_SFLOAT,offsetof(Vertex, tangent)});
-    attributeDescriptions.push_back(VkVertexInputAttributeDescription{static_cast<uint32_t>(attributeDescriptions.size()),0,VK_FORMAT_R32G32B32_SFLOAT,offsetof(Vertex, bitangent)});
 
     return attributeDescriptions;
 }

@@ -21,8 +21,11 @@ PlyModel::PlyModel(
     const math::vec4& specularFactor,
     const float metallicFactor,
     const float roughnessFactor,
-    const const interfaces::Material::PbrWorkflow workflow) : filename(filename)
+    const const interfaces::Material::PbrWorkflow workflow) :
+    filename(filename)
 {
+    type = interfaces::Model::VertexType::baseSimple;
+
     auto& mat = materials.emplace_back();
     mat.baseColor.factor = baseColorFactor;
     mat.baseColor.coordSet = 1;
@@ -58,17 +61,17 @@ bool PlyModel::loadFromFile(const utils::PhysicalDevice& physicalDevice, VkComma
 
     file.read(file_stream);
 
-    struct {
-        interfaces::Indices indices; interfaces::Vertices vertices;
-    } host = {
-        interfaces::Indices(faces ? 3 * faces->count : 0),
-        interfaces::Vertices(verts ? verts->count : 0, interfaces::Vertex())
+    struct Host {
+        interfaces::Indices indices;
+        interfaces::SimpleVertices vertices;
     };
+    Host host = { interfaces::Indices(faces ? 3 * faces->count : 0), interfaces::SimpleVertices(verts ? verts->count : 0) };
     math::box bb;
 
     if (faces) {
         std::memcpy(host.indices.data(), faces->buffer.get_const(), faces->buffer.size_bytes());
     }
+
     if(verts){
         const auto buffer = (const math::vec3*)verts->buffer.get();
         for (size_t i = 0; i < host.vertices.size(); ++i) {
@@ -87,12 +90,14 @@ bool PlyModel::loadFromFile(const utils::PhysicalDevice& physicalDevice, VkComma
             bb.min = math::vec4(math::min(bb.min.dvec(), vert.pos), -1.0f);
         }
     }
+
     if(normals){
         const auto buffer = (const math::vec3*)normals->buffer.get();
         for (size_t index = 0; index < host.vertices.size(); ++index) {
             host.vertices[index].normal = buffer[index];
         }
     }
+
     if(texcoords){
         const auto buffer = (const math::vec2*)texcoords->buffer.get();
         for (size_t index = 0; index < host.vertices.size(); ++index) {
@@ -114,9 +119,9 @@ bool PlyModel::loadFromFile(const utils::PhysicalDevice& physicalDevice, VkComma
     );
 
     const auto& device = physicalDevice.device();
-    utils::createDeviceBuffer(physicalDevice, device, commandBuffer, host.vertices.size() * sizeof(interfaces::Vertex), host.vertices.data(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, cache.vertices, vertices);
+    utils::createDeviceBuffer(physicalDevice, device, commandBuffer, host.vertices.size() * sizeof(decltype(host.vertices)::value_type), host.vertices.data(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, cache.vertices, vertices);
     if (!host.indices.empty()) {
-        utils::createDeviceBuffer(physicalDevice, device, commandBuffer, host.indices.size() * sizeof(uint32_t), host.indices.data(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, cache.indices, indices);
+        utils::createDeviceBuffer(physicalDevice, device, commandBuffer, host.indices.size() * sizeof(decltype(host.indices)::value_type), host.indices.data(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, cache.indices, indices);
     }
 
     skeleton.deviceBuffer = utils::vkDefault::Buffer(physicalDevice, device, sizeof(math::mat4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);

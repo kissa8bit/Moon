@@ -31,7 +31,6 @@ layout(location = 2)	in vec2 UV0;
 layout(location = 3)	in vec2 UV1;
 layout(location = 4)	in vec3 tangent;
 layout(location = 5)	in vec3 bitangent;
-layout(location = 6)	in vec3 glPosition;
 
 layout (set = 1, binding = 0) uniform LocalUniformBuffer
 {
@@ -102,7 +101,7 @@ void main()
         if(!transparencyPass && baseColor.a < 1.0f){
             discard;
         }
-        if(transparencyPass && (!inOpenInterval(0.0f, 1.0f, baseColor.a) || glPosition.z < 1.001f * texture(depthMap , glPosition.xy).r)){
+        if(transparencyPass && (!inOpenInterval(0.0f, 1.0f, baseColor.a) || gl_FragCoord.z < 1.001f * texture(depthMap , gl_FragCoord.xy).r)){
             discard;
         }
     }
@@ -136,5 +135,5 @@ void main()
 
     outBaseColor = baseColor;
     outPosition = vec4(position.xyz, params);
-    outNormal = vec4(pc.material.normalTextureSet > -1 ? getNormal() : normal, emissiveAndAO);;
+    outNormal = vec4(pc.material.normalTextureSet > -1 ? getNormal() : normal, emissiveAndAO);
 }

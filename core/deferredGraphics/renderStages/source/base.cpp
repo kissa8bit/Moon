@@ -12,7 +12,7 @@ namespace moon::deferredGraphics {
 
 Graphics::Base::Base(const GraphicsParameters& parameters, const interfaces::Objects* objects) : parameters(parameters), objects(objects) {}
 
-void Graphics::Base::create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass) {
+void Graphics::Base::create(interfaces::ObjectType type, const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass) {
     std::vector<VkDescriptorSetLayoutBinding> bindings;
     bindings.push_back(utils::vkDefault::bufferVertexLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
     bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
@@ -41,8 +41,8 @@ void Graphics::Base::create(const workflows::ShaderNames& shadersNames, VkDevice
     const auto fragShader = utils::vkDefault::FragmentShaderModule(device, parameters.shadersPath / shadersNames.at(workflows::ShaderType::Fragment), specializationInfo);
     const std::vector<VkPipelineShaderStageCreateInfo> shaderStages = {vertShader, fragShader};
 
-    const auto bindingDescription = interfaces::Vertex::getBindingDescription();
-    const auto attributeDescriptions = interfaces::Vertex::getAttributeDescriptions();
+    const auto bindingDescription = interfaces::VertexInputBindingDescriptionFromObjectType(type);
+    const auto attributeDescriptions = interfaces::AttributeDescriptionsFromObjectType(type);
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
         vertexInputInfo.vertexBindingDescriptionCount = 1;
@@ -65,8 +65,7 @@ void Graphics::Base::create(const workflows::ShaderNames& shadersNames, VkDevice
     };
     const VkPipelineColorBlendStateCreateInfo colorBlending = utils::vkDefault::colorBlendState(static_cast<uint32_t>(colorBlendAttachment.size()), colorBlendAttachment.data());
 
-    interfaces::ObjectType baseMask{interfaces::ObjectType::base};
-    auto& pipelineDesc = pipelineDescs[baseMask];
+    auto& pipelineDesc = pipelineDescs[type];
 
     std::vector<VkPushConstantRange> pushConstantRange;
     pushConstantRange.push_back(VkPushConstantRange{});
@@ -112,7 +111,7 @@ void Graphics::Base::create(const workflows::ShaderNames& shadersNames, VkDevice
             outliningDepthStencil.back.reference = 1;
             outliningDepthStencil.front = outliningDepthStencil.back;
 
-        interfaces::ObjectType outliningMask{interfaces::ObjectType::base | interfaces::ObjectType::outlining};
+        interfaces::ObjectType outliningMask{type | interfaces::ObjectType::outlining};
         auto& pipelineDesc = pipelineDescs[outliningMask];
         pipelineDesc.pipelineLayout = utils::vkDefault::PipelineLayout(device, descriptorSetLayouts, pushConstantRange);
 
@@ -158,7 +157,7 @@ void Graphics::Base::render(uint32_t frameNumber, VkCommandBuffer commandBuffers
 
         if (!model) continue;
         if (!property.has(interfaces::ObjectProperty::enable)) continue;
-        if (!type.has(interfaces::ObjectType::Value::base)) continue;
+        if (!type.has_any(interfaces::ObjectType::Value::baseTypes)) continue;
 
         const auto& pipelineDesc = pipelineDescs.at(type);
 

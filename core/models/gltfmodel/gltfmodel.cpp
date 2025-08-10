@@ -14,7 +14,11 @@
 
 namespace moon::models {
 
-GltfModel::GltfModel(std::filesystem::path filename, uint32_t instanceCount) : filename(filename) {
+GltfModel::GltfModel(std::filesystem::path filename, uint32_t instanceCount) :
+    filename(filename)
+{
+    type = interfaces::Model::VertexType::base;
+
     instances.resize(instanceCount);
 }
 

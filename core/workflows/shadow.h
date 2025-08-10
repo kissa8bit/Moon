@@ -17,18 +17,28 @@ private:
     using FramebuffersMap = std::unordered_map<const utils::DepthMap*, utils::vkDefault::Framebuffers>;
     FramebuffersMap framebuffersMap;
 
+    struct PipelineDesc {
+        utils::vkDefault::PipelineLayout pipelineLayout;
+        utils::vkDefault::Pipeline pipeline;
+    };
+
+    using PipelineDescs = std::unordered_map<interfaces::ObjectType, PipelineDesc, interfaces::ObjectType::Hasher>;
+
     struct Shadow : public Workbody{
         const ShadowGraphicsParameters& parameters;
-        utils::vkDefault::DescriptorSetLayout lightDescriptorSetLayout;
-        utils::vkDefault::DescriptorSetLayout objectDescriptorSetLayout;
-        utils::vkDefault::DescriptorSetLayout skeletonDescriptorSetLayout;
-        utils::vkDefault::DescriptorSetLayout materialDescriptorSetLayout;
         const interfaces::Objects* objects{ nullptr };
         interfaces::DepthMaps* depthMaps{ nullptr };
 
+        PipelineDescs                           pipelineDescs;
+        utils::vkDefault::DescriptorSetLayout   lightDescriptorSetLayout;
+        utils::vkDefault::DescriptorSetLayout   objectDescriptorSetLayout;
+        utils::vkDefault::DescriptorSetLayout   skeletonDescriptorSetLayout;
+        utils::vkDefault::DescriptorSetLayout   materialDescriptorSetLayout;
+
         Shadow(const ShadowGraphicsParameters& parameters, const interfaces::Objects* objects, interfaces::DepthMaps* depthMaps)
             : parameters(parameters), objects(objects), depthMaps(depthMaps) {};
-        void create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass) override;
+        void create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass) override {};
+        void create(interfaces::ObjectType type, const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass);
     }shadow;
 
     void render(uint32_t frameNumber, VkCommandBuffer commandBuffer, interfaces::Light* lightSource, const utils::DepthMap& depthMap, const utils::vkDefault::Framebuffer& framebuffer);

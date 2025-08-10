@@ -10,7 +10,14 @@ utils::vkDefault::DescriptorSetLayout BaseObject::createDescriptorSetLayout(VkDe
 }
 
 BaseObject::BaseObject(interfaces::Model* model, uint32_t firstInstance, uint32_t instanceCount)
-    : interfaces::Object(interfaces::ObjectMask(interfaces::ObjectType::base, interfaces::ObjectProperty::enable), model, { firstInstance, instanceCount }), uniformBuffer(&hostBuffer, sizeof(hostBuffer))
+    :   interfaces::Object(
+            interfaces::ObjectMask(
+                interfaces::objectTypeFromVertexType(model ? model->vertexType() : interfaces::Model::VertexType{}),
+                interfaces::ObjectProperty::enable),
+            model,
+            { firstInstance, instanceCount }
+        ),
+        uniformBuffer(&hostBuffer, sizeof(hostBuffer))
 {}
 
 void BaseObject::update(uint32_t frameNumber, VkCommandBuffer commandBuffer) {

@@ -38,7 +38,7 @@ struct GltfMesh : public interfaces::Mesh {
             for (uint32_t index = range.first; index < range.last(); index++) {
                 const auto& vertex = vertices[indices[index]];
                 const auto& pos = vertex.pos;
-                const int joint = vertex.joint0[0];
+                const int joint = vertex.joint[0];
                 if (joint == -1) continue;
 
                 auto& box = boxes[skin.joints.at(joint).jointedNodeId];

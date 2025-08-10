@@ -43,15 +43,16 @@ private:
     GraphicsParameters& parameters;
     DeferredAttachments deferredAttachments;
 
+    struct PipelineDesc {
+        utils::vkDefault::PipelineLayout pipelineLayout;
+        utils::vkDefault::Pipeline pipeline;
+    };
+
+    using PipelineDescs = std::unordered_map<interfaces::ObjectType, PipelineDesc, interfaces::ObjectType::Hasher>;
+
     struct Base {
         const GraphicsParameters& parameters;
         const interfaces::Objects* objects{ nullptr };
-
-        struct PipelineDesc {
-            utils::vkDefault::PipelineLayout pipelineLayout;
-            utils::vkDefault::Pipeline pipeline;
-        };
-        using PipelineDescs = std::unordered_map<interfaces::ObjectType, PipelineDesc, interfaces::ObjectType::Hasher>;
 
         PipelineDescs                           pipelineDescs;
         utils::vkDefault::DescriptorSetLayout   descriptorSetLayout;
@@ -63,20 +64,19 @@ private:
 
         Base(const GraphicsParameters& parameters, const interfaces::Objects* objects);
 
-        void create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass);
+        void create(interfaces::ObjectType type, const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass);
         void update(VkDevice device, const utils::BuffersDatabase& bDatabase, const utils::AttachmentsDatabase& aDatabase);
         void render(uint32_t frameNumber, VkCommandBuffer commandBuffers) const;
     } base;
 
     struct OutliningExtension {
-        const Base& parent;
+        const Base&     parent;
 
-        utils::vkDefault::PipelineLayout  pipelineLayout;
-        utils::vkDefault::Pipeline        pipeline;
+        PipelineDescs   pipelineDescs;
 
         OutliningExtension(const Base& parent);
 
-        void create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass);
+        void create(interfaces::ObjectType type, const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass);
         void render(uint32_t frameNumber, VkCommandBuffer commandBuffers) const;
     } outlining;
 

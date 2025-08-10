@@ -27,6 +27,7 @@
 		bool operator!=(FlagName r) const { return value != r.value; }									\
 																										\
 		bool has(Value type) const { return (value & type) == type; }									\
+		bool has_any(Value type) const { return value & type; }											\
 		FlagName& set(Value type, bool enable) {														\
 			value = static_cast<Value>((value & ~type) | (enable ? type : 0ul));						\
 			return *this;																				\

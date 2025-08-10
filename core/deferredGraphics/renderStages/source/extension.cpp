@@ -10,13 +10,15 @@ namespace moon::deferredGraphics {
 
 Graphics::OutliningExtension::OutliningExtension(const Graphics::Base& parent) : parent(parent) {}
 
-void Graphics::OutliningExtension::create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass){
+void Graphics::OutliningExtension::create(interfaces::ObjectType type, const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass){
+    type = type | interfaces::ObjectType::outlining;
+
     const auto vertShader = utils::vkDefault::VertrxShaderModule(device, parent.parameters.shadersPath / shadersNames.at(workflows::ShaderType::Vertex));
     const auto fragShader = utils::vkDefault::FragmentShaderModule(device, parent.parameters.shadersPath / shadersNames.at(workflows::ShaderType::Fragment));
     const std::vector<VkPipelineShaderStageCreateInfo> shaderStages = { vertShader, fragShader };
 
-    auto bindingDescription = interfaces::Vertex::getBindingDescription();
-    auto attributeDescriptions = interfaces::Vertex::getAttributeDescriptions();
+    const auto bindingDescription = interfaces::VertexInputBindingDescriptionFromObjectType(type);
+    const auto attributeDescriptions = interfaces::AttributeDescriptionsFromObjectType(type);
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -50,6 +52,8 @@ void Graphics::OutliningExtension::create(const workflows::ShaderNames& shadersN
     };
     VkPipelineColorBlendStateCreateInfo colorBlending = utils::vkDefault::colorBlendState(static_cast<uint32_t>(colorBlendAttachment.size()),colorBlendAttachment.data());
 
+    auto& pipelineDesc = pipelineDescs[type];
+
     std::vector<VkPushConstantRange> pushConstantRange;
     pushConstantRange.push_back(VkPushConstantRange{});
         pushConstantRange.back().stageFlags = VK_PIPELINE_STAGE_FLAG_BITS_MAX_ENUM;
@@ -61,7 +65,7 @@ void Graphics::OutliningExtension::create(const workflows::ShaderNames& shadersN
         parent.skeletonDescriptorSetLayout,
         parent.materialDescriptorSetLayout
     };
-    pipelineLayout = utils::vkDefault::PipelineLayout(device, descriptorSetLayout, pushConstantRange);
+    pipelineDesc.pipelineLayout = utils::vkDefault::PipelineLayout(device, descriptorSetLayout, pushConstantRange);
 
     std::vector<VkGraphicsPipelineCreateInfo> pipelineInfo;
     pipelineInfo.push_back(VkGraphicsPipelineCreateInfo{});
@@ -75,19 +79,18 @@ void Graphics::OutliningExtension::create(const workflows::ShaderNames& shadersN
         pipelineInfo.back().pRasterizationState = &rasterizer;
         pipelineInfo.back().pMultisampleState = &multisampling;
         pipelineInfo.back().pColorBlendState = &colorBlending;
-        pipelineInfo.back().layout = pipelineLayout;
+        pipelineInfo.back().layout = pipelineDesc.pipelineLayout;
         pipelineInfo.back().renderPass = renderPass;
         pipelineInfo.back().subpass = 0;
         pipelineInfo.back().pDepthStencilState = &depthStencil;
         pipelineInfo.back().basePipelineHandle = VK_NULL_HANDLE;
-    pipeline = utils::vkDefault::Pipeline(device, pipelineInfo);
+    pipelineDesc.pipeline = utils::vkDefault::Pipeline(device, pipelineInfo);
 }
 
 void Graphics::OutliningExtension::render(uint32_t frameNumber, VkCommandBuffer commandBuffer) const
 {
     if (!parent.objects) return;
 
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
     for(const auto& object: *parent.objects){
         if (!object) continue;
 
@@ -98,13 +101,17 @@ void Graphics::OutliningExtension::render(uint32_t frameNumber, VkCommandBuffer 
 
         if (!model) continue;
         if (!property.has(interfaces::ObjectProperty::enable)) continue;
-        if (!type.has(interfaces::ObjectType::Value::base)) continue;
+        if (!type.has_any(interfaces::ObjectType::Value::baseTypes)) continue;
         if (!type.has(interfaces::ObjectType::Value::outlining)) continue;
 
         const utils::vkDefault::DescriptorSets descriptorSets = { parent.descriptorSets.at(frameNumber), object->getDescriptorSet(frameNumber) };
 
+        const auto& pipelineDesc = pipelineDescs.at(type);
+
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineDesc.pipeline);
+
         uint32_t primirives = 0;
-        model->render(object->getInstanceNumber(frameNumber), commandBuffer, pipelineLayout, descriptorSets, primirives);
+        model->render(object->getInstanceNumber(frameNumber), commandBuffer, pipelineDesc.pipelineLayout, descriptorSets, primirives);
     }
 }
 

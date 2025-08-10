@@ -118,22 +118,46 @@ struct Mesh {
     void renderBB(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets) const;
 };
 
+using Indices = std::vector<uint32_t>;
+
+struct SimpleVertex {
+    alignas(16) math::vec3 pos{ 0.0f };
+    alignas(16) math::vec3 normal{ 0.0f };
+    alignas(8)  math::vec2 uv0{ 0.0f };
+
+    static VkVertexInputBindingDescription getBindingDescription();
+    static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
+};
+
+using SimpleVertices = std::vector<SimpleVertex>;
+
+struct PBRVertex {
+    alignas(16) math::vec3 pos{ 0.0f };
+    alignas(16) math::vec3 normal{ 0.0f };
+    alignas(8)  math::vec2 uv0{ 0.0f };
+    alignas(8)  math::vec2 uv1{ 0.0f };
+    alignas(16) math::vec3 tangent{ 0.0f };
+
+    static VkVertexInputBindingDescription getBindingDescription();
+    static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
+};
+
+using PBRVertices = std::vector<PBRVertex>;
+
 struct Vertex {
     alignas(16) math::vec3 pos{ 0.0f };
     alignas(16) math::vec3 normal{ 0.0f };
     alignas(8)  math::vec2 uv0{ 0.0f };
     alignas(8)  math::vec2 uv1{ 0.0f };
-    alignas(16) math::vec4 joint0{ -1.0f };
-    alignas(16) math::vec4 weight0{ 1.0f, 0.0f, 0.0f, 0.0f };
+    alignas(16) math::vec4 joint{ -1.0f };
+    alignas(16) math::vec4 weight{ 1.0f, 0.0f, 0.0f, 0.0f };
     alignas(16) math::vec3 tangent{ 0.0f };
-    alignas(16) math::vec3 bitangent{ 0.0f };
 
     static VkVertexInputBindingDescription getBindingDescription();
     static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
 };
 
 using Vertices = std::vector<Vertex>;
-using Indices = std::vector<uint32_t>;
 
 class Animation {
 public:
@@ -144,16 +168,15 @@ public:
 };
 
 class Model {
-protected:
-    utils::vkDefault::DescriptorSetLayout skeletonDescriptorSetLayout;
-    utils::vkDefault::DescriptorSetLayout materialDescriptorSetLayout;
-    utils::vkDefault::DescriptorPool descriptorPool;
-
-    utils::Buffer vertices, indices;
-    utils::Textures textures;
-    interfaces::Materials materials;
-
 public:
+    enum VertexType : uint32_t
+    {
+        non = 0ul,
+        baseSimple = 1ul << 0,
+        basePBR = 1ul << 1,
+        base = 1ul << 2,
+    };
+
     virtual ~Model() = default;
 
     virtual std::vector<Animation*> animations(uint32_t instanceNumber) = 0;
@@ -161,6 +184,19 @@ public:
     virtual void create(const utils::PhysicalDevice& device, VkCommandPool commandPool) = 0;
     virtual void render(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t& primitiveCount) const = 0;
     virtual void renderBB(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets) const = 0;
+
+    VertexType vertexType() const { return type; }
+
+protected:
+    VertexType type{};
+
+    utils::vkDefault::DescriptorSetLayout skeletonDescriptorSetLayout;
+    utils::vkDefault::DescriptorSetLayout materialDescriptorSetLayout;
+    utils::vkDefault::DescriptorPool descriptorPool;
+
+    utils::Buffer vertices, indices;
+    utils::Textures textures;
+    interfaces::Materials materials;
 };
 
 } // moon::interfaces

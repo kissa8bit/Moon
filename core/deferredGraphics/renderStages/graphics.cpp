@@ -132,13 +132,25 @@ void Graphics::createPipelines() {
         {workflows::ShaderType::Vertex, "base/baseVert.spv"},
         {workflows::ShaderType::Fragment, "base/baseFrag.spv"}
     };
-    base.create(baseShaderNames, device, renderPass);
+    base.create(interfaces::ObjectType::base, baseShaderNames, device, renderPass);
+
+    const workflows::ShaderNames baseSimpleShaderNames = {
+        {workflows::ShaderType::Vertex, "base/baseSimpleVert.spv"},
+        {workflows::ShaderType::Fragment, "base/baseFrag.spv"}
+    };
+    base.create(interfaces::ObjectType::baseSimple, baseSimpleShaderNames, device, renderPass);
 
     const workflows::ShaderNames outliningShaderNames = {
         {workflows::ShaderType::Vertex, "outlining/outliningVert.spv"},
         {workflows::ShaderType::Fragment, "outlining/outliningFrag.spv"}
     };
-    outlining.create(outliningShaderNames, device, renderPass);
+    outlining.create(interfaces::ObjectType::base, outliningShaderNames, device, renderPass);
+
+    const workflows::ShaderNames outliningSimpleShaderNames = {
+        {workflows::ShaderType::Vertex, "outlining/outliningSimpleVert.spv"},
+        {workflows::ShaderType::Fragment, "outlining/outliningFrag.spv"}
+    };
+    outlining.create(interfaces::ObjectType::baseSimple, outliningSimpleShaderNames, device, renderPass);
 
     lighting.create(device, renderPass);
 

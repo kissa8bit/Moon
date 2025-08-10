@@ -73,7 +73,6 @@ void calculateTangent(uint32_t indexOffset, interfaces::Vertices& vertices, inte
         for (uint32_t j = i; j < i + 3; j++) {
             auto& v = vertices[indices[j]];
             v.tangent = normalized(tangent - v.normal * dot(v.normal, tangent));
-            v.bitangent = normalized(cross(v.normal, v.tangent));
         }
     }
 }
@@ -100,14 +99,14 @@ void GltfModel::loadVertices(const tinygltf::Model& gltfModel, const tinygltf::M
             if (joint.buffer && joint.accessor) {
                 switch (joint.accessor->componentType) {
                     case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-                        vert.joint0 = joint.loadVec4<uint16_t>(index);
+                        vert.joint = joint.loadVec4<uint16_t>(index);
                         break;
                     case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
-                        vert.joint0 = joint.loadVec4<uint8_t>(index);
+                        vert.joint = joint.loadVec4<uint8_t>(index);
                         break;
                 }
             }
-            if (weight.buffer) vert.weight0 = weight.loadVec4(index);
+            if (weight.buffer) vert.weight = weight.loadVec4(index);
             vertices.push_back(vert);
         }
 

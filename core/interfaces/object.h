@@ -15,12 +15,15 @@
 
 namespace moon::interfaces {
 
-#define ObjectType_Value		\
-	enum Value : uint32_t {		\
-		non = 0x0,				\
-		base = 1ul << 0,		\
-		skybox = 1ul << 1,		\
-		outlining = 1ul << 2,	\
+#define ObjectType_Value							\
+	enum Value : uint32_t {							\
+		non = 0x0,									\
+		baseSimple = 1ul << 0,						\
+		basePBR = 1ul << 1,							\
+		base = 1ul << 2,							\
+		baseTypes = baseSimple | basePBR | base,	\
+		skybox = 1ul << 3,							\
+		outlining = 1ul << 4,						\
 	};
 FLAG_GENERATOR(ObjectType, ObjectType_Value)
 #undef ObjectType_Value
@@ -35,6 +38,54 @@ FLAG_GENERATOR(ObjectProperty, ObjectProperty_Value)
 #undef ObjectProperty_Value
 
 MASK_GENERATOR(ObjectMask, ObjectType, ObjectProperty)
+
+inline ObjectType objectTypeFromVertexType(Model::VertexType type)
+{
+	switch (type)
+	{
+	case Model::VertexType::baseSimple:
+		return ObjectType::baseSimple;
+	case Model::VertexType::basePBR:
+		return ObjectType::basePBR;
+	case Model::VertexType::base:
+		return ObjectType::base;
+	}
+	return ObjectType::non;
+}
+
+inline VkVertexInputBindingDescription VertexInputBindingDescriptionFromObjectType(ObjectType type)
+{
+	if (type.has(ObjectType::baseSimple))
+	{
+		return SimpleVertex::getBindingDescription();
+	}
+	if (type.has(ObjectType::basePBR))
+	{
+		return PBRVertex::getBindingDescription();
+	}
+	if (type.has(ObjectType::base))
+	{
+		return Vertex::getBindingDescription();
+	}
+	return VkVertexInputBindingDescription{};
+}
+
+inline std::vector<VkVertexInputAttributeDescription> AttributeDescriptionsFromObjectType(ObjectType type)
+{
+	if (type.has(ObjectType::baseSimple))
+	{
+		return SimpleVertex::getAttributeDescriptions();
+	}
+	if (type.has(ObjectType::basePBR))
+	{
+		return PBRVertex::getAttributeDescriptions();
+	}
+	if (type.has(ObjectType::base))
+	{
+		return Vertex::getAttributeDescriptions();
+	}
+	return {};
+}
 
 class Object {
 protected:
