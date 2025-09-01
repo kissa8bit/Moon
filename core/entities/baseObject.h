@@ -17,6 +17,9 @@ public:
     BaseObject(BaseObject&&) = default;
     BaseObject& operator=(BaseObject&&) = default;
 
+    bool isEnable() const;
+
+    BaseObject& setEnable(const bool enable);
     BaseObject& setOutlining(const bool enable, const float width = 0, const math::vec4& color = { 0.0f });
     BaseObject& setColor(std::optional<math::vec4> constant = std::nullopt, std::optional<math::vec4> factor = std::nullopt);
     BaseObject& setBloom(std::optional<math::vec4> constant = std::nullopt, std::optional<math::vec4> factor = std::nullopt);

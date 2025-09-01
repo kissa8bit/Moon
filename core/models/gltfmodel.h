@@ -32,7 +32,6 @@ private:
     } cache;
 
     bool loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffer commandBuffer);
-    void loadVertices(const tinygltf::Model& gltfModel, const tinygltf::Mesh& mesh, interfaces::Indices& indices, interfaces::Vertices& vertices);
     void loadTextures(const tinygltf::Model& gltfModel, const utils::PhysicalDevice& device, VkCommandBuffer commandBuffer);
     void loadAnimations(const tinygltf::Model& gltfModel);
     void loadMaterials(const tinygltf::Model& gltfModel);

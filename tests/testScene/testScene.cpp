@@ -326,15 +326,11 @@ void testScene::createModels()
     models["box"] = MAKE_GLTF(glTFSamples / "Box/glTF-Binary/Box.glb");
     models["sponza"] = MAKE_GLTF(glTFSamples / "Sponza/glTF/Sponza.gltf");
     models["duck"] = MAKE_GLTF(glTFSamples / "Duck/glTF-Binary/Duck.glb");
-    models["wasd"] = MAKE_GLTF(glTFSamples / "Duck/glTF-Binary/Duck.glb");
     models["DragonAttenuation"] = MAKE_GLTF(glTFSamples / "DragonAttenuation/glTF-Binary/DragonAttenuation.glb");
     models["DamagedHelmet"] = MAKE_GLTF(glTFSamples / "DamagedHelmet/glTF-Binary/DamagedHelmet.glb");
     models["AlphaBlendModeTest"] = MAKE_GLTF(glTFSamples / "AlphaBlendModeTest/glTF-Binary/AlphaBlendModeTest.glb");
 
     models["teapot"] = MAKE_PLY(modelPath / "ply/teapot.ply");
-
-#undef MAKE_GLTF
-#undef MAKE_PLY
 
     for(auto& [_,model]: models){
         graphics["base"]->create(model.get());

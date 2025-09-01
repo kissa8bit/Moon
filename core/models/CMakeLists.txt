@@ -17,7 +17,6 @@ set(INCLUDE_DIRS
 include_directories(${INCLUDE_DIRS})
 
 set(SOURCES
-    gltfmodel/loadVertices.cpp
     gltfmodel/loadAnimations.cpp
     gltfmodel/loadTextures.cpp
     gltfmodel/loadMaterials.cpp
@@ -26,6 +25,7 @@ set(SOURCES
 )
 
 set(HEADERS
+    gltfmodel/loadVertices.h
     gltfmodel/tinyGLTF.h
     gltfmodel/gltfutils.h
     gltfmodel/gltfmesh.h

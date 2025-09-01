@@ -20,6 +20,21 @@ BaseObject::BaseObject(interfaces::Model* model, uint32_t firstInstance , uint32
     }
 }
 
+bool BaseObject::isEnable() const {
+    auto pBaseObject = static_cast<implementations::BaseObject*>(pObject.get());
+    if (!pBaseObject) return false;
+
+    return pBaseObject->objectMask().property().has(interfaces::ObjectProperty::enable);
+}
+
+BaseObject& BaseObject::setEnable(const bool enable) {
+    auto pBaseObject = static_cast<implementations::BaseObject*>(pObject.get());
+    if (!pBaseObject) return *this;
+
+    pBaseObject->objectMask().property().set(interfaces::ObjectProperty::enable, enable);
+    return *this;
+}
+
 BaseObject& BaseObject::setColor(std::optional<math::vec4> constant, std::optional<math::vec4> factor) {
     auto pBaseObject = static_cast<implementations::BaseObject*>(pObject.get());
     if (!pBaseObject) return *this;

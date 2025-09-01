@@ -79,7 +79,7 @@ void calculateTangent(uint32_t indexOffset, interfaces::Vertices& vertices, inte
 
 }
 
-void GltfModel::loadVertices(const tinygltf::Model& gltfModel, const tinygltf::Mesh& mesh, interfaces::Indices& indices, interfaces::Vertices& vertices) {
+void loadVertices(const tinygltf::Model& gltfModel, const tinygltf::Mesh& mesh, interfaces::Indices& indices, interfaces::Vertices& vertices) {
     for (const tinygltf::Primitive& primitive: mesh.primitives) {
         const auto pos = LoadBuffer<float>(primitive, gltfModel, "POSITION", TINYGLTF_TYPE_VEC3);
         const auto norm = LoadBuffer<float>(primitive, gltfModel, "NORMAL",TINYGLTF_TYPE_VEC3);

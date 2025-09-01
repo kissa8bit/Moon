@@ -11,6 +11,8 @@
 #include "gltfutils.h"
 #include "gltfskeleton.h"
 #include "node.h"
+#include "loadVertices.h"
+
 
 namespace moon::models {
 
@@ -74,16 +76,17 @@ bool GltfModel::loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffe
         }
     }
 
-    loadAnimations(gltfModel);
-
-    for(auto& instance : instances){
-        updateNodes(instance.nodes, instance.skeletons);
-    }
-
     utils::createDeviceBuffer(device, device.device(), commandBuffer, host.vertices.size() * sizeof(interfaces::Vertex), host.vertices.data(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, cache.vertices, vertices);
     if (!host.indices.empty()) {
         utils::createDeviceBuffer(device, device.device(), commandBuffer, host.indices.size() * sizeof(uint32_t), host.indices.data(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, cache.indices, indices);
     }
+
+    loadAnimations(gltfModel);
+
+    for (auto& instance : instances) {
+        updateNodes(instance.nodes, instance.skeletons);
+    }
+
     return true;
 }
 
