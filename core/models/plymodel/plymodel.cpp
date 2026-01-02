@@ -21,7 +21,7 @@ PlyModel::PlyModel(
     const math::vec4& specularFactor,
     const float metallicFactor,
     const float roughnessFactor,
-    const const interfaces::Material::PbrWorkflow workflow) :
+    const interfaces::Material::PbrWorkflow workflow) :
     filename(filename)
 {
     type = interfaces::Model::VertexType::baseSimple;

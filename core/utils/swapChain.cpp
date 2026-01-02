@@ -24,7 +24,8 @@ VkResult SwapChain::reset(const PhysicalDevice* pdevice, Window* pwindow, VkSurf
 
     attachments.clear();
     for (const auto& image: swapChainKHR.images()){
-        auto& attachment = attachments.emplace_back();
+        attachments.emplace_back();
+        auto& attachment = attachments.back();
         attachment.image = image;
         attachment.imageView = utils::vkDefault::ImageView(device->device(), attachment.image, VK_IMAGE_VIEW_TYPE_2D, surfaceFormat.format, VK_IMAGE_ASPECT_COLOR_BIT, 1, 0, 1);
     }
@@ -34,13 +35,17 @@ VkResult SwapChain::reset(const PhysicalDevice* pdevice, Window* pwindow, VkSurf
 }
 
 VkResult SwapChain::present(VkSemaphore waitSemaphore, ImageIndex imageIndex) const {
+    const VkSwapchainKHR sc = swapChainKHR;
+    const uint32_t idx = static_cast<uint32_t>(imageIndex);
+
     VkPresentInfoKHR presentInfo{};
         presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
         presentInfo.waitSemaphoreCount = 1;
         presentInfo.pWaitSemaphores = &waitSemaphore;
         presentInfo.swapchainCount = 1;
-        presentInfo.pSwapchains = swapChainKHR;
-        presentInfo.pImageIndices = reinterpret_cast<const uint32_t*>(&imageIndex);
+        presentInfo.pSwapchains = &sc;
+        presentInfo.pImageIndices = &idx;
+
     return vkQueuePresentKHR(device->device()(0, 0), &presentInfo);
 }
 
@@ -49,7 +54,7 @@ SwapChain::operator const VkSwapchainKHR&() const {
 }
 
 const VkImageView& SwapChain::imageView(ImageIndex imageIndex) const {
-    return attachments[imageIndex].imageView;
+    return attachments[static_cast<size_t>(imageIndex)].imageView;
 }
 
 utils::vkDefault::ImageInfo SwapChain::info() const { return imageInfo;}
@@ -69,12 +74,13 @@ std::vector<uint32_t> SwapChain::makeScreenshot(ImageIndex imageIndex) const {
 
     Buffer cache(*device, device->device(), sizeof(uint32_t) * imageInfo.Extent.width * imageInfo.Extent.height, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    VkCommandBuffer commandBuffer = singleCommandBuffer::create(device->device(),commandPool);
-    texture::transitionLayout(commandBuffer, attachments.at(imageIndex).image, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_REMAINING_MIP_LEVELS, 0, 1);
-    texture::copy(commandBuffer, attachments.at(imageIndex).image, cache, { imageInfo.Extent.width, imageInfo.Extent.height, 1}, 1);
-    texture::transitionLayout(commandBuffer, attachments.at(imageIndex).image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_REMAINING_MIP_LEVELS, 0, 1);
-    singleCommandBuffer::submit(device->device(),device->device()(0,0),commandPool,&commandBuffer);
+    VkCommandBuffer commandBuffer = singleCommandBuffer::create(device->device(), commandPool);
+    texture::transitionLayout(commandBuffer, attachments.at(static_cast<size_t>(imageIndex)).image, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_REMAINING_MIP_LEVELS, 0, 1);
+    texture::copy(commandBuffer, attachments.at(static_cast<size_t>(imageIndex)).image, cache, { imageInfo.Extent.width, imageInfo.Extent.height, 1}, 1);
+    texture::transitionLayout(commandBuffer, attachments.at(static_cast<size_t>(imageIndex)).image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_REMAINING_MIP_LEVELS, 0, 1);
+    singleCommandBuffer::submit(device->device(), device->device()(0,0), commandPool, &commandBuffer);
 
+    CHECK_M(cache.map() != nullptr, std::string("[ SwapChain::makeScreenshot ] cache buffer not mapped"));
     std::memcpy(buffer.data(), cache.map(), cache.size());
 
     return buffer;

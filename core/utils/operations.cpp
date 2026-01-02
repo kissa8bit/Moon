@@ -9,10 +9,11 @@
 #include <fstream>
 #include <algorithm>
 #include <iostream>
-#include <string.h>
+#include <cstring>
 #include <unordered_map>
 
 #define ONLYDEVICELOCALHEAP
+#define THROW_EXEPTION
 
 namespace moon::utils {
 
@@ -110,7 +111,7 @@ uint32_t physicalDevice::findMemoryTypeIndex(VkPhysicalDevice physicalDevice, ui
 
 #ifdef ONLYDEVICELOCALHEAP
     for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++){
-        if ((memoryTypeBits & (1 << i)) && (memoryProperties.memoryTypes[i].propertyFlags & properties) == properties){
+        if ((memoryTypeBits & (1u << i)) && (memoryProperties.memoryTypes[i].propertyFlags & properties) == properties){
             if(memoryProperties.memoryTypes[i].heapIndex == deviceLocalHeapIndex){
                 memoryTypeIndex.push_back(i);
 			}
@@ -120,7 +121,7 @@ uint32_t physicalDevice::findMemoryTypeIndex(VkPhysicalDevice physicalDevice, ui
 
     if(memoryTypeIndex.size() == 0){
 		for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++){
-		    if ((memoryTypeBits & (1 << i)) && (memoryProperties.memoryTypes[i].propertyFlags & properties) == properties){
+		    if ((memoryTypeBits & (1u << i)) && (memoryProperties.memoryTypes[i].propertyFlags & properties) == properties){
 				memoryTypeIndex.push_back(i);
 		    }
     	}
@@ -370,21 +371,31 @@ void texture::transitionLayout(VkCommandBuffer commandBuffer, VkImage image, VkI
         {VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, {VK_ACCESS_TRANSFER_READ_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT}}
     };
 
+    auto getDesc = [&layoutDescription](VkImageLayout layout) -> std::pair<VkAccessFlags, VkPipelineStageFlags> {
+        if (auto it = layoutDescription.find(layout); it != layoutDescription.end()) {
+            return it->second;
+        }
+        return { 0u, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT };
+    };
+
+    const auto srcDesc = getDesc(oldLayout);
+    const auto dstDesc = getDesc(newLayout);
+
     VkImageMemoryBarrier barrier{};
-        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        barrier.oldLayout = oldLayout;
-        barrier.newLayout = newLayout;
-        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.image = image;
-        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        barrier.subresourceRange.baseMipLevel = 0;
-        barrier.subresourceRange.levelCount = mipLevels;
-        barrier.subresourceRange.baseArrayLayer = baseArrayLayer;
-        barrier.subresourceRange.layerCount = arrayLayers;
-        barrier.srcAccessMask = layoutDescription[oldLayout].first;
-        barrier.dstAccessMask = layoutDescription[newLayout].first;
-    vkCmdPipelineBarrier(commandBuffer, layoutDescription[oldLayout].second, layoutDescription[newLayout].second, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout = oldLayout;
+    barrier.newLayout = newLayout;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = image;
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseMipLevel = 0;
+    barrier.subresourceRange.levelCount = mipLevels;
+    barrier.subresourceRange.baseArrayLayer = baseArrayLayer;
+    barrier.subresourceRange.layerCount = arrayLayers;
+    barrier.srcAccessMask = srcDesc.first;
+    barrier.dstAccessMask = dstDesc.first;
+    vkCmdPipelineBarrier(commandBuffer, srcDesc.second, dstDesc.second, 0, 0, nullptr, 0, nullptr, 1, &barrier);
 }
 
 void texture::copy(VkCommandBuffer commandBuffer, VkImage srcImage, VkImage dstImage, VkExtent3D extent, uint32_t layerCount) {
@@ -535,7 +546,11 @@ void texture::blitDown(VkCommandBuffer commandBuffer, VkImage srcImage, uint32_t
         blit.srcSubresource.baseArrayLayer = baseArrayLayer;
         blit.srcSubresource.layerCount = layerCount;
         blit.dstOffsets[0] = {0, 0, 0};
-        blit.dstOffsets[1] = {static_cast<int32_t>((width/blitFactor > 1) ? (width/blitFactor) : 1),static_cast<int32_t>((height/blitFactor > 1) ? (height/blitFactor) : 1), 1};
+        blit.dstOffsets[1] = {
+            static_cast<int32_t>((width / blitFactor) > 1.0f ? static_cast<int32_t>(width / blitFactor) : 1),
+            static_cast<int32_t>((height / blitFactor) > 1.0f ? static_cast<int32_t>(height / blitFactor) : 1),
+            1
+        }; 
         blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         blit.dstSubresource.mipLevel = dstMipLevel;
         blit.dstSubresource.baseArrayLayer = baseArrayLayer;
@@ -619,10 +634,16 @@ VkPresentModeKHR swapChain::queryingPresentMode(const std::vector<VkPresentModeK
 VkExtent2D swapChain::queryingExtent(Window* window, const VkSurfaceCapabilitiesKHR& capabilities) {
     if(!CHECK_M(window, "[ swapChain::queryingExtent ] : window is nullptr")) return{};
     const auto [width, height] = window->getFramebufferSize();
-    VkExtent2D actualExtent = (capabilities.currentExtent.width != UINT32_MAX && capabilities.currentExtent.height != UINT32_MAX)
-    ? capabilities.currentExtent
-    : VkExtent2D{   actualExtent.width = std::clamp(static_cast<uint32_t>(width), capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
-                    actualExtent.height = std::clamp(static_cast<uint32_t>(height), capabilities.minImageExtent.height, capabilities.maxImageExtent.height)};
+
+    VkExtent2D actualExtent;
+    if (capabilities.currentExtent.width != UINT32_MAX && capabilities.currentExtent.height != UINT32_MAX) {
+        actualExtent = capabilities.currentExtent;
+    }
+    else {
+        actualExtent.width = std::clamp(static_cast<uint32_t>(width), capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+        actualExtent.height = std::clamp(static_cast<uint32_t>(height), capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+    }
+
     return actualExtent;
 }
 
@@ -656,11 +677,15 @@ VkFormat image::depthStencilFormat(VkPhysicalDevice physicalDevice)
 std::vector<char> shaderModule::readFile(const std::filesystem::path& filename) {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
-    if (!file.is_open()) {
-        std::cout << "Failed to open file " << filename.string() << std::endl;
-        throw std::runtime_error("failed to open file!");
+    if (!CHECK_M(file.is_open(), "[ shaderModule::readFile ] : failed to open file " + filename.string())) {
+        return std::vector<char>{};
     }
-    size_t fileSize = static_cast<size_t>(file.tellg());
+    std::streampos pos = file.tellg();
+    if (!CHECK_M(pos != std::streampos(-1), "[ shaderModule::readFile ] : failed to determine file size " + filename.string())) {
+        file.close();
+        return std::vector<char>{};
+    }
+    size_t fileSize = static_cast<size_t>(pos);
     std::vector<char> buffer(fileSize);
     file.seekg(0);
     file.read(buffer.data(), fileSize);
@@ -670,6 +695,7 @@ std::vector<char> shaderModule::readFile(const std::filesystem::path& filename) 
 }
 
 VkShaderModule shaderModule::create(VkDevice device, const std::vector<char>& code) {
+    CHECK_M((code.size() % 4) == 0, std::string("[ shaderModule::create ] shader code size not multiple of 4"));
     VkShaderModule shaderModule{VK_NULL_HANDLE};
     VkShaderModuleCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;

@@ -3,12 +3,14 @@
 #include "operations.h"
 
 #include <iostream>
+#include <iomanip>
+#include <algorithm>
 
 namespace moon::utils {
 
 Memory::~Memory() {
 #ifndef DEBUG_PRINT_DISABLE
-    instance().status();
+    status();
 #endif
 };
 
@@ -24,14 +26,20 @@ VkResult Memory::allocate(VkPhysicalDevice physicalDevice, VkDevice device, VkMe
         allocInfo.memoryTypeIndex = physicalDevice::findMemoryTypeIndex(physicalDevice, requirements.memoryTypeBits, properties);
     const VkResult result = CHECK(vkAllocateMemory(device, &allocInfo, nullptr, memory));
     if (result == VK_SUCCESS) {
-        memoryMap[*memory] = Description{ requirements.alignment, requirements.size, name };
-        totalMemoryUsed += requirements.alignment + requirements.size;
+        uint64_t align = requirements.alignment ? requirements.alignment : 1u;
+        uint64_t requested = requirements.size;
+        uint64_t allocated = ((requested + align - 1) / align) * align;
+
+        std::lock_guard<std::mutex> lock(mtx);
+        memoryMap[*memory] = Description{ align, allocated, name };
+        totalMemoryUsed += allocated;
     }
 
     return result;
 }
 
 void Memory::nameMemory(VkDeviceMemory memory, const std::string& name) {
+    std::lock_guard<std::mutex> lock(mtx);
     if (auto memIt = memoryMap.find(memory); memIt != memoryMap.end()) {
         auto& desc = memIt->second;
         desc.name = name;
@@ -39,19 +47,21 @@ void Memory::nameMemory(VkDeviceMemory memory, const std::string& name) {
 }
 
 void Memory::free(VkDeviceMemory memory) {
+    std::lock_guard<std::mutex> lock(mtx);
     if (auto memIt = memoryMap.find(memory); memIt != memoryMap.end()) {
         const auto& desc = memIt->second;
-        totalMemoryUsed -= desc.alignment + desc.size;
+        totalMemoryUsed -= desc.size;
         memoryMap.erase(memory);
     }
 }
 
 void Memory::status() {
+    std::lock_guard<std::mutex> lock(mtx);
     for (const auto& [memory, desc] : memoryMap) {
-        std::cout << std::setw(16) << memory << "\t"
-                  << std::setw(16) << memoryMap[memory].alignment << "\t"
-                  << std::setw(16) << memoryMap[memory].size << "\t"
-                  << std::setw(16) << memoryMap[memory].name << std::endl;
+        std::cout << std::setw(16) << (uint64_t)memory << "\t"
+                  << std::setw(16) << desc.alignment << "\t"
+                  << std::setw(16) << desc.size << "\t"
+                  << std::setw(16) << desc.name << std::endl;
     }
 
     std::cout << "Total allocations : " << memoryMap.size() << std::endl;

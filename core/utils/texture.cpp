@@ -63,7 +63,11 @@ VkResult TextureImage::create(
         const uint32_t&         imageCount,
         const TextureSampler&   textureSampler)
 {
-    mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
+    if (width <= 0 || height <= 0) {
+        throw std::runtime_error("[TextureImage::create] : invalid texture size (width/height must be > 0)");
+    }
+
+    mipLevels = static_cast<uint32_t>(std::floor(std::log2(static_cast<float>(std::max(width, height))))) + 1;
     image = utils::vkDefault::Image(physicalDevice,
                                     device,
                                     flags,
@@ -104,7 +108,7 @@ VkResult TextureImage::create(
     samplerInfo.maxLod = static_cast<float>(mipLevels);
     samplerInfo.mipLodBias = 0.0f;
 
-    VkImageViewType type = flags == VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
+    const VkImageViewType type = (flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
     imageView = utils::vkDefault::ImageView(device, image, type, format, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels, 0, imageCount);
     sampler = utils::vkDefault::Sampler(device, samplerInfo);
     return VK_SUCCESS;
@@ -170,8 +174,8 @@ Texture::Texture(
 void Texture::setMipLevel(float mipLevel){image.mipLevel = mipLevel;}
 void Texture::setTextureFormat(VkFormat format){image.format = format;}
 
-const VkImageView Texture::imageView() const {return image.imageView;}
-const VkSampler Texture::sampler() const {return image.sampler;}
+VkImageView Texture::imageView() const {return image.imageView;}
+VkSampler Texture::sampler() const {return image.sampler;}
 
 
 VkDescriptorImageInfo Texture::descriptorImageInfo() const {

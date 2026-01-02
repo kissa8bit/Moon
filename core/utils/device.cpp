@@ -4,7 +4,10 @@
 namespace moon::utils {
 
 Device::~Device() {
-    if (descriptor) vkDestroyDevice(descriptor, nullptr); descriptor = VK_NULL_HANDLE;
+    if (descriptor) {
+        vkDestroyDevice(descriptor, nullptr);
+    }
+    descriptor = VK_NULL_HANDLE;
 }
 
 Device::Device(Device&& other) noexcept {
@@ -43,13 +46,18 @@ Device::Device(VkPhysicalDevice physicalDevice, const PhysicalDevice::Properties
     createInfo.pQueueCreateInfos = queueCreateInfos.data();
     createInfo.pEnabledFeatures = &properties.deviceFeatures;
 
-    const auto pEnabledExtensionNames = properties.deviceExtensions.data()->c_str();
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(properties.deviceExtensions.size());
-    createInfo.ppEnabledExtensionNames = &pEnabledExtensionNames;
+    std::vector<const char*> enabledExtensionNames;
+    enabledExtensionNames.reserve(properties.deviceExtensions.size());
+    for (const auto& ext : properties.deviceExtensions) enabledExtensionNames.push_back(ext.c_str());
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(enabledExtensionNames.size());
+    createInfo.ppEnabledExtensionNames = enabledExtensionNames.empty() ? nullptr : enabledExtensionNames.data();
+
 #ifndef DEBUG_PRINT_DISABLE
-    const auto pEnabledLayerNames = properties.validationLayers.data()->c_str();
-    createInfo.enabledLayerCount = static_cast<uint32_t>(properties.validationLayers.size());
-    createInfo.ppEnabledLayerNames = &pEnabledLayerNames;
+    std::vector<const char*> enabledLayerNames;
+    enabledLayerNames.reserve(properties.validationLayers.size());
+    for (const auto& layer : properties.validationLayers) enabledLayerNames.push_back(layer.c_str());
+    createInfo.enabledLayerCount = static_cast<uint32_t>(enabledLayerNames.size());
+    createInfo.ppEnabledLayerNames = enabledLayerNames.empty() ? nullptr : enabledLayerNames.data();
 #endif
 
     CHECK(vkCreateDevice(physicalDevice, &createInfo, nullptr, &descriptor));

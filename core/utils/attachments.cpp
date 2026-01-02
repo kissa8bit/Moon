@@ -20,10 +20,10 @@ Attachment& Attachment::operator=(Attachment&& other) noexcept {
 };
 
 void Attachment::swap(Attachment& other) noexcept {
-    uint8_t buff[sizeof(Attachment)];
-    std::memcpy((void*)buff, (void*)&other, sizeof(Attachment));
-    std::memcpy((void*)&other, (void*)this, sizeof(Attachment));
-    std::memcpy((void*)this, (void*)buff, sizeof(Attachment));
+    std::swap(image, other.image);
+    std::swap(imageView, other.imageView);
+    std::swap(imageInfo, other.imageInfo);
+    std::swap(layout, other.layout);
 }
 
 Attachment::Attachment(VkPhysicalDevice physicalDevice, VkDevice device, const utils::vkDefault::ImageInfo& imageInfo, VkImageUsageFlags usage)
@@ -75,7 +75,18 @@ void Attachment::copyTo(VkCommandBuffer commandBuffer, VkBuffer bfr)
 void Attachment::clear(VkCommandBuffer commandBuffer, VkClearColorValue clearColorValue)
 {
     VkImageSubresourceRange ImageSubresourceRange{};
-    ImageSubresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    const auto depthFormats = image::depthFormats();
+    const bool isDepth = std::any_of(depthFormats.begin(), depthFormats.end(), [this](const VkFormat& format) { return imageInfo.Format == format; });
+    VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT;
+    if (isDepth) {
+        if (imageInfo.Format == VK_FORMAT_D32_SFLOAT_S8_UINT || imageInfo.Format == VK_FORMAT_D24_UNORM_S8_UINT) {
+            aspect = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+        } else {
+            aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
+        }
+    }
+
+    ImageSubresourceRange.aspectMask = aspect;
     ImageSubresourceRange.baseMipLevel = 0;
     ImageSubresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
     ImageSubresourceRange.baseArrayLayer = 0;
@@ -172,8 +183,8 @@ VkAttachmentDescription Attachments::depthDescription(VkFormat format)
         description.samples = VK_SAMPLE_COUNT_1_BIT;
         description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         description.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        description.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         description.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     return description;
@@ -186,8 +197,8 @@ VkAttachmentDescription Attachments::depthStencilDescription(VkFormat format)
         description.samples = VK_SAMPLE_COUNT_1_BIT;
         description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         description.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        description.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         description.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     return description;
@@ -235,45 +246,65 @@ bool AttachmentsDatabase::addAttachmentData(const std::string& id, bool enable, 
 }
 
 bool AttachmentsDatabase::enable(const std::string& id) const {
-    return attachmentsMap.at(id).enable;
+    auto it = attachmentsMap.find(id);
+    return it != attachmentsMap.end() && it->second.enable;
 }
 
 const Attachments* AttachmentsDatabase::get(const std::string& id) const{
-    return attachmentsMap.count(id) > 0 && attachmentsMap.at(id).enable ? attachmentsMap.at(id).pImages : nullptr;
+    auto it = attachmentsMap.find(id);
+    return (it != attachmentsMap.end() && it->second.enable) ? it->second.pImages : nullptr;
 }
 
 const Texture* AttachmentsDatabase::getEmpty(const std::string& id) const {
     const auto texid = id.empty() ? defaultEmptyTexture : id;
-    return emptyTexturesMap.count(texid) > 0 ? emptyTexturesMap.at(texid) : nullptr;
+    auto it = emptyTexturesMap.find(texid);
+    return it != emptyTexturesMap.end() ? it->second : nullptr;
 }
 
 VkImageView AttachmentsDatabase::imageView(const std::string& id, const uint32_t imageIndex, const std::optional<std::string>& emptyTextureId) const {
-    const auto emptyTexture = emptyTextureId ? emptyTexturesMap.at(*emptyTextureId) : emptyTexturesMap.at(defaultEmptyTexture);
+    const Texture* emptyTexture = getEmpty(emptyTextureId ? *emptyTextureId : std::string{});
     const auto attachment = get(id);
-
-    return attachment ? attachment->imageView(imageIndex) : emptyTexture->imageView();
+    if (attachment) {
+        return attachment->imageView(imageIndex);
+    }
+    if (emptyTexture) {
+        return emptyTexture->imageView();
+    }
+    return VK_NULL_HANDLE;
 }
 
 VkSampler AttachmentsDatabase::sampler(const std::string& id, const std::optional<std::string>& emptyTextureId) const {
-    const auto emptyTexture = emptyTextureId ? emptyTexturesMap.at(*emptyTextureId) : emptyTexturesMap.at(defaultEmptyTexture);
+    const Texture* emptyTexture = getEmpty(emptyTextureId ? *emptyTextureId : std::string{});
     const auto attachment = get(id);
-
-    return attachment ? attachment->sampler() : emptyTexture->sampler();
+    if (attachment) {
+        return attachment->sampler();
+    }
+    if (emptyTexture) {
+        return emptyTexture->sampler();
+    }
+    return VK_NULL_HANDLE;
 }
 
 VkDescriptorImageInfo AttachmentsDatabase::descriptorImageInfo(const std::string& id, const uint32_t imageIndex, const std::optional<std::string>& emptyTextureId) const{
-    VkDescriptorImageInfo res;
+    VkDescriptorImageInfo res{};
     res.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     res.imageView = imageView(id, imageIndex, emptyTextureId);
-    res.sampler = sampler(id);
+    res.sampler = sampler(id, emptyTextureId);
     return res;
 }
 
 VkDescriptorImageInfo AttachmentsDatabase::descriptorEmptyInfo(const std::string& id) const {
-    VkDescriptorImageInfo res;
-    res.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    res.imageView = getEmpty(id)->imageView();
-    res.sampler = getEmpty(id)->sampler();
+    VkDescriptorImageInfo res{};
+    const Texture* empty = getEmpty(id);
+    if (empty) {
+        res.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        res.imageView = empty->imageView();
+        res.sampler = empty->sampler();
+    } else {
+        res.imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        res.imageView = VK_NULL_HANDLE;
+        res.sampler = VK_NULL_HANDLE;
+    }
     return res;
 }
 

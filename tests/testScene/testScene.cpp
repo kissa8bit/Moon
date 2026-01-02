@@ -39,6 +39,8 @@ testScene::testScene(moon::graphicsManager::GraphicsManager& app, moon::tests::G
     mouse(window),
     board(std::make_shared<controller>(window, glfwGetKey))
 {
+    mouse.control->sensitivity = 0.01f;
+    board->sensitivity = 0.05f;
     create();
 }
 
@@ -142,6 +144,13 @@ void testScene::makeGui() {
         if (ImGui::Button("Update")) {
             window.windowResized() = true;
         }
+
+        ImGui::SetNextItemWidth(150.0f);
+        ImGui::SliderFloat("mouse sensitivity", &mouse.control->sensitivity, 0.0f, 5.0f);
+
+        ImGui::SetNextItemWidth(150.0f);
+        ImGui::SliderFloat("board sensitivity", &board->sensitivity, 0.0f, 5.0f);
+
         ImGui::TreePop();
     }
 
@@ -519,7 +528,7 @@ void testScene::createLight()
 
 void testScene::mouseEvent()
 {
-    double sensitivity = mouse.control->sensitivity * frameTime;
+    const float sensitivity = mouse.control->sensitivity;
 
     const auto& cursorBuffer = mouse.cursor->read();
     const auto& cursorInfo = cursorBuffer.info;
@@ -571,7 +580,7 @@ void testScene::mouseEvent()
 
 void testScene::keyboardEvent()
 {
-    float sensitivity = 8.0f * frameTime;
+    const float sensitivity = board->sensitivity;
 
     if (auto pBaseCamera = dynamic_cast<moon::entities::BaseCamera*>(cameras["base"].get()); pBaseCamera) {
         if (!board->pressed(GLFW_KEY_LEFT_CONTROL) && board->pressed(GLFW_KEY_A)) cameras["base"]->translate(-sensitivity * pBaseCamera->getViewMatrix()[0].dvec());

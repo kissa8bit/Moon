@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <list>
 #include <map>
+#include <limits>
 
 #include "operations.h"
 #include "queueFamily.h"
@@ -326,10 +327,12 @@ public:
 
 class Buffer {
 private:
+	constexpr static VkDeviceSize maxsize = std::numeric_limits<VkDeviceSize>::max();
+
 	VkDeviceMemory memory{ VK_NULL_HANDLE };
 	bool updateFlag{ true };
 	void* memorymap{ nullptr };
-	size_t memorysize{ 0 };
+	VkDeviceSize memorysize{ 0 };
 
 	VKDEFAULT_INIT_DESCRIPTOR(Buffer, VkBuffer);
 
@@ -341,8 +344,7 @@ public:
 		VkBufferUsageFlags              usage,
 		VkMemoryPropertyFlags           properties);
 
-	void copy(const void* data);
-	void copy(const void* data, uint32_t offset, uint32_t size);
+	void copy(const void* data, VkDeviceSize offset = 0, VkDeviceSize size = maxsize);
 	size_t size() const;
 	void* &map();
 	void raiseFlag();

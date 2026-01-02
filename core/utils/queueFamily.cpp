@@ -7,7 +7,9 @@ QueueFamily::QueueFamily() = default;
 QueueFamily::QueueFamily(VkQueueFamilyProperties queueFamilyProperties, VkBool32 presentSupport)
     : queueFamilyProperties(queueFamilyProperties), presentSupport(presentSupport)
 {
-    queuePriorities.resize(queueFamilyProperties.queueCount, 1.0f / queueFamilyProperties.queueCount);
+    const auto qcount = queueFamilyProperties.queueCount;
+    const float priority = qcount ? (1.0f / static_cast<float>(qcount)) : 0.0f;
+    queuePriorities.assign(static_cast<size_t>(qcount), priority);
 }
 
 QueueFamily::QueueFamily(const QueueFamily & other)
@@ -17,7 +19,9 @@ QueueFamily::QueueFamily(const QueueFamily & other)
 QueueFamily& QueueFamily::operator=(const QueueFamily & other) {
     queueFamilyProperties = other.queueFamilyProperties;
     presentSupport = other.presentSupport;
-    queuePriorities.resize(queueFamilyProperties.queueCount, 1.0f / queueFamilyProperties.queueCount);
+    const auto qcount = queueFamilyProperties.queueCount;
+    const float priority = qcount ? (1.0f / static_cast<float>(qcount)) : 0.0f;
+    queuePriorities.assign(static_cast<size_t>(qcount), priority);
     return *this;
 }
 

@@ -15,37 +15,57 @@ PipelineStage::PipelineStage(const std::vector<const vkDefault::CommandBuffers*>
 
     if (!CHECK_M(sizes.size() == 1, std::string("[PipelineStage::PipelineStage] input commandBuffers must be same size"))) return;
 
-    frames.resize(*sizes.begin());
-    for (const auto& fcb : commandBuffers) {
-        for (const auto& cb : *fcb) {
-            frames.at(&cb - &fcb->front()).commandBuffers.push_back(cb);
+    const size_t frameCount = *sizes.begin();
+    frames.resize(frameCount);
+
+    for (size_t idx = 0; idx < frameCount; ++idx) {
+        for (const auto& fcb : commandBuffers) {
+            frames[idx].commandBuffers.push_back((*fcb)[idx]);
         }
     }
 }
 
 VkResult PipelineStage::submit(uint32_t frameIndex) const {
     const auto& frame = frames.at(frameIndex);
-    std::vector<VkPipelineStageFlags> waitStagesMasks(frame.wait.size(), waitStagesMask);
-    vkDefault::VkSemaphores signals(frame.signal.begin(), frame.signal.end());
+
+    const uint32_t waitCount = static_cast<uint32_t>(frame.wait.size());
+    std::vector<VkPipelineStageFlags> waitStagesMasks;
+    const VkPipelineStageFlags* pWaitDstStageMask = nullptr;
+    const VkSemaphore* pWaitSemaphores = nullptr;
+    if (waitCount > 0) {
+        waitStagesMasks.assign(waitCount, waitStagesMask);
+        pWaitDstStageMask = waitStagesMasks.data();
+        pWaitSemaphores = frame.wait.data();
+    }
+
+    std::vector<VkSemaphore> signalSemaphores;
+    signalSemaphores.reserve(frame.signal.size());
+    for (const auto& sem : frame.signal) {
+        signalSemaphores.push_back(sem);
+    }
+    const uint32_t signalCount = static_cast<uint32_t>(signalSemaphores.size());
+    const VkSemaphore* pSignalSemaphores = signalCount > 0 ? signalSemaphores.data() : nullptr;
+
     VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.waitSemaphoreCount = static_cast<uint32_t>(frame.wait.size());
-        submitInfo.pWaitSemaphores = frame.wait.data();
-        submitInfo.pWaitDstStageMask = waitStagesMasks.data();
+        submitInfo.waitSemaphoreCount = waitCount;
+        submitInfo.pWaitSemaphores = pWaitSemaphores;
+        submitInfo.pWaitDstStageMask = pWaitDstStageMask;
         submitInfo.commandBufferCount = static_cast<uint32_t>(frame.commandBuffers.size());
         submitInfo.pCommandBuffers = frame.commandBuffers.data();
-        submitInfo.signalSemaphoreCount = static_cast<uint32_t>(signals.size());
-        submitInfo.pSignalSemaphores = signals.data();
+        submitInfo.signalSemaphoreCount = signalCount;
+        submitInfo.pSignalSemaphores = pSignalSemaphores;
     return vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
 }
 
 PipelineNode::PipelineNode(VkDevice device, PipelineStages&& instages, PipelineNode* next) : stages(std::move(instages)), next(next) {
     for (auto& currentStage : stages) {
-        for (auto& frame : currentStage.frames) {
+        for (size_t frameIndex = 0; frameIndex < currentStage.frames.size(); ++frameIndex) {
+            auto& frame = currentStage.frames[frameIndex];
             if (next) {
-                const auto frameIndex = &frame - &currentStage.frames.front();
                 for (auto& nextStage : next->stages) {
-                    const auto& signal = frame.signal.emplace_back(utils::vkDefault::Semaphore(device));
+                    frame.signal.emplace_back(utils::vkDefault::Semaphore(device));
+                    const auto& signal = frame.signal.back();
                     nextStage.frames.at(frameIndex).wait.push_back(signal);
                 }
             } else {

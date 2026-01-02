@@ -93,8 +93,8 @@ public:
     void setMipLevel(float mipLevel);
     void setTextureFormat(VkFormat format);
 
-    const VkImageView imageView() const;
-    const VkSampler sampler() const;
+    VkImageView imageView() const;
+    VkSampler sampler() const;
     VkDescriptorImageInfo descriptorImageInfo() const;
 
     static Texture empty(const PhysicalDevice&, VkCommandPool, bool isBlack = true);

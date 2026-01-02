@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include <mutex>
 
 namespace moon::utils {
 
@@ -18,6 +19,7 @@ private:
 
     uint64_t totalMemoryUsed{ 0 };
     std::unordered_map<VkDeviceMemory, Description> memoryMap;
+    std::mutex mtx;
 
     Memory() = default;
     ~Memory();

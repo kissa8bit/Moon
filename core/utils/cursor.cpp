@@ -1,5 +1,10 @@
 #include "cursor.h"
 
+#include <cstring>
+#include <limits>
+
+#include "operations.h"
+
 namespace moon::utils {
 
 void Cursor::create(VkPhysicalDevice physicalDevice, VkDevice device) {
@@ -21,7 +26,8 @@ void Cursor::update(const float& x, const float& y) {
 }
 
 const CursorBuffer& Cursor::read() {
-    std::memcpy((void*)&cursorBuffer, (void*)buffer.map(), sizeof(CursorBuffer));
+    CHECK_M(buffer.map() != nullptr, std::string("[ Cursor::read ] buffer is not host visible or not mapped"));
+    std::memcpy((void*)&cursorBuffer, buffer.map(), sizeof(CursorBuffer));
     return cursorBuffer;
 }
 

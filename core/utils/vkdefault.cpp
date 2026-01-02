@@ -488,17 +488,23 @@ vkDefault::DescriptorPool::DescriptorPool(const VkDevice& device, const VkDescri
 }
 
 vkDefault::DescriptorPool::DescriptorPool(const VkDevice& device, const std::vector<const vkDefault::DescriptorSetLayout*>& descriptorSetLayouts, const uint32_t descriptorsCount) : device(device) {
-    uint32_t maxSets = 0;
-    std::vector<VkDescriptorPoolSize> poolSizes;
+    std::unordered_map<VkDescriptorType, uint32_t> aggregated;
     for (const vkDefault::DescriptorSetLayout* descriptorSetLayout : descriptorSetLayouts) {
         for (const VkDescriptorSetLayoutBinding& binding : descriptorSetLayout->bindings) {
-            VkDescriptorPoolSize descriptorPoolSize;
-                descriptorPoolSize.type = binding.descriptorType;
-                descriptorPoolSize.descriptorCount = static_cast<uint32_t>(binding.descriptorCount * descriptorsCount);
-                maxSets += descriptorPoolSize.descriptorCount;
-            poolSizes.push_back(descriptorPoolSize);
+            aggregated[binding.descriptorType] += static_cast<uint32_t>(binding.descriptorCount) * descriptorsCount;
         }
     }
+
+    std::vector<VkDescriptorPoolSize> poolSizes;
+    uint32_t maxSets = descriptorsCount * static_cast<uint32_t>(descriptorSetLayouts.size());
+    poolSizes.reserve(aggregated.size());
+    for (const auto& [type, count] : aggregated) {
+        VkDescriptorPoolSize descriptorPoolSize{};
+        descriptorPoolSize.type = type;
+        descriptorPoolSize.descriptorCount = count;
+        poolSizes.push_back(descriptorPoolSize);
+    }
+
     VkDescriptorPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
@@ -602,16 +608,23 @@ vkDefault::Buffer::Buffer(
     }
 }
 
-void vkDefault::Buffer::copy(const void* data) {
-    std::memcpy(memorymap, data, memorysize);
-}
-
-void vkDefault::Buffer::copy(const void* data, uint32_t offset, uint32_t size) {
-    if (memorymap) {
-        vkUnmapMemory(device, memory);
+void vkDefault::Buffer::copy(const void* data, VkDeviceSize offset, VkDeviceSize size) {
+    if (size == 0) {
+        return;
     }
-    CHECK(vkMapMemory(device, memory, offset, size, 0, &memorymap));
-    std::memcpy(memorymap, data, size);
+
+    CHECK_M(memorymap != nullptr, std::string("[ vkDefault::Buffer::copy(offset) ] buffer is not host visible or not mapped"));
+
+    if (size == maxsize) {
+        size = memorysize;
+    }
+
+    CHECK_M(offset + size <= memorysize, std::string("[ vkDefault::Buffer::copy(offset) ] out of bounds"));
+
+    if (memorymap) {
+        auto dst = static_cast<uint8_t*>(memorymap) + offset;
+        std::memcpy(dst, data, size);
+    }
 }
 
 size_t vkDefault::Buffer::size() const {

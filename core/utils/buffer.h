@@ -14,17 +14,17 @@ namespace moon::utils {
 using Buffer = vkDefault::Buffer;
 using Buffers = std::vector<Buffer>;
 
-void createDeviceBuffer(VkPhysicalDevice physicalDevice, VkDevice device, VkCommandBuffer commandBuffer, size_t bufferSize, void* data, VkBufferUsageFlagBits usage, Buffer& cache, Buffer& deviceLocal);
+void createDeviceBuffer(VkPhysicalDevice physicalDevice, VkDevice device, VkCommandBuffer commandBuffer, size_t bufferSize, const void* data, VkBufferUsageFlagBits usage, Buffer& cache, Buffer& deviceLocal);
 
 struct UniformBuffer {
-    void* host{ nullptr };
+    const void* host{ nullptr };
     utils::Buffers cache;
     utils::Buffers device;
     size_t size{ 0 };
 
     UniformBuffer() = default;
-    UniformBuffer(void* hostData, size_t dataSize);
-    UniformBuffer(const utils::PhysicalDevice& device, uint32_t imageCount, void* hostData, size_t dataSize);
+    UniformBuffer(const void* hostData, size_t dataSize);
+    UniformBuffer(const utils::PhysicalDevice& device, uint32_t imageCount, const void* hostData, size_t dataSize);
     UniformBuffer(UniformBuffer&&) noexcept;
     UniformBuffer& operator=(UniformBuffer&&) noexcept;
     void swap(UniformBuffer&) noexcept;

@@ -26,10 +26,12 @@ const utils::vkDefault::DescriptorSets& DepthMap::descriptorSets() const{
 }
 
 void DepthMap::update(bool enable){
+    CHECK_M(map.descriptorSets.size() == imageInfo.Count, std::string("[ DepthMap::update ] descriptorSets.size() mismatch with imageInfo.Count"));
+
     for (size_t i = 0; i < imageInfo.Count; i++) {
-        auto imageInfo = enable && map.attachments.count() ? map.attachments.descriptorImageInfo(i) : emptyTextureWhite.descriptorImageInfo();
+        const VkDescriptorImageInfo info = (enable && map.attachments.count()) ? map.attachments.descriptorImageInfo(static_cast<uint32_t>(i)) : emptyTextureWhite.descriptorImageInfo();
         utils::descriptorSet::Writes writes;
-        utils::descriptorSet::write(writes, map.descriptorSets[i], imageInfo);
+        utils::descriptorSet::write(writes, map.descriptorSets[i], info);
         utils::descriptorSet::update(device, writes);
     }
 }
@@ -39,11 +41,9 @@ const Attachments& DepthMap::attachments() const {
 }
 
 moon::utils::vkDefault::DescriptorSetLayout DepthMap::createDescriptorSetLayout(VkDevice device) {
-    moon::utils::vkDefault::DescriptorSetLayout descriptorSetLayout;
     std::vector<VkDescriptorSetLayoutBinding> binding;
     binding.push_back(vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(binding.size()), 1));
-    descriptorSetLayout = utils::vkDefault::DescriptorSetLayout(device, binding);
-    return descriptorSetLayout;
+    return utils::vkDefault::DescriptorSetLayout(device, binding);
 }
 
 }
