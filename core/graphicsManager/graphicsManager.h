@@ -46,14 +46,14 @@ private:
     VkResult createSyncObjects();
 
 public:
-    GraphicsManager(utils::Window* window, int32_t imageCount = -1, int32_t resourceCount = -1, const VkPhysicalDeviceFeatures& deviceFeatures = {});
+    GraphicsManager(utils::Window* window, uint32_t imageCount = 0, uint32_t resourceCount = 1, const VkPhysicalDeviceFeatures& deviceFeatures = {});
 
-    VkInstance getInstance() const;
-    VkExtent2D getImageExtent() const;
-    utils::ResourceIndex   getResourceIndex() const;
-    uint32_t   getResourceCount() const;
-    utils::ImageIndex   getImageIndex() const;
-    uint32_t   getImageCount() const;
+    VkInstance              getInstance() const;
+    VkExtent2D              getImageExtent() const;
+    utils::ResourceIndex    getResourceIndex() const;
+    uint32_t                getResourceCount() const;
+    utils::ImageIndex       getImageIndex() const;
+    uint32_t                getImageCount() const;
 
     void setDevice(utils::PhysicalDevice::Index deviceIndex);
     void setGraphics(GraphicsInterface* graphics);

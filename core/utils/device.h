@@ -15,11 +15,11 @@ using Devices = std::vector<Device>;
 
 class PhysicalDevice{
 public:
-    using Index = uint32_t;
+    using Index = uint64_t;
     using Map = std::map<Index, PhysicalDevice>;
 
     struct Properties {
-        Index index{ 0x7FFFFFFF };
+        Index index{ 0xFFFFFFFFFFFFFFFF };
         VkPhysicalDeviceType type{ VK_PHYSICAL_DEVICE_TYPE_MAX_ENUM };
         VkPhysicalDeviceFeatures deviceFeatures{};
         std::string name{};
@@ -46,7 +46,7 @@ public:
     bool presentSupport(VkSurfaceKHR surface);
 
     operator VkPhysicalDevice() const;
-    const Device& device(uint32_t index = 0) const;
+    const Device& device(Index index = 0) const;
     const Properties& properties() const;
 };
 

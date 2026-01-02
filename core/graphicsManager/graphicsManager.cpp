@@ -5,12 +5,13 @@
 
 namespace moon::graphicsManager {
 
-GraphicsManager::GraphicsManager(utils::Window* window, int32_t imageCount, int32_t resourceCount, const VkPhysicalDeviceFeatures& deviceFeatures) :
+GraphicsManager::GraphicsManager(utils::Window* window, uint32_t imageCount, uint32_t resourceCount, const VkPhysicalDeviceFeatures& deviceFeatures) :
     imageCount(imageCount),
     resourceCount(resourceCount) {
     moon::utils::debug::checkResult(createInstance(window), "in file " + std::string(__FILE__) + ", line " + std::to_string(__LINE__));
     moon::utils::debug::checkResult(createDevice(deviceFeatures), "in file " + std::string(__FILE__) + ", line " + std::to_string(__LINE__));
     moon::utils::debug::checkResult(createSurface(window), "in file " + std::string(__FILE__) + ", line " + std::to_string(__LINE__));
+    CHECK_M(resourceCount > 0, "[ GraphicsManager::GraphicsManager ] resourceCount must be greater than 0");
     reset(window);
 }
 
@@ -87,9 +88,13 @@ VkResult GraphicsManager::createDevice(const VkPhysicalDeviceFeatures& deviceFea
         }
     }
 
-    if(!activeDevice) return VK_ERROR_DEVICE_LOST;
+    if (!CHECK_M(activeDevice, "[ GraphicsManager::createDevice ] no suitable device found")) {
+        return VK_ERROR_DEVICE_LOST;
+    }
 
-    activeDevice->createDevice({ {0,2} });
+    if (!CHECK_M(activeDevice->createDevice({ {0, 2} }) == VK_SUCCESS, "[ GraphicsManager::createDevice ] failed to create PhysicalDevice")) {
+        return VK_ERROR_DEVICE_LOST;
+    }
 
     return VK_SUCCESS;
 }
@@ -129,6 +134,7 @@ void GraphicsManager::setDevice(utils::PhysicalDevice::Index deviceIndex){
 
 VkResult GraphicsManager::createSyncObjects(){
     CHECK_M(!devices.empty(), "[ GraphicsManager::createSyncObjects ] there are no created devices");
+    CHECK_M(resourceCount > 0, "[ GraphicsManager::GraphicsManager ] resourceCount must be greater than 0");
 
     VkResult result = VK_SUCCESS;
 
@@ -147,25 +153,29 @@ VkResult GraphicsManager::createSyncObjects(){
 
 VkResult GraphicsManager::checkNextFrame(){
 #define GM_CNF_RET(expr) if (auto result = CHECK(expr); result) return result;
-    GM_CNF_RET(vkWaitForFences(activeDevice->device(), 1, fences[resourceIndex], VK_TRUE, UINT64_MAX))
-    GM_CNF_RET(vkResetFences(activeDevice->device(), 1, fences[resourceIndex]))
-    GM_CNF_RET(swapChainKHR.acquireNextImage(availableSemaphores[resourceIndex], imageIndex))
+    GM_CNF_RET(vkWaitForFences(activeDevice->device(), 1, fences.at(resourceIndex), VK_TRUE, UINT64_MAX))
+    GM_CNF_RET(vkResetFences(activeDevice->device(), 1, fences.at(resourceIndex)))
+    GM_CNF_RET(swapChainKHR.acquireNextImage(availableSemaphores.at(resourceIndex), imageIndex))
     return VK_SUCCESS;
 #undef GM_CNF_RET
 }
 
 VkResult GraphicsManager::drawFrame(){
     for(auto graph : graphics){
-        graph->update(resourceIndex);
+        if (graph) {
+            graph->update(resourceIndex);
+        }
     }
     linker.update(resourceIndex, imageIndex);
 
-    utils::vkDefault::VkSemaphores waitSemaphores = {availableSemaphores[resourceIndex]};
+    utils::vkDefault::VkSemaphores waitSemaphores = {availableSemaphores.at(resourceIndex) };
     for(auto graph: graphics){
-        waitSemaphores = graph->submit(resourceIndex, waitSemaphores);
+        if (graph) {
+            waitSemaphores = graph->submit(resourceIndex, waitSemaphores);
+        }
     }
 
-    VkSemaphore linkerSemaphore = linker.submit(imageIndex, waitSemaphores, fences[resourceIndex], activeDevice->device()(0,0));
+    VkSemaphore linkerSemaphore = linker.submit(imageIndex, waitSemaphores, fences.at(resourceIndex), activeDevice->device()(0,0));
 
     resourceIndex = utils::ResourceIndex((resourceIndex + 1) % resourceCount);
 
@@ -176,8 +186,8 @@ VkResult GraphicsManager::deviceWaitIdle() const {
     return vkDeviceWaitIdle(activeDevice->device());
 }
 
-VkInstance      GraphicsManager::getInstance()      const {return instance;}
-VkExtent2D      GraphicsManager::getImageExtent()   const {return swapChainKHR.info().Extent;}
+VkInstance              GraphicsManager::getInstance()      const {return instance;}
+VkExtent2D              GraphicsManager::getImageExtent()   const {return swapChainKHR.info().Extent;}
 utils::ResourceIndex    GraphicsManager::getResourceIndex() const {return resourceIndex;}
 uint32_t                GraphicsManager::getResourceCount() const {return resourceCount;}
 utils::ImageIndex       GraphicsManager::getImageIndex()    const {return imageIndex;}

@@ -118,7 +118,7 @@ PhysicalDevice::PhysicalDevice(VkPhysicalDevice physicalDevice, VkPhysicalDevice
 
     VkPhysicalDeviceProperties physicalDeviceProperties;
     vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
-    props.index = physicalDeviceProperties.deviceID;
+    props.index = (static_cast<uint64_t>(physicalDeviceProperties.vendorID) << 32) | static_cast<uint64_t>(physicalDeviceProperties.deviceID);
     props.type = physicalDeviceProperties.deviceType;
     props.deviceFeatures = deviceFeatures;
     props.name = physicalDeviceProperties.deviceName;
@@ -149,7 +149,7 @@ PhysicalDevice::operator VkPhysicalDevice() const {
     return descriptor;
 }
 
-const Device& PhysicalDevice::device(uint32_t index) const {
+const Device& PhysicalDevice::device(Index index) const {
     return devices.at(index);
 }
 

@@ -58,12 +58,13 @@ void GraphicsLinker::createRenderPass(VkDevice device) {
 
 void GraphicsLinker::createFramebuffers(VkDevice device, const moon::utils::SwapChain* swapChainKHR){
     framebuffers.resize(imageInfo.Count);
-    for (uint32_t i = 0; i < framebuffers.size(); i++) {
+    for (uint32_t i = 0; i < static_cast<uint32_t>(framebuffers.size()); i++) {
+        const VkImageView iv = swapChainKHR->imageView(utils::ImageIndex(i));
         VkFramebufferCreateInfo framebufferInfo{};
             framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
             framebufferInfo.renderPass = renderPass;
             framebufferInfo.attachmentCount = 1;
-            framebufferInfo.pAttachments = &swapChainKHR->imageView(utils::ImageIndex(i));
+            framebufferInfo.pAttachments = &iv;
             framebufferInfo.width = imageInfo.Extent.width;
             framebufferInfo.height = imageInfo.Extent.height;
             framebufferInfo.layers = 1;
@@ -114,15 +115,19 @@ VkRenderPass GraphicsLinker::getRenderPass() const {
 
 VkSemaphore GraphicsLinker::submit(utils::ImageIndex imageIndex, const utils::vkDefault::VkSemaphores& waitSemaphores, VkFence fence, VkQueue queue) const  {
     VkPipelineStageFlags waitStages = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    const VkCommandBuffer cb = commandBuffers.at(imageIndex);
+    const VkSemaphore sig = signalSemaphores.at(imageIndex);
+
     VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submitInfo.waitSemaphoreCount = static_cast<uint32_t>(waitSemaphores.size());
-        submitInfo.pWaitSemaphores = submitInfo.waitSemaphoreCount > 0 ? waitSemaphores.data() : VK_NULL_HANDLE;
+        submitInfo.pWaitSemaphores = submitInfo.waitSemaphoreCount > 0 ? waitSemaphores.data() : nullptr;
         submitInfo.pWaitDstStageMask = &waitStages;
         submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = commandBuffers.at(imageIndex);
+        submitInfo.pCommandBuffers = &cb;
         submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores = signalSemaphores.at(imageIndex);
+        submitInfo.pSignalSemaphores = &sig;
+
     CHECK(vkQueueSubmit(queue, 1, &submitInfo, fence));
     return signalSemaphores.at(imageIndex);
 }

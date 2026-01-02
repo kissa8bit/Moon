@@ -30,7 +30,7 @@ private:
 
     virtual void setProperties(
         const utils::PhysicalDevice::Map& devicesMap,
-        const uint32_t deviceIndex,
+        const utils::PhysicalDevice::Index deviceIndex,
         const utils::SwapChain* swapChain,
         uint32_t resources)
     {
