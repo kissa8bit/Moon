@@ -7,10 +7,10 @@ namespace moon::workflows {
 
 struct BloomParameters : workflows::Parameters {
     struct{
-        std::string bloom;
+        utils::AttachmentName bloom;
     }in;
     struct{
-        std::string bloom;
+        utils::AttachmentName bloom;
     }out;
     uint32_t blitAttachmentsCount{ 0 };
     float blitFactor{ 1.5f };

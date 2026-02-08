@@ -10,32 +10,28 @@
 
 namespace moon::deferredGraphics {
 
-Graphics::Base::Base(const GraphicsParameters& parameters, const interfaces::Objects* objects) : parameters(parameters), objects(objects) {}
+Graphics::Base::Base(const GraphicsParameters& parameters, LayerIndex layerIndex, const interfaces::Objects* objects) 
+    : parameters(parameters), layerIndex(layerIndex), objects(objects)
+{}
 
 void Graphics::Base::create(interfaces::ObjectType type, const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass) {
     std::vector<VkDescriptorSetLayoutBinding> bindings;
     bindings.push_back(utils::vkDefault::bufferVertexLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
     bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
     bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
+    bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
 
-    const std::vector<VkBool32> transparencyData = {
-        static_cast<VkBool32>(parameters.enableTransparency),
-        static_cast<VkBool32>(parameters.transparencyPass)
-    };
+	uint32_t specializationData = static_cast<uint32_t>(layerIndex);
     std::vector<VkSpecializationMapEntry> specializationMapEntry;
     specializationMapEntry.push_back(VkSpecializationMapEntry{});
         specializationMapEntry.back().constantID = static_cast<uint32_t>(specializationMapEntry.size() - 1);
         specializationMapEntry.back().offset = 0;
-        specializationMapEntry.back().size = sizeof(VkBool32);
-    specializationMapEntry.push_back(VkSpecializationMapEntry{});
-        specializationMapEntry.back().constantID = static_cast<uint32_t>(specializationMapEntry.size() - 1);
-        specializationMapEntry.back().offset = sizeof(VkBool32);
-        specializationMapEntry.back().size = sizeof(VkBool32);
-    VkSpecializationInfo specializationInfo;
+        specializationMapEntry.back().size = sizeof(uint32_t);
+    VkSpecializationInfo specializationInfo{};
         specializationInfo.mapEntryCount = static_cast<uint32_t>(specializationMapEntry.size());
         specializationInfo.pMapEntries = specializationMapEntry.data();
-        specializationInfo.dataSize = sizeof(decltype(transparencyData)::value_type) * transparencyData.size();
-        specializationInfo.pData = transparencyData.data();
+        specializationInfo.dataSize = sizeof(specializationData);
+        specializationInfo.pData = &specializationData;
 
     const auto vertShader = utils::vkDefault::VertrxShaderModule(device, parameters.shadersPath / shadersNames.at(workflows::ShaderType::Vertex));
     const auto fragShader = utils::vkDefault::FragmentShaderModule(device, parameters.shadersPath / shadersNames.at(workflows::ShaderType::Fragment), specializationInfo);
@@ -61,6 +57,7 @@ void Graphics::Base::create(interfaces::ObjectType type, const workflows::Shader
     const std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachment = {
         utils::vkDefault::colorBlendAttachmentState(VK_FALSE),
         utils::vkDefault::colorBlendAttachmentState(VK_FALSE),
+        utils::vkDefault::colorBlendAttachmentState(VK_FALSE),
         utils::vkDefault::colorBlendAttachmentState(VK_FALSE)
     };
     const VkPipelineColorBlendStateCreateInfo colorBlending = utils::vkDefault::colorBlendState(static_cast<uint32_t>(colorBlendAttachment.size()), colorBlendAttachment.data());
@@ -69,7 +66,7 @@ void Graphics::Base::create(interfaces::ObjectType type, const workflows::Shader
 
     std::vector<VkPushConstantRange> pushConstantRange;
     pushConstantRange.push_back(VkPushConstantRange{});
-        pushConstantRange.back().stageFlags = VK_PIPELINE_STAGE_FLAG_BITS_MAX_ENUM;
+        pushConstantRange.back().stageFlags = VK_SHADER_STAGE_ALL;
         pushConstantRange.back().offset = 0;
         pushConstantRange.back().size = sizeof(interfaces::Material::Buffer);
     const std::vector<VkDescriptorSetLayout> descriptorSetLayouts = {
@@ -131,13 +128,15 @@ void Graphics::Base::update(VkDevice device, const utils::BuffersDatabase& bData
     for (uint32_t i = 0; i < parameters.imageInfo.Count; i++) {
         auto descriptorSet = descriptorSets.at(i);
 
-        std::string depthId = !parameters.transparencyPass || parameters.transparencyNumber == 0 ? "" :
-            (parameters.out.transparency + std::to_string(parameters.transparencyNumber - 1) + ".") + parameters.out.depth;
+		const bool needPrevLayer = layerIndex > LayerIndex(0);
+        const auto depthId = needPrevLayer ? layerPrefix(layerIndex - 1) + parameters.out.depth : utils::AttachmentName("");
+        const auto colorId = needPrevLayer ? layerPrefix(layerIndex - 1) + parameters.out.color : utils::AttachmentName("");
 
         utils::descriptorSet::Writes writes;
         WRITE_DESCRIPTOR(writes, descriptorSet, bDatabase.descriptorBufferInfo(parameters.in.camera, i));
         WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorEmptyInfo());
         WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(depthId, i));
+        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(colorId, i));
         utils::descriptorSet::update(device, writes);
     }
 }

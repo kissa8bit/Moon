@@ -18,7 +18,6 @@ include_directories(${INCLUDE_DIRS})
 
 set(SOURCES
     gltfmodel/loadAnimations.cpp
-    gltfmodel/loadTextures.cpp
     gltfmodel/loadMaterials.cpp
     gltfmodel/gltfmodel.cpp
     plymodel/plymodel.cpp

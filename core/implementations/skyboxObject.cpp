@@ -11,14 +11,7 @@ utils::vkDefault::DescriptorSetLayout SkyboxObject::createDescriptorSetLayout(Vk
 
 SkyboxObject::SkyboxObject(const utils::vkDefault::Paths& texturePaths, const float& mipLevel)
     : interfaces::Object(interfaces::ObjectMask(interfaces::ObjectType::skybox, interfaces::ObjectProperty::enable)), uniformBuffer(&hostBuffer, sizeof(hostBuffer)), texturePaths(texturePaths)
-{
-    setMipLevel(mipLevel);
-}
-
-SkyboxObject& SkyboxObject::setMipLevel(float mipLevel) {
-    texture.setMipLevel(mipLevel);
-    return *this;
-}
+{}
 
 void SkyboxObject::createDescriptors(const utils::PhysicalDevice& device, uint32_t imageCount) {
     descriptorSetLayout = createDescriptorSetLayout(device.device());
@@ -41,7 +34,7 @@ void SkyboxObject::create(const utils::PhysicalDevice& device, VkCommandPool com
     uniformBuffer = utils::UniformBuffer(device, imageCount, uniformBuffer.host, uniformBuffer.size);
 
     VkCommandBuffer commandBuffer = utils::singleCommandBuffer::create(device.device(), commandPool);
-    texture = texturePaths.empty() ? utils::Texture::empty(device, commandBuffer) : utils::CubeTexture(texturePaths, device, device.device(), commandBuffer);
+    texture = texturePaths.empty() ? utils::Texture::createEmpty(device, commandBuffer) : utils::CubeTexture(texturePaths, device, device.device(), commandBuffer);
     CHECK(utils::singleCommandBuffer::submit(device.device(), device.device()(0, 0), commandPool, &commandBuffer));
     texture.destroyCache();
 

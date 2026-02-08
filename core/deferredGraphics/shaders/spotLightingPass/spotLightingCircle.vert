@@ -3,7 +3,7 @@
 #include "../../../workflows/shaders/__methods__/defines.glsl"
 #include "../../../workflows/shaders/__methods__/geometricFunctions.glsl"
 
-layout(set = 0, binding = 4) uniform GlobalUniformBuffer {
+layout(set = 0, binding = 5) uniform GlobalUniformBuffer {
     mat4 view;
     mat4 proj;
 } global;

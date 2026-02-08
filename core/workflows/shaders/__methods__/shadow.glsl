@@ -65,7 +65,7 @@ float shadowFactor(const in mat4 proj, sampler2D Sampler, vec4 coordinates) {
             valid += 1.0f;
         }
     }
-    return res / valid;
+    return valid > 0.0f ? res / valid : 0.0f;
 }
 
 #endif

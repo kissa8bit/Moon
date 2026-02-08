@@ -67,8 +67,14 @@ struct Parameters {
     std::filesystem::path shadersPath;
 };
 
-using ParametersMap = std::unordered_map<std::string, workflows::Parameters*>;
-using WorkflowsMap = std::unordered_map<std::string, std::unique_ptr<workflows::Workflow>>;
+struct ParameterNameTag {};
+struct WorkflowNameTag {}; 
+
+using ParameterName = utils::Name<ParameterNameTag>;
+using WorkflowName = utils::Name<WorkflowNameTag>;
+
+using ParametersMap = std::unordered_map<ParameterName, Parameters*>;
+using WorkflowsMap = std::unordered_map<WorkflowName, std::unique_ptr<workflows::Workflow>>;
 
 } // moon::workflows
 

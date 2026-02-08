@@ -29,7 +29,7 @@ void SpotLight::create(const utils::PhysicalDevice& device, VkCommandPool comman
 	uniformBuffer = utils::UniformBuffer(device, imageCount, uniformBuffer.host, uniformBuffer.size);
 
 	VkCommandBuffer commandBuffer = utils::singleCommandBuffer::create(device.device(), commandPool);
-	texture = texturePath.empty() ? utils::Texture::empty(device, commandBuffer) : utils::Texture(texturePath, device, device.device(), commandBuffer);
+	texture = texturePath.empty() ? utils::Texture::createEmpty(device, commandBuffer) : utils::Texture(texturePath, device, device.device(), commandBuffer);
 	CHECK(utils::singleCommandBuffer::submit(device.device(), device.device()(0, 0), commandPool, &commandBuffer));
 	texture.destroyCache();
 

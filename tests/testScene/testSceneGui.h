@@ -71,8 +71,8 @@ void scaleManipulator(transformational::Object& obj, const char* name, float wid
 
 #undef MOVE_VEC_DEF
 
-bool switcher(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> graphics, const std::string& name) {
-    if (auto val = graphics->getEnable(name); ImGui::RadioButton(name.c_str(), val)) {
+bool switcher(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> graphics, const moon::workflows::ParameterName& name) {
+    if (auto val = graphics->getEnable(name); ImGui::RadioButton(name.get().c_str(), val)) {
         graphics->setEnable(name, !val);
         return true;
     }
@@ -82,15 +82,14 @@ bool switcher(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> graphics
 bool switchers(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> graphics) {
     bool framebufferResized = false;
     ImGui::BeginGroup();
-    framebufferResized |= moon::tests::gui::switcher(graphics, "Bloom");
-    framebufferResized |= moon::tests::gui::switcher(graphics, "Blur");
-    framebufferResized |= moon::tests::gui::switcher(graphics, "Skybox");
-    framebufferResized |= moon::tests::gui::switcher(graphics, "SSLR");
-    framebufferResized |= moon::tests::gui::switcher(graphics, "SSAO");
-    framebufferResized |= moon::tests::gui::switcher(graphics, "Shadow");
-    framebufferResized |= moon::tests::gui::switcher(graphics, "Scattering");
-    framebufferResized |= moon::tests::gui::switcher(graphics, "BoundingBox");
-    framebufferResized |= moon::tests::gui::switcher(graphics, "TransparentLayer");
+    framebufferResized |= moon::tests::gui::switcher(graphics, moon::deferredGraphics::Names::Bloom::param);
+    framebufferResized |= moon::tests::gui::switcher(graphics, moon::deferredGraphics::Names::Blur::param);
+    framebufferResized |= moon::tests::gui::switcher(graphics, moon::deferredGraphics::Names::Skybox::param);
+    framebufferResized |= moon::tests::gui::switcher(graphics, moon::deferredGraphics::Names::SSLR::param);
+    framebufferResized |= moon::tests::gui::switcher(graphics, moon::deferredGraphics::Names::SSAO::param);
+    framebufferResized |= moon::tests::gui::switcher(graphics, moon::deferredGraphics::Names::Shadow::param);
+    framebufferResized |= moon::tests::gui::switcher(graphics, moon::deferredGraphics::Names::Scattering::param);
+    framebufferResized |= moon::tests::gui::switcher(graphics, moon::deferredGraphics::Names::BoundingBox::param);
     ImGui::EndGroup();
     return framebufferResized;
 }
@@ -187,11 +186,7 @@ bool graphicsProps(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> gra
         const moon::utils::CursorBuffer& cursorBuffer = cursor->read();
         float farBlurDepth = cursorBuffer.info.depth;
         ImGui::SliderFloat("far blur depth", &farBlurDepth, 0.0f, 1.0f);
-        graphics->parameters().blurDepth() = graphics->getEnable("Blur") ? 1.02f * farBlurDepth : 1.0f;
-    }
-
-    if (bool val = graphics->parameters().scatteringRefraction(); ImGui::RadioButton("refraction of scattering", val)) {
-        graphics->parameters().scatteringRefraction() = !val;
+        graphics->parameters().blurDepth() = graphics->getEnable(moon::deferredGraphics::Names::Blur::param) ? 1.02f * farBlurDepth : 1.0f;
     }
 
     return true;

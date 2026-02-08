@@ -10,7 +10,6 @@
 #include <utils/swapChain.h>
 #include <utils/types.h>
 
-#include "linkable.h"
 #include "graphicsInterface.h"
 
 namespace moon::graphicsManager {

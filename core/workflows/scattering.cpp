@@ -15,7 +15,8 @@ Scattering::Scattering(ScatteringParameters& parameters, const interfaces::Light
 {}
 
 void Scattering::createAttachments(utils::AttachmentsDatabase& aDatabase){
-    utils::createAttachments(physicalDevice, device, parameters.imageInfo, 1, &frame);
+    const utils::vkDefault::ImageInfo info = { parameters.imageInfo.Count, VK_FORMAT_R32G32B32A32_SFLOAT, parameters.imageInfo.Extent, parameters.imageInfo.Samples };
+    utils::createAttachments(physicalDevice, device, info, 1, &frame);
     aDatabase.addAttachmentData(parameters.out.scattering, parameters.enable, &frame);
 }
 

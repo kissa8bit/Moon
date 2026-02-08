@@ -63,7 +63,7 @@ int main()
 
     for(float time = 1.0f; !window.isClosed();){
         if(auto start = clk::now(); app.checkNextFrame() != VK_ERROR_OUT_OF_DATE_KHR) {
-            testScene.updateFrame(app.getResourceIndex(), time);
+            testScene.updateFrame(app.getResourceIndex().get(), time);
 
             if (VkResult result = app.drawFrame(); result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || window.windowResized()){
                 std::tie(WIDTH, HEIGHT) = resize(window, app, testScene);

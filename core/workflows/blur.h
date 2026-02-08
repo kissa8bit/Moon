@@ -7,10 +7,10 @@ namespace moon::workflows {
 
 struct GaussianBlurParameters : workflows::Parameters {
     struct{
-        std::string blur;
+        utils::AttachmentName blur;
     }in;
     struct{
-        std::string blur;
+        utils::AttachmentName blur;
     }out;
     float blurDepth{ 1.0f };
 };

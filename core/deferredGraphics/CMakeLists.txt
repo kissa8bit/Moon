@@ -28,6 +28,7 @@ set(HEADERS
     renderStages/graphics.h
     renderStages/deferredLink.h
     renderStages/deferredAttachments.h
+    renderStages/layerIndex.h
 )
 
 set(ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/..)

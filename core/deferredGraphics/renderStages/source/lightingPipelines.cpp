@@ -19,22 +19,11 @@ void Graphics::Lighting::createPipeline(interfaces::LightType type, const workfl
     VkPipelineMultisampleStateCreateInfo multisampling = utils::vkDefault::multisampleState();
     VkPipelineDepthStencilStateCreateInfo depthStencil = utils::vkDefault::depthStencilDisable();
 
-    VkPipelineColorBlendAttachmentState customBlendAttachment{};
-        customBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-        customBlendAttachment.blendEnable = VK_TRUE;
-        customBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
-        customBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE;
-        customBlendAttachment.colorBlendOp = VK_BLEND_OP_MAX;
-        customBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-        customBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-        customBlendAttachment.alphaBlendOp = VK_BLEND_OP_MIN;
-
-    std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachment ={
+    std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachment = {
         utils::vkDefault::colorBlendAttachmentState(VK_TRUE),
-        customBlendAttachment,
         utils::vkDefault::colorBlendAttachmentState(VK_TRUE)
     };
-    VkPipelineColorBlendStateCreateInfo colorBlending = utils::vkDefault::colorBlendState(static_cast<uint32_t>(colorBlendAttachment.size()),colorBlendAttachment.data());
+    VkPipelineColorBlendStateCreateInfo colorBlending = utils::vkDefault::colorBlendState(static_cast<uint32_t>(colorBlendAttachment.size()), colorBlendAttachment.data());
 
     auto& pipelineDesc = pipelineDescs[type];
 

@@ -17,7 +17,6 @@ set(HEADERS
     graphicsInterface.h
     graphicsLinker.h
     graphicsManager.h
-    linkable.h
 )
 
 set(ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/..)

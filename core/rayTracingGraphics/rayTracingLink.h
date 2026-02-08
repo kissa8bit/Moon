@@ -8,7 +8,7 @@
 
 #include <math/linearAlgebra.h>
 
-#include <graphicsManager/linkable.h>
+#include <graphicsManager/graphicsInterface.h>
 
 namespace moon::rayTracingGraphics {
 
@@ -23,7 +23,7 @@ struct RayTracingLinkParameters{
     moon::utils::vkDefault::ImageInfo imageInfo;
 };
 
-class RayTracingLink : public moon::graphicsManager::Linkable{
+class RayTracingLink {
 private:
     RayTracingLinkParameters                parameters;
 
@@ -34,13 +34,15 @@ private:
     utils::vkDefault::DescriptorPool        descriptorPool;
     utils::vkDefault::DescriptorSets        descriptorSets;
 
-    void createPipeline(VkDevice device);
+    graphicsManager::PositionInWindow       position;
+
+    void createPipeline(VkDevice device, VkRenderPass renderPass);
     void createDescriptors(VkDevice device, const moon::utils::AttachmentsDatabase& aDatabase);
 
 public:
     RayTracingLink() = default;
     RayTracingLink(VkDevice device, const RayTracingLinkParameters& parameters, VkRenderPass renderPass, const moon::utils::AttachmentsDatabase& aDatabase);
-    void draw(VkCommandBuffer commandBuffer, uint32_t imageNumber) const override;
+    void draw(VkCommandBuffer commandBuffer, uint32_t imageNumber) const;
 };
 
 } // moon::rayTracingGraphics

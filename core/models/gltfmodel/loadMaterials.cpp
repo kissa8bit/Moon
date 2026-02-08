@@ -7,22 +7,59 @@ namespace moon::models {
 
 namespace {
 
-class Extractor {
-public:
-    static const utils::Texture* getEmptyTexture(const utils::Textures& textures) {
-        return textures.empty() ? nullptr : &textures.back();
+utils::Texture loadTexture(const tinygltf::Model& gltfModel, const utils::PhysicalDevice& device, VkCommandBuffer commandBuffer, VkFormat format, int texIndex) {
+    const tinygltf::Texture& tex = gltfModel.textures[texIndex];
+    const tinygltf::Image& gltfimage = gltfModel.images[tex.source];
+
+    const uint32_t downsampleWidth = 1, downsampleHeight = 1;
+
+    const auto width = gltfimage.width / downsampleWidth;
+    const auto height = gltfimage.height / downsampleHeight;
+
+    std::vector<uint8_t> buffer(4 * width * height);
+
+    for (uint32_t i = 0, offset = 0; i < height; ++i) {
+        for (uint32_t j = 0; j < width; ++j) {
+            uint32_t line = gltfimage.component * (gltfimage.width * downsampleHeight * i + downsampleHeight * j);
+
+            buffer[offset + 3] = 255;
+            for (uint32_t k = 0; k < gltfimage.component; ++k) {
+                buffer[offset + k] = gltfimage.image[line + k];
+            }
+            offset += 4;
+        }
     }
 
-    Extractor(const tinygltf::Material& material, const utils::Textures& textures)
-        : material(material), textures(textures), emptyTexture(getEmptyTexture(textures))
+    utils::TextureSampler textureSampler{};
+    if (isValid(tex.sampler)) {
+        const auto& samplers = gltfModel.samplers.at(tex.sampler);
+        textureSampler.minFilter = getVkFilterMode(samplers.minFilter);
+        textureSampler.magFilter = getVkFilterMode(samplers.magFilter);
+        textureSampler.addressModeV = textureSampler.addressModeW = getVkWrapMode(samplers.wrapT);
+        textureSampler.addressModeU = getVkWrapMode(samplers.wrapS);
+    }
+    return utils::Texture(device, device.device(), commandBuffer, width, height, buffer.data(), format, textureSampler);
+}
+
+class Extractor {
+public:
+    const utils::Texture* getEmptyTexture() {
+        return textures.empty() ? nullptr : &textures[-1];
+    }
+
+    Extractor(const tinygltf::Model& gltfModel, const utils::PhysicalDevice& device, VkCommandBuffer commandBuffer, utils::Textures& textures)
+        : gltfModel(gltfModel), device(device), commandBuffer(commandBuffer), textures(textures), emptyTexture(getEmptyTexture())
     {}
 
     template<typename TextureInfo, typename FactorType = double>
-    interfaces::Material::TextureParameters operator()(const TextureInfo& textureInfo, const std::vector<FactorType>& factor = {}) const {
+    interfaces::Material::TextureParameters operator()(const TextureInfo& textureInfo, VkFormat format, const std::vector<FactorType>& factor = {}) const {
         interfaces::Material::TextureParameters textureParameters(emptyTexture);
 
-        if (isValid(textureInfo.index)) {
-            textureParameters.texture = &textures.at(textureInfo.index);
+        if (const auto index = textureInfo.index; isValid(index)) {
+            if (textures.find(index) == textures.end()) {
+                textures[index] = loadTexture(gltfModel, device, commandBuffer, format, index);
+            }
+            textureParameters.texture = &textures[index];
             textureParameters.coordSet = textureInfo.texCoord;
         }
 
@@ -33,12 +70,12 @@ public:
         return textureParameters;
     }
 
-    interfaces::Material::TextureParameters operator()(const tinygltf::Value& extensions, const std::string& texName, const std::string& factorName = "") const {
+    interfaces::Material::TextureParameters operator()(const tinygltf::Value& extensions, const std::string& texName, VkFormat format, const std::string& factorName = "") const {
         interfaces::Material::TextureParameters textureParameters(emptyTexture);
 
         if (extensions.Has(texName)) {
             if (const auto& texture = extensions.Get(texName); !(texture == nullValue)){
-                getTexure(textureParameters, texture);
+                getTexure(textureParameters, texture, format);
             }
         }
 
@@ -52,10 +89,14 @@ public:
     }
 
 private:
-    void getTexure(interfaces::Material::TextureParameters& textureParameters, const tinygltf::Value& texture) const {
+    void getTexure(interfaces::Material::TextureParameters& textureParameters, const tinygltf::Value& texture, VkFormat format) const {
         const auto& index = texture.Get("index");
         if (index == nullValue) return;
-        textureParameters.texture = &textures[index.Get<int>()];
+		const int indexValue = index.Get<int>();
+        if (textures.find(indexValue) == textures.end()) {
+            textures[indexValue] = loadTexture(gltfModel, device, commandBuffer, format, indexValue);
+        }
+        textureParameters.texture = &textures[indexValue];
 
         const auto& texCoordSet = texture.Get("texCoord");
         if (texture == nullValue) return;
@@ -69,8 +110,10 @@ private:
         }
     };
 
-    const tinygltf::Material& material;
-    const utils::Textures& textures;
+    const tinygltf::Model& gltfModel;
+    const utils::PhysicalDevice& device;
+    VkCommandBuffer commandBuffer{VK_NULL_HANDLE};
+    utils::Textures& textures;
     const utils::Texture* emptyTexture{nullptr};
 
     inline static const tinygltf::Value nullValue{};
@@ -78,26 +121,28 @@ private:
 
 }
 
-void GltfModel::loadMaterials(const tinygltf::Model& gltfModel) {
+void GltfModel::loadMaterials(const tinygltf::Model& gltfModel, const utils::PhysicalDevice& device, VkCommandBuffer commandBuffer) {
     static const std::unordered_map<std::string, interfaces::Material::AlphaMode> alphaModeMap = {
         {"OPAQUE", interfaces::Material::AlphaMode::ALPHAMODE_OPAQUE},
         {"MASK", interfaces::Material::AlphaMode::ALPHAMODE_MASK},
         {"BLEND", interfaces::Material::AlphaMode::ALPHAMODE_BLEND}
     };
 
+    textures[-1] = utils::Texture::createEmpty(device, commandBuffer);
+
+    Extractor extractor(gltfModel, device, commandBuffer, textures);
     for (const tinygltf::Material& mat : gltfModel.materials)
     {
-        Extractor extractor(mat, textures);
         const auto& pbr = mat.pbrMetallicRoughness;
 
         auto& material = materials.emplace_back();
-        material.baseColor = extractor(pbr.baseColorTexture, pbr.baseColorFactor);
-        material.metallicRoughness = extractor(pbr.metallicRoughnessTexture);
+        material.baseColor = extractor(pbr.baseColorTexture, VK_FORMAT_R8G8B8A8_SRGB, pbr.baseColorFactor);
+        material.metallicRoughness = extractor(pbr.metallicRoughnessTexture, VK_FORMAT_R8G8B8A8_UNORM);
         material.metallicRoughness.factor[interfaces::Material::metallicIndex] = pbr.metallicFactor;
         material.metallicRoughness.factor[interfaces::Material::roughnessIndex] = pbr.roughnessFactor;
-        material.normal = extractor(mat.normalTexture);
-        material.emissive = extractor(mat.emissiveTexture, mat.emissiveFactor);
-        material.occlusion = extractor(mat.occlusionTexture);
+        material.normal = extractor(mat.normalTexture, VK_FORMAT_R8G8B8A8_UNORM);
+        material.emissive = extractor(mat.emissiveTexture, VK_FORMAT_R8G8B8A8_SRGB, mat.emissiveFactor);
+        material.occlusion = extractor(mat.occlusionTexture, VK_FORMAT_R8G8B8A8_UNORM);
         material.alphaMode = alphaModeMap.at(mat.alphaMode);
         material.alphaCutoff = mat.alphaCutoff;
 
@@ -108,11 +153,11 @@ void GltfModel::loadMaterials(const tinygltf::Model& gltfModel) {
                 material.pbrWorkflows = interfaces::Material::PbrWorkflow::SPECULAR_GLOSSINESS;
             }
 
-            material.extensions.specularGlossiness = extractor(extensions, "specularGlossinessTexture", "specularFactor");
-            material.extensions.diffuse = extractor(extensions, "diffuseTexture", "diffuseFactor");
+            material.extensions.specularGlossiness = extractor(extensions, "specularGlossinessTexture", VK_FORMAT_R8G8B8A8_UNORM, "specularFactor");
+            material.extensions.diffuse = extractor(extensions, "diffuseTexture", VK_FORMAT_R8G8B8A8_SRGB, "diffuseFactor");
         }
     }
-    auto& emptyMaterial = materials.emplace_back(Extractor::getEmptyTexture(textures));
+    auto& emptyMaterial = materials.emplace_back(extractor.getEmptyTexture());
 }
 
 } // moon::models

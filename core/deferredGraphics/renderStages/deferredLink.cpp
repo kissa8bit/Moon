@@ -6,12 +6,12 @@
 namespace moon::deferredGraphics {
 
 DeferredLink::DeferredLink(VkDevice device, const std::filesystem::path& shadersPath, const utils::vkDefault::ImageInfo& info, VkRenderPass renderPass, const graphicsManager::PositionInWindow& position, const utils::Attachments* attachment)
-    : Linkable(renderPass, position) {
-    createPipeline(device, shadersPath, info);
+    : position(position) {
+    createPipeline(device, shadersPath, info, renderPass);
     createDescriptors(device, info, attachment);
 }
 
-void DeferredLink::createPipeline(VkDevice device, const std::filesystem::path& shadersPath, const utils::vkDefault::ImageInfo& info) {
+void DeferredLink::createPipeline(VkDevice device, const std::filesystem::path& shadersPath, const utils::vkDefault::ImageInfo& info, VkRenderPass renderPass) {
     std::vector<VkDescriptorSetLayoutBinding> bindings;
     bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
     descriptorSetLayout = utils::vkDefault::DescriptorSetLayout(device, bindings);
@@ -34,7 +34,7 @@ void DeferredLink::createPipeline(VkDevice device, const std::filesystem::path& 
 
     std::vector<VkPushConstantRange> pushConstantRange;
         pushConstantRange.push_back(VkPushConstantRange{});
-        pushConstantRange.back().stageFlags = VK_PIPELINE_STAGE_FLAG_BITS_MAX_ENUM;
+        pushConstantRange.back().stageFlags = VK_SHADER_STAGE_ALL;
         pushConstantRange.back().offset = 0;
         pushConstantRange.back().size = sizeof(graphicsManager::PositionInWindow);
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts = { descriptorSetLayout };
@@ -53,7 +53,7 @@ void DeferredLink::createPipeline(VkDevice device, const std::filesystem::path& 
         pipelineInfo.back().pMultisampleState = &multisampling;
         pipelineInfo.back().pColorBlendState = &colorBlending;
         pipelineInfo.back().layout = pipelineLayout;
-        pipelineInfo.back().renderPass = renderPass();
+        pipelineInfo.back().renderPass = renderPass;
         pipelineInfo.back().subpass = 0;
         pipelineInfo.back().basePipelineHandle = VK_NULL_HANDLE;
         pipelineInfo.back().pDepthStencilState = &depthStencil;

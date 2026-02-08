@@ -65,8 +65,11 @@ private:
 
     moon::workflows::BloomParameters bloomParams;
 
+    RayTracingLink linkMember;
+
     void update(uint32_t imageIndex) override;
     utils::vkDefault::VkSemaphores submit(uint32_t frameIndex, const utils::vkDefault::VkSemaphores& externalSemaphore = {}) override;
+    void draw(VkCommandBuffer commandBuffer, uint32_t imageNumber) const override;
 
 public:
     RayTracingGraphics(const std::filesystem::path& shadersPath, const std::filesystem::path& workflowsShadersPath, VkExtent2D extent);

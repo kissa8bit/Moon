@@ -7,14 +7,14 @@ namespace moon::workflows {
 
 struct PostProcessingParameters : workflows::Parameters{
     struct{
-        std::string baseColor;
-        std::string blur;
-        std::string bloom;
-        std::string ssao;
-        std::string boundingBox;
+        utils::AttachmentName baseColor;
+        utils::AttachmentName blur;
+        utils::AttachmentName bloom;
+        utils::AttachmentName ssao;
+        utils::AttachmentName boundingBox;
     }in;
     struct{
-        std::string postProcessing;
+        utils::AttachmentName postProcessing;
     }out;
 };
 

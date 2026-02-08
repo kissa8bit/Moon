@@ -1,14 +1,14 @@
 #ifndef MOON_IMGUI_GRAPHICS_IMGUILINK_H
 #define MOON_IMGUI_GRAPHICS_IMGUILINK_H
 
-#include <graphicsManager/linkable.h>
+#include <vulkan.h>
 
 namespace moon::imguiGraphics {
 
-class ImguiLink : public graphicsManager::Linkable {
+class ImguiLink {
 public:
     ImguiLink() = default;
-    void draw(VkCommandBuffer commandBuffer, uint32_t imageNumber) const override;
+    void draw(VkCommandBuffer commandBuffer, uint32_t imageNumber) const;
 };
 
 } // moon::imguiGraphics

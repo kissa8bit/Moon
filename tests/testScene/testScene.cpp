@@ -74,20 +74,20 @@ void testScene::create()
     deferredGraphicsParameters.shadersPath = ExternalPath / "core/deferredGraphics/spv";
     deferredGraphicsParameters.workflowsShadersPath = ExternalPath / "core/workflows/spv";
     deferredGraphicsParameters.extent = window.sizes();
+	deferredGraphicsParameters.workflowsParameters.layersCount = 4;
     graphics["base"] = std::make_shared<moon::deferredGraphics::DeferredGraphics>(deferredGraphicsParameters);
     app.setGraphics(graphics["base"].get());
     graphics["base"]->bind(*cameras["base"].get());
     graphics["base"]->bind(mouse);
     graphics["base"]->
-        setEnable("TransparentLayer", false).
-        setEnable("Skybox", true).
-        setEnable("Blur", true).
-        setEnable("Bloom", true).
-        setEnable("SSAO", false).
-        setEnable("SSLR", false).
-        setEnable("Scattering", true).
-        setEnable("Shadow", true).
-        setEnable("Selector", true);
+        setEnable(moon::deferredGraphics::Names::Skybox::param, true).
+        setEnable(moon::deferredGraphics::Names::Blur::param, true).
+        setEnable(moon::deferredGraphics::Names::Bloom::param, true).
+        setEnable(moon::deferredGraphics::Names::SSAO::param, false).
+        setEnable(moon::deferredGraphics::Names::SSLR::param, false).
+        setEnable(moon::deferredGraphics::Names::Scattering::param, true).
+        setEnable(moon::deferredGraphics::Names::Shadow::param, true).
+        setEnable(moon::deferredGraphics::Names::Selector::param, true);
     graphics["base"]->reset();
 
 #ifdef SECOND_VIEW_WINDOW
@@ -130,7 +130,7 @@ void testScene::create()
 
 void testScene::requestUpdate() {
     if (graphics["base"]) {
-        graphics["base"]->requestUpdate("DeferredGraphics");
+        graphics["base"]->requestUpdate(moon::deferredGraphics::Names::MainGraphics::name);
     }
 #ifdef SECOND_VIEW_WINDOW
     if (graphics["view"]) {
@@ -334,6 +334,8 @@ void testScene::createModels()
 
     models["box"] = MAKE_GLTF(glTFSamples / "Box/glTF-Binary/Box.glb");
     models["sponza"] = MAKE_GLTF(glTFSamples / "Sponza/glTF/Sponza.gltf");
+    // models["sponza2"] = MAKE_GLTF(modelPath / "main_sponza/NewSponza_Main_glTF_003.gltf");
+    // models["sponza3"] = MAKE_GLTF(modelPath / "pkg_a_curtains/NewSponza_Curtains_glTF.gltf");
     models["duck"] = MAKE_GLTF(glTFSamples / "Duck/glTF-Binary/Duck.glb");
     models["DragonAttenuation"] = MAKE_GLTF(glTFSamples / "DragonAttenuation/glTF-Binary/DragonAttenuation.glb");
     models["DamagedHelmet"] = MAKE_GLTF(glTFSamples / "DamagedHelmet/glTF-Binary/DamagedHelmet.glb");
@@ -351,6 +353,12 @@ void testScene::createObjects()
     auto resourceCount = app.getResourceCount();
     staticObjects["sponza"] = std::make_shared<moon::entities::BaseObject>(models["sponza"].get());
     staticObjects["sponza"]->rotate(moon::math::radians(90.0f),{1.0f,0.0f,0.0f}).scale({3.0f,3.0f,3.0f});
+
+    // staticObjects["sponza2"] = std::make_shared<moon::entities::BaseObject>(models["sponza2"].get());
+    // staticObjects["sponza2"]->rotate(moon::math::radians(90.0f), { 1.0f,0.0f,0.0f });
+    // 
+    // staticObjects["sponza3"] = std::make_shared<moon::entities::BaseObject>(models["sponza3"].get());
+    // staticObjects["sponza3"]->rotate(moon::math::radians(90.0f), { 1.0f,0.0f,0.0f });
 
     objects["bee0"] = std::make_shared<moon::entities::BaseObject>(models["bee"].get(), 0, resourceCount);
     objects["bee0"]->translate({5.0f,0.0f,0.0f}).rotate(moon::math::radians(90.0f),{1.0f,0.0f,0.0f}).scale({0.2f,0.2f,0.2f});

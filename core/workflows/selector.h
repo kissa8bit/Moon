@@ -9,16 +9,13 @@ namespace moon::workflows {
 
 struct SelectorParameters : workflows::Parameters {
     struct{
-        std::string storageBuffer;
-        std::string position;
-        std::string depth;
-        std::string transparency;
-        std::string defaultDepthTexture;
+        utils::AttachmentName normal;
+        utils::AttachmentName depth;
+        utils::ImageName defaultDepthTexture;
     }in;
     struct{
-        std::string selector;
+        utils::AttachmentName selector;
     }out;
-    uint32_t transparentLayersCount{ 1 };
 };
 
 class SelectorGraphics : public Workflow

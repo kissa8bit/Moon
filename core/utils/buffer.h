@@ -6,6 +6,7 @@
 #include <string>
 #include <unordered_map>
 
+#include "types.h"
 #include "vkdefault.h"
 #include "device.h"
 
@@ -33,17 +34,17 @@ struct UniformBuffer {
 };
 
 struct BuffersDatabase{
-    std::unordered_map<std::string, const Buffers*> buffersMap;
+    std::unordered_map<utils::BufferName, const Buffers*> buffersMap;
 
     BuffersDatabase() = default;
     BuffersDatabase(const BuffersDatabase&) = default;
     BuffersDatabase& operator=(const BuffersDatabase&) = default;
 
-    bool add(const std::string& id, const Buffers* pBuffer);
-    bool remove(const std::string& id);
-    const Buffers* get(const std::string& id) const;
-    VkBuffer buffer(const std::string& id, const uint32_t imageIndex) const;
-    VkDescriptorBufferInfo descriptorBufferInfo(const std::string& id, const uint32_t imageIndex) const;
+    bool add(const utils::BufferName& id, const Buffers* pBuffer);
+    bool remove(const utils::BufferName& id);
+    const Buffers* get(const utils::BufferName& id) const;
+    VkBuffer buffer(const utils::BufferName& id, const uint32_t imageIndex) const;
+    VkDescriptorBufferInfo descriptorBufferInfo(const utils::BufferName& id, const uint32_t imageIndex) const;
 };
 
 }

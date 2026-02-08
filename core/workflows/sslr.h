@@ -7,16 +7,16 @@ namespace moon::workflows {
 
 struct SSLRParameters : workflows::Parameters{
     struct{
-        std::string camera;
-        std::string position;
-        std::string normal;
-        std::string color;
-        std::string depth;
-        std::string firstTransparency;
-        std::string defaultDepthTexture;
+        utils::BufferName camera;
+        utils::AttachmentName position;
+        utils::AttachmentName normal;
+        utils::AttachmentName color;
+        utils::AttachmentName depth;
+        utils::AttachmentName firstTransparency;
+        utils::ImageName defaultDepthTexture;
     }in;
     struct{
-        std::string sslr;
+        utils::AttachmentName sslr;
     }out;
 };
 

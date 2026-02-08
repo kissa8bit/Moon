@@ -1,5 +1,4 @@
 #include "graphicsManager.h"
-#include "linkable.h"
 
 #include <string>
 
@@ -20,6 +19,12 @@ void GraphicsManager::reset(utils::Window* window){
     moon::utils::debug::checkResult(createSwapChain(window, imageCount), "in file " + std::string(__FILE__) + ", line " + std::to_string(__LINE__));
     moon::utils::debug::checkResult(createLinker(), "in file " + std::string(__FILE__) + ", line " + std::to_string(__LINE__));
     moon::utils::debug::checkResult(createSyncObjects(), "in file " + std::string(__FILE__) + ", line " + std::to_string(__LINE__));
+
+    // Update renderPass in all graphics after linker recreation
+    for (auto& graph : graphics) {
+        graph->setProperties(devices, activeDevice->properties().index, &swapChainKHR, resourceCount, linker.getRenderPass());
+        graph->reset();
+    }
 }
 
 VkResult GraphicsManager::createInstance(utils::Window* window){
@@ -124,8 +129,7 @@ VkResult GraphicsManager::createLinker(){
 
 void GraphicsManager::setGraphics(GraphicsInterface* ingraphics){
     graphics.push_back(ingraphics);
-    ingraphics->setProperties(devices, activeDevice->properties().index, &swapChainKHR, resourceCount);
-    ingraphics->link->renderPass() = linker.getRenderPass();
+    ingraphics->setProperties(devices, activeDevice->properties().index, &swapChainKHR, resourceCount, linker.getRenderPass());
 }
 
 void GraphicsManager::setDevice(utils::PhysicalDevice::Index deviceIndex){
@@ -153,9 +157,9 @@ VkResult GraphicsManager::createSyncObjects(){
 
 VkResult GraphicsManager::checkNextFrame(){
 #define GM_CNF_RET(expr) if (auto result = CHECK(expr); result) return result;
-    GM_CNF_RET(vkWaitForFences(activeDevice->device(), 1, fences.at(resourceIndex), VK_TRUE, UINT64_MAX))
-    GM_CNF_RET(vkResetFences(activeDevice->device(), 1, fences.at(resourceIndex)))
-    GM_CNF_RET(swapChainKHR.acquireNextImage(availableSemaphores.at(resourceIndex), imageIndex))
+    GM_CNF_RET(vkWaitForFences(activeDevice->device(), 1, fences.at(resourceIndex.get()), VK_TRUE, UINT64_MAX))
+    GM_CNF_RET(vkResetFences(activeDevice->device(), 1, fences.at(resourceIndex.get())))
+    GM_CNF_RET(swapChainKHR.acquireNextImage(availableSemaphores.at(resourceIndex.get()), imageIndex))
     return VK_SUCCESS;
 #undef GM_CNF_RET
 }
@@ -163,21 +167,21 @@ VkResult GraphicsManager::checkNextFrame(){
 VkResult GraphicsManager::drawFrame(){
     for(auto graph : graphics){
         if (graph) {
-            graph->update(resourceIndex);
+            graph->update(resourceIndex.get());
         }
     }
     linker.update(resourceIndex, imageIndex);
 
-    utils::vkDefault::VkSemaphores waitSemaphores = {availableSemaphores.at(resourceIndex) };
+    utils::vkDefault::VkSemaphores waitSemaphores = {availableSemaphores.at(resourceIndex.get()) };
     for(auto graph: graphics){
         if (graph) {
-            waitSemaphores = graph->submit(resourceIndex, waitSemaphores);
+            waitSemaphores = graph->submit(resourceIndex.get(), waitSemaphores);
         }
     }
 
-    VkSemaphore linkerSemaphore = linker.submit(imageIndex, waitSemaphores, fences.at(resourceIndex), activeDevice->device()(0,0));
+    VkSemaphore linkerSemaphore = linker.submit(imageIndex, waitSemaphores, fences.at(resourceIndex.get()), activeDevice->device()(0,0));
 
-    resourceIndex = utils::ResourceIndex((resourceIndex + 1) % resourceCount);
+    resourceIndex = utils::ResourceIndex((resourceIndex.get() + 1) % resourceCount);
 
     return swapChainKHR.present(linkerSemaphore, imageIndex);
 }

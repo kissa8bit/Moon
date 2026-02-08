@@ -63,29 +63,29 @@ void UniformBuffer::update(uint32_t frameNumber, VkCommandBuffer commandBuffer) 
     }
 }
 
-bool BuffersDatabase::add(const std::string& id, const Buffers* pBuffer) {
+bool BuffersDatabase::add(const utils::BufferName& id, const Buffers* pBuffer) {
     if (!pBuffer) return false;
     buffersMap[id] = pBuffer;
     return true;
 }
 
-bool BuffersDatabase::remove(const std::string& id) {
+bool BuffersDatabase::remove(const utils::BufferName& id) {
     return buffersMap.erase(id) > 0;
 }
 
-const Buffers* BuffersDatabase::get(const std::string& id) const {
+const Buffers* BuffersDatabase::get(const utils::BufferName& id) const {
     auto it = buffersMap.find(id);
     return it != buffersMap.end() ? it->second : nullptr;
 }
 
-VkBuffer BuffersDatabase::buffer(const std::string& id, const uint32_t imageIndex) const
+VkBuffer BuffersDatabase::buffer(const utils::BufferName& id, const uint32_t imageIndex) const
 {
     auto it = buffersMap.find(id);
     if (it == buffersMap.end() || !(it->second) || imageIndex >= it->second->size()) return VK_NULL_HANDLE;
     return static_cast<VkBuffer>(it->second->at(imageIndex));
 }
 
-VkDescriptorBufferInfo BuffersDatabase::descriptorBufferInfo(const std::string& id, const uint32_t imageIndex) const
+VkDescriptorBufferInfo BuffersDatabase::descriptorBufferInfo(const utils::BufferName& id, const uint32_t imageIndex) const
 {
     VkDescriptorBufferInfo bufferInfo{};
     auto it = buffersMap.find(id);

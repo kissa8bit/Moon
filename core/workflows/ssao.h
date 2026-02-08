@@ -7,15 +7,15 @@ namespace moon::workflows {
 
 struct SSAOParameters : workflows::Parameters{
     struct{
-        std::string camera;
-        std::string position;
-        std::string normal;
-        std::string color;
-        std::string depth;
-        std::string defaultDepthTexture;
+        utils::BufferName camera;
+        utils::AttachmentName position;
+        utils::AttachmentName normal;
+        utils::AttachmentName color;
+        utils::AttachmentName depth;
+        utils::ImageName defaultDepthTexture;
     }in;
     struct{
-        std::string ssao;
+        utils::AttachmentName ssao;
     }out;
 };
 

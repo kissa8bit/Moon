@@ -8,14 +8,15 @@ namespace moon::workflows {
 SelectorGraphics::SelectorGraphics(SelectorParameters& parameters, utils::Cursor** cursor) : parameters(parameters), selector(parameters), cursor(cursor) {}
 
 void SelectorGraphics::createAttachments(utils::AttachmentsDatabase& aDatabase){
-    utils::createAttachments(physicalDevice, device, parameters.imageInfo, 1, &frame);
+    const utils::vkDefault::ImageInfo info = { parameters.imageInfo.Count, VK_FORMAT_R8G8B8A8_UNORM, parameters.imageInfo.Extent, parameters.imageInfo.Samples };
+    utils::createAttachments(physicalDevice, device, info, 1, &frame);
     aDatabase.addAttachmentData(parameters.out.selector, parameters.enable, &frame);
 }
 
 void SelectorGraphics::createRenderPass()
 {
     utils::vkDefault::RenderPass::AttachmentDescriptions attachments = {
-        utils::Attachments::imageDescription(parameters.imageInfo.Format)
+        utils::Attachments::imageDescription(VK_FORMAT_R8G8B8A8_UNORM)
     };
 
     utils::vkDefault::SubpassInfos subpassInfos = utils::vkDefault::subpassInfos(attachments.size());
@@ -58,23 +59,10 @@ void SelectorGraphics::Selector::create(const workflows::ShaderNames& shadersNam
         bindings.back().pImmutableSamplers = nullptr;
         bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
         bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
-        bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), parameters.transparentLayersCount));
-        bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), parameters.transparentLayersCount));
     descriptorSetLayout = utils::vkDefault::DescriptorSetLayout(device, bindings);
 
-    uint32_t specializationData = parameters.transparentLayersCount;
-    VkSpecializationMapEntry specializationMapEntry{};
-        specializationMapEntry.constantID = 0;
-        specializationMapEntry.offset = 0;
-        specializationMapEntry.size = sizeof(uint32_t);
-    VkSpecializationInfo specializationInfo;
-        specializationInfo.mapEntryCount = 1;
-        specializationInfo.pMapEntries = &specializationMapEntry;
-        specializationInfo.dataSize = sizeof(specializationData);
-        specializationInfo.pData = &specializationData;
-
     const auto vertShader = utils::vkDefault::VertrxShaderModule(device, parameters.shadersPath / shadersNames.at(workflows::ShaderType::Vertex));
-    const auto fragShader = utils::vkDefault::FragmentShaderModule(device, parameters.shadersPath / shadersNames.at(workflows::ShaderType::Fragment), specializationInfo);
+    const auto fragShader = utils::vkDefault::FragmentShaderModule(device, parameters.shadersPath / shadersNames.at(workflows::ShaderType::Fragment));
     const std::vector<VkPipelineShaderStageCreateInfo> shaderStages = { vertShader, fragShader };
 
     VkViewport viewport = utils::vkDefault::viewport({0,0}, parameters.imageInfo.Extent);
@@ -136,20 +124,10 @@ void SelectorGraphics::updateDescriptors(const utils::BuffersDatabase& bDatabase
     for (uint32_t i = 0; i < parameters.imageInfo.Count; i++) {
         auto descriptorSet = selector.descriptorSets[i];
 
-        std::vector<VkDescriptorImageInfo> positionLayersImageInfo(parameters.transparentLayersCount);
-        std::vector<VkDescriptorImageInfo> depthLayersImageInfo(parameters.transparentLayersCount);
-        for(uint32_t index = 0; index < parameters.transparentLayersCount; index++){
-            std::string key = parameters.in.transparency + std::to_string(index) + ".";
-            positionLayersImageInfo[index] = aDatabase.descriptorImageInfo(key + parameters.in.position, i);
-            depthLayersImageInfo[index] = aDatabase.descriptorImageInfo(key + parameters.in.depth, i, parameters.in.defaultDepthTexture);
-        }
-
         utils::descriptorSet::Writes writes;
         WRITE_DESCRIPTOR_T(writes, descriptorSet, (*cursor)->descriptorBufferInfo(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.position, i));
+        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.normal, i));
         WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.depth, i, parameters.in.defaultDepthTexture));
-        utils::descriptorSet::write(writes, descriptorSet, positionLayersImageInfo);
-        utils::descriptorSet::write(writes, descriptorSet, depthLayersImageInfo);
         utils::descriptorSet::update(device, writes);
     }
 }

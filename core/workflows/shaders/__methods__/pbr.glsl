@@ -14,15 +14,12 @@ float microfacetDistribution(float NdotH, float alphaRoughness) {
     return roughnessSq / (pi * f * f);
 }
 
-vec3 diffuse(const in vec4 BaseColor, const in float metallic, const in vec3 f0) {
-    vec3 diffuseColor = BaseColor.rgb * (vec3(1.0f) - f0);
-    diffuseColor *= 1.0f - metallic;
-
-    return diffuseColor / pi;
+vec3 diffuse(const in vec4 BaseColor, const in float metallic) {
+    return BaseColor.rgb * (1.0f - metallic) / pi;
 }
 
-vec3 specularReflection(vec3 specular0, vec3 specular90, float NdotH) {
-    return specular0 + (specular90 - specular0) * pow(1.0f - NdotH, 5);
+vec3 specularReflection(vec3 specular0, vec3 specular90, float HdotV) {
+    return specular0 + (specular90 - specular0) * pow(1.0f - HdotV, 5);
 }
 
 vec4 pbr(
@@ -41,6 +38,7 @@ vec4 pbr(
 
     float perceptualRoughness = decodeParameter(0x000000ff, 0, position.a) / 255.0f;
     float metallic = decodeParameter(0x0000ff00, 8, position.a) / 255.0f;
+    float ao = decodeParameter(0x00ff0000, 16, position.a) / 255.0f;
 
     float alphaRoughness = perceptualRoughness * perceptualRoughness;
     vec3 f0 = vec3(0.04f);
@@ -55,10 +53,10 @@ vec4 pbr(
     float G = geometricOcclusion(clamp(dot(Normal, LightDirection), 0.001f, 1.0f), clamp(abs(dot(Normal, Direction)), 0.001f, 1.0f), alphaRoughness);
     float D = microfacetDistribution(clamp(dot(Normal, H), 0.0f, 1.0f), alphaRoughness);
 
-    vec3 diffuseContrib = (1.0f - F) * diffuse(BaseColor, metallic, f0);
+    vec3 diffuseContrib = (1.0f - F) * diffuse(BaseColor, metallic);
     vec3 specContrib = F * G * D / (4.0f * clamp(dot(Normal, LightDirection), 0.001f, 1.0f) * clamp(abs(dot(Normal, Direction)), 0.001f, 1.0f));
 
-    vec4 outColor = vec4(clamp(dot(Normal, LightDirection), 0.001f, 1.0f) * lightColor.xyz * (diffuseContrib + specContrib), BaseColor.a);
+    vec4 outColor = vec4(clamp(dot(Normal, LightDirection), 0.0f, 1.0f) * lightColor.xyz * (diffuseContrib + specContrib), BaseColor.a);
 
     return outColor;
 }

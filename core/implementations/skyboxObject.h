@@ -23,8 +23,6 @@ public:
     SkyboxObject(const utils::vkDefault::Paths& texturePaths, const float& mipLevel);
     Buffer& buffer(bool update);
 
-    SkyboxObject& setMipLevel(float mipLevel);
-
     void setTransformation(const math::mat4& transformation) override;
 
     static utils::vkDefault::DescriptorSetLayout createDescriptorSetLayout(VkDevice device);

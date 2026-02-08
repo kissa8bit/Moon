@@ -56,18 +56,21 @@ void TextureImage::makeCache(
 }
 
 VkResult TextureImage::create(
-        VkPhysicalDevice        physicalDevice,
-        VkDevice                device,
-        VkCommandBuffer         commandBuffer,
-        VkImageCreateFlags      flags,
-        const uint32_t&         imageCount,
-        const TextureSampler&   textureSampler)
+        VkPhysicalDevice            physicalDevice,
+        VkDevice                    device,
+        VkCommandBuffer             commandBuffer,
+        VkImageCreateFlags          flags,
+        const uint32_t&             imageCount,
+        VkFormat                    form,
+        const TextureSampler&       textureSampler,
+        std::optional<uint32_t>     mipLevelsOpt)
 {
     if (width <= 0 || height <= 0) {
         throw std::runtime_error("[TextureImage::create] : invalid texture size (width/height must be > 0)");
     }
 
-    mipLevels = static_cast<uint32_t>(std::floor(std::log2(static_cast<float>(std::max(width, height))))) + 1;
+    format = form;
+    mipLevels = mipLevelsOpt.value_or(static_cast<uint32_t>(std::floor(std::log2(static_cast<float>(std::max(width, height))))) + 1);
     image = utils::vkDefault::Image(physicalDevice,
                                     device,
                                     flags,
@@ -135,29 +138,33 @@ void Texture::destroyCache(){
 }
 
 Texture::Texture(
-    VkPhysicalDevice    physicalDevice,
-    VkDevice            device,
-    VkCommandBuffer     commandBuffer,
-    int                 width,
-    int                 height,
-    void*               buffer,
-    const TextureSampler& textureSampler)
+        VkPhysicalDevice        physicalDevice,
+        VkDevice                device,
+        VkCommandBuffer         commandBuffer,
+        int                     width,
+        int                     height,
+        void*                   buffer,
+        VkFormat                format,
+        const TextureSampler&   textureSampler,
+        std::optional<uint32_t> mipLevels)
 {
     image.width = width;
     image.height = height;
     image.channels = 4;
     image.size = 4 * image.width * image.height;
     image.makeCache(physicalDevice, device, { buffer });
-    CHECK(image.create(physicalDevice, device, commandBuffer, 0, 1, textureSampler));
+    CHECK(image.create(physicalDevice, device, commandBuffer, 0, 1, format, textureSampler, mipLevels));
 }
 
 #ifdef USE_STB_IMAGE
 Texture::Texture(
-        const std::filesystem::path& path,
-        VkPhysicalDevice    physicalDevice,
-        VkDevice            device,
-        VkCommandBuffer     commandBuffer,
-        const TextureSampler& textureSampler) : paths({ path })
+        const std::filesystem::path&    path,
+        VkPhysicalDevice                physicalDevice,
+        VkDevice                        device,
+        VkCommandBuffer                 commandBuffer,
+        VkFormat                        format,
+        const TextureSampler&           textureSampler,
+        std::optional<uint32_t>         mipLevels) : paths({ path })
 {
     if(paths.empty()) throw std::runtime_error("[Texture::create] : no paths to texture");
 
@@ -167,16 +174,12 @@ Texture::Texture(
     image.makeCache(physicalDevice, device, { buffer });
     stbi_image_free(buffer);
 
-    CHECK(image.create(physicalDevice, device, commandBuffer, 0, 1, textureSampler));
+    CHECK(image.create(physicalDevice, device, commandBuffer, 0, 1, format, textureSampler, mipLevels));
 }
 #endif
 
-void Texture::setMipLevel(float mipLevel){image.mipLevel = mipLevel;}
-void Texture::setTextureFormat(VkFormat format){image.format = format;}
-
 VkImageView Texture::imageView() const {return image.imageView;}
 VkSampler Texture::sampler() const {return image.sampler;}
-
 
 VkDescriptorImageInfo Texture::descriptorImageInfo() const {
     VkDescriptorImageInfo imageInfo{};
@@ -189,7 +192,14 @@ VkDescriptorImageInfo Texture::descriptorImageInfo() const {
 CubeTexture::CubeTexture(Texture&& texture) : Texture(std::move(texture)){}
 
 #ifdef USE_STB_IMAGE
-CubeTexture::CubeTexture(const utils::vkDefault::Paths& path, VkPhysicalDevice physicalDevice, VkDevice device, VkCommandBuffer commandBuffer, const TextureSampler& textureSampler) : Texture(path)
+CubeTexture::CubeTexture(
+        const utils::vkDefault::Paths&  path, 
+        VkPhysicalDevice                physicalDevice, 
+        VkDevice                        device,
+        VkCommandBuffer                 commandBuffer,
+        VkFormat                        format,
+        const TextureSampler&           textureSampler,
+        std::optional<uint32_t>         mipLevels ) : Texture(path)
 {
     if (paths.size() != 6) throw std::runtime_error("[CubeTexture::create] : must be 6 images");
 
@@ -211,21 +221,29 @@ CubeTexture::CubeTexture(const utils::vkDefault::Paths& path, VkPhysicalDevice p
     image.makeCache(physicalDevice, device, buffers);
     for(auto& buffer : buffers) stbi_image_free(buffer);
 
-    CHECK(image.create(physicalDevice, device, commandBuffer, VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT, 6, textureSampler));
+    CHECK(image.create(physicalDevice, device, commandBuffer, VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT, 6, format, textureSampler, mipLevels));
 }
 #endif
 
-Texture Texture::empty(const PhysicalDevice& device, VkCommandPool commandPool, bool isBlack){
+Texture Texture::createEmpty(const PhysicalDevice& device, VkCommandPool commandPool, Texture::EmptyType type){
     VkCommandBuffer commandBuffer = singleCommandBuffer::create(device.device(),commandPool);
-    Texture tex = Texture::empty(device, commandBuffer, isBlack);
+    Texture tex = Texture::createEmpty(device, commandBuffer, type);
     singleCommandBuffer::submit(device.device(), device.device()(0, 0), commandPool, &commandBuffer);
     tex.destroyCache();
     return tex;
 };
 
-Texture Texture::empty(const PhysicalDevice& device, VkCommandBuffer commandBuffer, bool isBlack) {
-    uint32_t buffer = isBlack ? 0xff000000 : 0xffffffff;
-    int width = 1, height = 1;
+Texture Texture::createEmpty(const PhysicalDevice& device, VkCommandBuffer commandBuffer, Texture::EmptyType type) {
+    uint32_t buffer = 0;
+    switch (type) {
+        case Texture::EmptyType::Black:
+            buffer = 0xff000000; // RGBA for black
+            break;
+        case Texture::EmptyType::White:
+            buffer = 0xffffffff; // RGBA for white
+            break;
+	}
+    const int width = 1, height = 1;
     return Texture(device, device.device(), commandBuffer, width, height, &buffer);
 }
 

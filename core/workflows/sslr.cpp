@@ -10,14 +10,15 @@ SSLRGraphics::SSLRGraphics(SSLRParameters& parameters) :
 {}
 
 void SSLRGraphics::createAttachments(utils::AttachmentsDatabase& aDatabase){
-    utils::createAttachments(physicalDevice, device, parameters.imageInfo, 1, &frame, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, utils::vkDefault::sampler());
+    const utils::vkDefault::ImageInfo info = { parameters.imageInfo.Count, VK_FORMAT_R8G8B8A8_UNORM, parameters.imageInfo.Extent, parameters.imageInfo.Samples };
+    utils::createAttachments(physicalDevice, device, info, 1, &frame, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, utils::vkDefault::sampler());
     aDatabase.addAttachmentData(parameters.out.sslr, parameters.enable, &frame);
 }
 
 void SSLRGraphics::createRenderPass()
 {
     utils::vkDefault::RenderPass::AttachmentDescriptions attachments = {
-        utils::Attachments::imageDescription(parameters.imageInfo.Format)
+        utils::Attachments::imageDescription(VK_FORMAT_R8G8B8A8_UNORM)
     };
 
     utils::vkDefault::SubpassInfos subpassInfos = utils::vkDefault::subpassInfos(attachments.size());

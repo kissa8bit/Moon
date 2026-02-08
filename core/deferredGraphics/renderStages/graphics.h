@@ -13,28 +13,25 @@
 #include <interfaces/light.h>
 
 #include "deferredAttachments.h"
+#include "layerIndex.h"
 
 namespace moon::deferredGraphics {
 
 struct GraphicsParameters : workflows::Parameters {
     struct{
-        std::string camera;
+        utils::BufferName camera;
     }in;
     struct{
-        std::string image;
-        std::string blur;
-        std::string bloom;
-        std::string position;
-        std::string normal;
-        std::string color;
-        std::string depth;
-        std::string transparency;
+        utils::AttachmentName image;
+        utils::AttachmentName bloom;
+        utils::AttachmentName position;
+        utils::AttachmentName normal;
+        utils::AttachmentName color;
+        utils::AttachmentName emission;
+        utils::AttachmentName depth;
     }out;
 
-    bool        transparencyPass{ false };
-    bool        enableTransparency{ false };
-    uint32_t    transparencyNumber{ 0 };
-    float       minAmbientFactor{ 0.05f };
+    float minAmbientFactor{ 0.05f };
 };
 
 class Graphics : public workflows::Workflow
@@ -42,6 +39,7 @@ class Graphics : public workflows::Workflow
 private:
     GraphicsParameters& parameters;
     DeferredAttachments deferredAttachments;
+    LayerIndex layerIndex{ 0 };
 
     struct PipelineDesc {
         utils::vkDefault::PipelineLayout pipelineLayout;
@@ -52,6 +50,7 @@ private:
 
     struct Base {
         const GraphicsParameters& parameters;
+        LayerIndex layerIndex{ 0 };
         const interfaces::Objects* objects{ nullptr };
 
         PipelineDescs                           pipelineDescs;
@@ -62,7 +61,7 @@ private:
         utils::vkDefault::DescriptorPool        descriptorPool;
         utils::vkDefault::DescriptorSets        descriptorSets;
 
-        Base(const GraphicsParameters& parameters, const interfaces::Objects* objects);
+        Base(const GraphicsParameters& parameters, LayerIndex layerIndex, const interfaces::Objects* objects);
 
         void create(interfaces::ObjectType type, const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass);
         void update(VkDevice device, const utils::BuffersDatabase& bDatabase, const utils::AttachmentsDatabase& aDatabase);
@@ -82,6 +81,7 @@ private:
 
     struct Lighting {
         const GraphicsParameters& parameters;
+        LayerIndex layerIndex{ 0 };
         const interfaces::Lights* lightSources{ nullptr };
         const interfaces::DepthMaps* depthMaps{ nullptr };
 
@@ -98,7 +98,7 @@ private:
         utils::vkDefault::DescriptorPool            descriptorPool;
         utils::vkDefault::DescriptorSets            descriptorSets;
 
-        Lighting(const GraphicsParameters& parameters, const interfaces::Lights* lightSources, const interfaces::DepthMaps* depthMaps);
+        Lighting(const GraphicsParameters& parameters, LayerIndex layerIndex, const interfaces::Lights* lightSources, const interfaces::DepthMaps* depthMaps);
         void createPipeline(interfaces::LightType type, const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass);
 
         void create(VkDevice device, VkRenderPass renderPass);
@@ -127,6 +127,7 @@ private:
 
 public:
     Graphics(GraphicsParameters& parameters,
+             LayerIndex layerIndex,
              const interfaces::Objects* object = nullptr,
              const interfaces::Lights* lightSources = nullptr,
              const interfaces::DepthMaps* depthMaps = nullptr);

@@ -218,7 +218,7 @@ void createAttachments(VkPhysicalDevice physicalDevice, VkDevice device, const u
     }
 }
 
-AttachmentsDatabase::AttachmentsDatabase(const std::string& emptyTextureId, Texture* emptyTexture)
+AttachmentsDatabase::AttachmentsDatabase(const utils::ImageName& emptyTextureId, Texture* emptyTexture)
 {
     defaultEmptyTexture = emptyTextureId;
     emptyTexturesMap[emptyTextureId] = emptyTexture;
@@ -230,7 +230,7 @@ void AttachmentsDatabase::destroy(){
     defaultEmptyTexture.clear();
 }
 
-bool AttachmentsDatabase::addEmptyTexture(const std::string& id, Texture* emptyTexture){
+bool AttachmentsDatabase::addEmptyTexture(const utils::ImageName& id, Texture* emptyTexture){
     if(emptyTexturesMap.count(id) > 0) return false;
     if(defaultEmptyTexture.empty()) defaultEmptyTexture = id;
 
@@ -238,31 +238,31 @@ bool AttachmentsDatabase::addEmptyTexture(const std::string& id, Texture* emptyT
     return true;
 }
 
-bool AttachmentsDatabase::addAttachmentData(const std::string& id, bool enable, const Attachments* pImages){
+bool AttachmentsDatabase::addAttachmentData(const utils::AttachmentName& id, bool enable, const Attachments* pImages){
     if(attachmentsMap.count(id) > 0) return false;
 
     attachmentsMap[id] = data{enable, pImages};
     return true;
 }
 
-bool AttachmentsDatabase::enable(const std::string& id) const {
+bool AttachmentsDatabase::enable(const utils::AttachmentName& id) const {
     auto it = attachmentsMap.find(id);
     return it != attachmentsMap.end() && it->second.enable;
 }
 
-const Attachments* AttachmentsDatabase::get(const std::string& id) const{
+const Attachments* AttachmentsDatabase::get(const utils::AttachmentName& id) const{
     auto it = attachmentsMap.find(id);
     return (it != attachmentsMap.end() && it->second.enable) ? it->second.pImages : nullptr;
 }
 
-const Texture* AttachmentsDatabase::getEmpty(const std::string& id) const {
+const Texture* AttachmentsDatabase::getEmpty(const utils::ImageName& id) const {
     const auto texid = id.empty() ? defaultEmptyTexture : id;
     auto it = emptyTexturesMap.find(texid);
     return it != emptyTexturesMap.end() ? it->second : nullptr;
 }
 
-VkImageView AttachmentsDatabase::imageView(const std::string& id, const uint32_t imageIndex, const std::optional<std::string>& emptyTextureId) const {
-    const Texture* emptyTexture = getEmpty(emptyTextureId ? *emptyTextureId : std::string{});
+VkImageView AttachmentsDatabase::imageView(const utils::AttachmentName& id, const uint32_t imageIndex, const std::optional<utils::ImageName>& emptyTextureId) const {
+    const Texture* emptyTexture = getEmpty(emptyTextureId ? *emptyTextureId : utils::ImageName());
     const auto attachment = get(id);
     if (attachment) {
         return attachment->imageView(imageIndex);
@@ -273,8 +273,8 @@ VkImageView AttachmentsDatabase::imageView(const std::string& id, const uint32_t
     return VK_NULL_HANDLE;
 }
 
-VkSampler AttachmentsDatabase::sampler(const std::string& id, const std::optional<std::string>& emptyTextureId) const {
-    const Texture* emptyTexture = getEmpty(emptyTextureId ? *emptyTextureId : std::string{});
+VkSampler AttachmentsDatabase::sampler(const utils::AttachmentName& id, const std::optional<utils::ImageName>& emptyTextureId) const {
+    const Texture* emptyTexture = getEmpty(emptyTextureId ? *emptyTextureId : utils::ImageName());
     const auto attachment = get(id);
     if (attachment) {
         return attachment->sampler();
@@ -285,7 +285,7 @@ VkSampler AttachmentsDatabase::sampler(const std::string& id, const std::optiona
     return VK_NULL_HANDLE;
 }
 
-VkDescriptorImageInfo AttachmentsDatabase::descriptorImageInfo(const std::string& id, const uint32_t imageIndex, const std::optional<std::string>& emptyTextureId) const{
+VkDescriptorImageInfo AttachmentsDatabase::descriptorImageInfo(const utils::AttachmentName& id, const uint32_t imageIndex, const std::optional<utils::ImageName>& emptyTextureId) const{
     VkDescriptorImageInfo res{};
     res.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     res.imageView = imageView(id, imageIndex, emptyTextureId);
@@ -293,7 +293,7 @@ VkDescriptorImageInfo AttachmentsDatabase::descriptorImageInfo(const std::string
     return res;
 }
 
-VkDescriptorImageInfo AttachmentsDatabase::descriptorEmptyInfo(const std::string& id) const {
+VkDescriptorImageInfo AttachmentsDatabase::descriptorEmptyInfo(const utils::ImageName& id) const {
     VkDescriptorImageInfo res{};
     const Texture* empty = getEmpty(id);
     if (empty) {

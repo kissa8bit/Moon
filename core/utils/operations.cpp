@@ -13,7 +13,7 @@
 #include <unordered_map>
 
 #define ONLYDEVICELOCALHEAP
-// #define THROW_EXEPTION
+#define THROW_EXEPTION
 
 namespace moon::utils {
 

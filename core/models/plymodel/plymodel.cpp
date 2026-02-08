@@ -105,14 +105,14 @@ bool PlyModel::loadFromFile(const utils::PhysicalDevice& physicalDevice, VkComma
         }
     }
 
-    textures.push_back(utils::Texture::empty(physicalDevice, commandBuffer));
-    material().baseColor.texture = &textures.back();
-    material().metallicRoughness.texture = &textures.back();
-    material().normal.texture = &textures.back();
-    material().occlusion.texture = &textures.back();
-    material().emissive.texture = &textures.back();
-    material().extensions.specularGlossiness.texture = &textures.back();
-    material().extensions.diffuse.texture = &textures.back();
+    const auto& emptyTex = textures[-1] = utils::Texture::createEmpty(physicalDevice, commandBuffer);
+    material().baseColor.texture = &emptyTex;
+    material().metallicRoughness.texture = &emptyTex;
+    material().normal.texture = &emptyTex;
+    material().occlusion.texture = &emptyTex;
+    material().emissive.texture = &emptyTex;
+    material().extensions.specularGlossiness.texture = &emptyTex;
+    material().extensions.diffuse.texture = &emptyTex;
 
     mesh.primitives.push_back(
         interfaces::Primitive({0, (uint32_t)host.indices.size()}, {0, (uint32_t)host.vertices.size()}, &material(), bb)

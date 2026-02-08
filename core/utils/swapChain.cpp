@@ -54,7 +54,7 @@ SwapChain::operator const VkSwapchainKHR&() const {
 }
 
 const VkImageView& SwapChain::imageView(ImageIndex imageIndex) const {
-    return attachments[static_cast<size_t>(imageIndex)].imageView;
+    return attachments[static_cast<uint32_t>(imageIndex)].imageView;
 }
 
 utils::vkDefault::ImageInfo SwapChain::info() const { return imageInfo;}
@@ -75,9 +75,9 @@ std::vector<uint32_t> SwapChain::makeScreenshot(ImageIndex imageIndex) const {
     Buffer cache(*device, device->device(), sizeof(uint32_t) * imageInfo.Extent.width * imageInfo.Extent.height, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     VkCommandBuffer commandBuffer = singleCommandBuffer::create(device->device(), commandPool);
-    texture::transitionLayout(commandBuffer, attachments.at(static_cast<size_t>(imageIndex)).image, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_REMAINING_MIP_LEVELS, 0, 1);
-    texture::copy(commandBuffer, attachments.at(static_cast<size_t>(imageIndex)).image, cache, { imageInfo.Extent.width, imageInfo.Extent.height, 1}, 1);
-    texture::transitionLayout(commandBuffer, attachments.at(static_cast<size_t>(imageIndex)).image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_REMAINING_MIP_LEVELS, 0, 1);
+    texture::transitionLayout(commandBuffer, attachments.at(static_cast<uint32_t>(imageIndex)).image, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_REMAINING_MIP_LEVELS, 0, 1);
+    texture::copy(commandBuffer, attachments.at(static_cast<uint32_t>(imageIndex)).image, cache, { imageInfo.Extent.width, imageInfo.Extent.height, 1}, 1);
+    texture::transitionLayout(commandBuffer, attachments.at(static_cast<uint32_t>(imageIndex)).image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_REMAINING_MIP_LEVELS, 0, 1);
     singleCommandBuffer::submit(device->device(), device->device()(0,0), commandPool, &commandBuffer);
 
     CHECK_M(cache.map() != nullptr, std::string("[ SwapChain::makeScreenshot ] cache buffer not mapped"));

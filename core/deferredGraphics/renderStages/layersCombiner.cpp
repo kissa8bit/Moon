@@ -3,11 +3,11 @@
 #include <utils/operations.h>
 #include <utils/vkdefault.h>
 
+#include <iostream>
+
 namespace moon::deferredGraphics {
 
 struct LayersCombinerPushConst {
-    alignas(4) int enableScatteringRefraction{ true };
-    alignas(4) int enableTransparentLayers{ true };
     alignas(4) float blurDepth{ 1.0f };
 };
 
@@ -15,13 +15,12 @@ LayersCombiner::LayersCombiner(LayersCombinerParameters& parameters) : combiner(
 
 void LayersCombiner::createAttachments(utils::AttachmentsDatabase& aDatabase)
 {
-    auto createAttachments = [](VkPhysicalDevice physicalDevice, VkDevice device, const utils::vkDefault::ImageInfo image, uint32_t attachmentsCount, utils::Attachments* pAttachments){
-        for(size_t index=0; index < attachmentsCount; index++){
-            pAttachments[index] = utils::Attachments(physicalDevice, device, image, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | (index==1 ? VK_IMAGE_USAGE_TRANSFER_SRC_BIT : 0));
-        }
-    };
+    const utils::vkDefault::ImageInfo f32Info = { parameters.imageInfo.Count, VK_FORMAT_R32G32B32A32_SFLOAT, parameters.imageInfo.Extent, VK_SAMPLE_COUNT_1_BIT };
+    const VkImageUsageFlags usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 
-    createAttachments(physicalDevice, device, parameters.imageInfo, LayersCombinerAttachments::size(), &frame);
+    frame.color = utils::Attachments(physicalDevice, device, f32Info, usage);
+    frame.bloom = utils::Attachments(physicalDevice, device, f32Info, usage | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    frame.blur = utils::Attachments(physicalDevice, device, f32Info, usage);
     aDatabase.addAttachmentData(parameters.out.color, parameters.enable, &frame.color);
     aDatabase.addAttachmentData(parameters.out.bloom, parameters.enable, &frame.bloom);
     aDatabase.addAttachmentData(parameters.out.blur, parameters.enable, &frame.blur);
@@ -29,9 +28,9 @@ void LayersCombiner::createAttachments(utils::AttachmentsDatabase& aDatabase)
 
 void LayersCombiner::createRenderPass(){
     utils::vkDefault::RenderPass::AttachmentDescriptions attachments = {
-        utils::Attachments::imageDescription(parameters.imageInfo.Format, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL),
-        utils::Attachments::imageDescription(parameters.imageInfo.Format, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL),
-        utils::Attachments::imageDescription(parameters.imageInfo.Format, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+        utils::Attachments::imageDescription(frame.color.format(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL),
+        utils::Attachments::imageDescription(frame.bloom.format(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL),
+        utils::Attachments::imageDescription(frame.blur.format(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
     };
 
     utils::vkDefault::SubpassInfos subpassInfos = utils::vkDefault::subpassInfos(attachments.size());
@@ -40,10 +39,12 @@ void LayersCombiner::createRenderPass(){
     dependencies.push_back(VkSubpassDependency{});
     dependencies.back().srcSubpass = VK_SUBPASS_EXTERNAL;
     dependencies.back().dstSubpass = 0;
-    dependencies.back().srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    dependencies.back().srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-    dependencies.back().dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependencies.back().dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    dependencies.back().srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependencies.back().srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    dependencies.back().dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT|
+                                       VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependencies.back().dstAccessMask = VK_ACCESS_SHADER_READ_BIT|
+                                        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
     renderPass = utils::vkDefault::RenderPass(device, attachments, subpassInfos, dependencies);
 }
@@ -66,32 +67,29 @@ void LayersCombiner::createFramebuffers(){
 
 void LayersCombiner::Combiner::create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass)
 {
+	const uint32_t layersCount = parameters.layersCount.get();
     std::vector<VkDescriptorSetLayoutBinding> bindings;
         bindings.push_back(utils::vkDefault::bufferFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
-        bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
-        bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
-        bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
-        bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
-        bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
-        bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), parameters.transparentLayersCount));
-        bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), parameters.transparentLayersCount));
-        bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), parameters.transparentLayersCount));
-        bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), parameters.transparentLayersCount));
-        bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), parameters.transparentLayersCount));
+        bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), layersCount));
+        bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), layersCount));
+        bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), layersCount));
+        bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), layersCount));
+        bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), layersCount));
         bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
         bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
         bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
         bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
     descriptorSetLayout = utils::vkDefault::DescriptorSetLayout(device, bindings);
 
-    uint32_t specializationData = parameters.transparentLayersCount;
-    VkSpecializationMapEntry specializationMapEntry{};
-        specializationMapEntry.constantID = 0;
-        specializationMapEntry.offset = 0;
-        specializationMapEntry.size = sizeof(uint32_t);
-    VkSpecializationInfo specializationInfo;
-        specializationInfo.mapEntryCount = 1;
-        specializationInfo.pMapEntries = &specializationMapEntry;
+    const uint32_t specializationData = layersCount;
+    std::vector<VkSpecializationMapEntry> specializationMapEntry;
+        specializationMapEntry.push_back(VkSpecializationMapEntry{});
+        specializationMapEntry.back().constantID = static_cast<uint32_t>(specializationMapEntry.size() - 1);
+        specializationMapEntry.back().offset = 0;
+        specializationMapEntry.back().size = sizeof(uint32_t);
+    VkSpecializationInfo specializationInfo{};
+        specializationInfo.mapEntryCount = static_cast<uint32_t>(specializationMapEntry.size());
+        specializationInfo.pMapEntries = specializationMapEntry.data();
         specializationInfo.dataSize = sizeof(specializationData);
         specializationInfo.pData = &specializationData;
 
@@ -113,7 +111,7 @@ void LayersCombiner::Combiner::create(const workflows::ShaderNames& shadersNames
 
     std::vector<VkPushConstantRange> pushConstantRange;
     pushConstantRange.push_back(VkPushConstantRange{});
-        pushConstantRange.back().stageFlags = VK_PIPELINE_STAGE_FLAG_BITS_MAX_ENUM;
+        pushConstantRange.back().stageFlags = VK_SHADER_STAGE_ALL;
         pushConstantRange.back().offset = 0;
         pushConstantRange.back().size = sizeof(LayersCombinerPushConst);
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts = { descriptorSetLayout };
@@ -164,31 +162,26 @@ void LayersCombiner::updateDescriptors(
 
     for (uint32_t i = 0; i < parameters.imageInfo.Count; i++)
     {
-        std::vector<VkDescriptorImageInfo> colorLayersImageInfos(parameters.transparentLayersCount);
-        std::vector<VkDescriptorImageInfo> bloomLayersImageInfos(parameters.transparentLayersCount);
-        std::vector<VkDescriptorImageInfo> positionLayersImageInfos(parameters.transparentLayersCount);
-        std::vector<VkDescriptorImageInfo> normalLayersImageInfos(parameters.transparentLayersCount);
-        std::vector<VkDescriptorImageInfo> depthLayersImageInfos(parameters.transparentLayersCount);
+        std::vector<VkDescriptorImageInfo> colorLayersImageInfos(parameters.layersCount.get());
+        std::vector<VkDescriptorImageInfo> bloomLayersImageInfos(parameters.layersCount.get());
+        std::vector<VkDescriptorImageInfo> positionLayersImageInfos(parameters.layersCount.get());
+        std::vector<VkDescriptorImageInfo> normalLayersImageInfos(parameters.layersCount.get());
+        std::vector<VkDescriptorImageInfo> depthLayersImageInfos(parameters.layersCount.get());
 
-        for(uint32_t index = 0; index < parameters.transparentLayersCount; index++){
-            std::string key = parameters.in.transparency + std::to_string(index) + ".";
+        for (LayerIndex index{ 0 }; index < parameters.layersCount; index++) {
+            auto pref = layerPrefix(index);
 
-            colorLayersImageInfos.at(index) = aDatabase.descriptorImageInfo(key + parameters.in.color, i);
-            bloomLayersImageInfos.at(index) = aDatabase.descriptorImageInfo(key + parameters.in.bloom, i);
-            positionLayersImageInfos.at(index) = aDatabase.descriptorImageInfo(key + parameters.in.position, i);
-            normalLayersImageInfos.at(index) = aDatabase.descriptorImageInfo(key + parameters.in.normal, i);
-            depthLayersImageInfos.at(index) = aDatabase.descriptorImageInfo(key + parameters.in.depth, i, parameters.in.defaultDepthTexture);
+            colorLayersImageInfos.at(index.get()) = aDatabase.descriptorImageInfo(pref + parameters.in.color, i);
+            bloomLayersImageInfos.at(index.get()) = aDatabase.descriptorImageInfo(pref + parameters.in.bloom, i);
+            positionLayersImageInfos.at(index.get()) = aDatabase.descriptorImageInfo(pref + parameters.in.position, i);
+            normalLayersImageInfos.at(index.get()) = aDatabase.descriptorImageInfo(pref + parameters.in.normal, i);
+            depthLayersImageInfos.at(index.get()) = aDatabase.descriptorImageInfo(pref + parameters.in.depth, i, parameters.in.defaultDepthTexture);
         }
 
         auto descriptorSet = combiner.descriptorSets.at(i);
 
         utils::descriptorSet::Writes writes;
         WRITE_DESCRIPTOR(writes, descriptorSet, bDatabase.descriptorBufferInfo(parameters.in.camera, i));
-        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.color, i));
-        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.bloom, i));
-        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.position, i));
-        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.normal, i));
-        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.depth, i, parameters.in.defaultDepthTexture));
         utils::descriptorSet::write(writes, descriptorSet, colorLayersImageInfos);
         utils::descriptorSet::write(writes, descriptorSet, bloomLayersImageInfos);
         utils::descriptorSet::write(writes, descriptorSet, positionLayersImageInfos);
@@ -219,8 +212,6 @@ void LayersCombiner::updateCommandBuffer(uint32_t frameNumber){
     vkCmdBeginRenderPass(commandBuffers.at(frameNumber), &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
         LayersCombinerPushConst pushConst{};
-            pushConst.enableScatteringRefraction = static_cast<int>(parameters.enableScatteringRefraction);
-            pushConst.enableTransparentLayers = static_cast<int>(parameters.enableTransparentLayers);
             pushConst.blurDepth = parameters.blurDepth;
         vkCmdPushConstants(commandBuffers.at(frameNumber), combiner.pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(LayersCombinerPushConst), &pushConst);
 

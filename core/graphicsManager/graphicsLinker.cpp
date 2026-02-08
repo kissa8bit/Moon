@@ -25,16 +25,12 @@ void GraphicsLinker::swap(GraphicsLinker& other) {
 }
 
 GraphicsLinker::GraphicsLinker(VkDevice device, const moon::utils::SwapChain* swapChainKHR, std::vector<GraphicsInterface*>* graphics)
-    : graphics(graphics), imageInfo(swapChainKHR->info()) 
+    : graphics(graphics), imageInfo(swapChainKHR->info())
 {
     createRenderPass(device);
     createFramebuffers(device, swapChainKHR);
     createCommandBuffers(device);
     createSyncObjects(device);
-
-    for (auto& graph : *graphics) {
-        graph->link->renderPass() = renderPass;
-    }
 }
 
 void GraphicsLinker::createRenderPass(VkDevice device) {
@@ -85,28 +81,28 @@ void GraphicsLinker::createSyncObjects(VkDevice device) {
 }
 
 void GraphicsLinker::update(utils::ResourceIndex resourceIndex, utils::ImageIndex imageIndex){
-    CHECK(commandBuffers.at(imageIndex).reset());
-    CHECK(commandBuffers.at(imageIndex).begin());
+    CHECK(commandBuffers.at(imageIndex.get()).reset());
+    CHECK(commandBuffers.at(imageIndex.get()).begin());
 
     std::vector<VkClearValue> clearValues = {VkClearValue{}};
     VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         renderPassInfo.renderPass = renderPass;
-        renderPassInfo.framebuffer = framebuffers.at(imageIndex);
+        renderPassInfo.framebuffer = framebuffers.at(imageIndex.get());
         renderPassInfo.renderArea.offset = {0,0};
         renderPassInfo.renderArea.extent = imageInfo.Extent;
         renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
         renderPassInfo.pClearValues = clearValues.data();
 
-    vkCmdBeginRenderPass(commandBuffers.at(imageIndex), &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(commandBuffers.at(imageIndex.get()), &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
     for(auto& graph: *graphics){
-        graph->link->draw(commandBuffers.at(imageIndex), resourceIndex);
+        graph->draw(commandBuffers.at(imageIndex.get()), resourceIndex.get());
     }
 
-    vkCmdEndRenderPass(commandBuffers.at(imageIndex));
+    vkCmdEndRenderPass(commandBuffers.at(imageIndex.get()));
 
-    CHECK(commandBuffers.at(imageIndex).end());
+    CHECK(commandBuffers.at(imageIndex.get()).end());
 }
 
 VkRenderPass GraphicsLinker::getRenderPass() const {
@@ -115,8 +111,8 @@ VkRenderPass GraphicsLinker::getRenderPass() const {
 
 VkSemaphore GraphicsLinker::submit(utils::ImageIndex imageIndex, const utils::vkDefault::VkSemaphores& waitSemaphores, VkFence fence, VkQueue queue) const  {
     VkPipelineStageFlags waitStages = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-    const VkCommandBuffer cb = commandBuffers.at(imageIndex);
-    const VkSemaphore sig = signalSemaphores.at(imageIndex);
+    const VkCommandBuffer cb = commandBuffers.at(imageIndex.get());
+    const VkSemaphore sig = signalSemaphores.at(imageIndex.get());
 
     VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -129,7 +125,7 @@ VkSemaphore GraphicsLinker::submit(utils::ImageIndex imageIndex, const utils::vk
         submitInfo.pSignalSemaphores = &sig;
 
     CHECK(vkQueueSubmit(queue, 1, &submitInfo, fence));
-    return signalSemaphores.at(imageIndex);
+    return signalSemaphores.at(imageIndex.get());
 }
 
 } // moon::graphicsManager

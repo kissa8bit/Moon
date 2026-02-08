@@ -18,7 +18,7 @@ DepthMap::Map::Map(const PhysicalDevice& device, const utils::vkDefault::ImageIn
 {}
 
 DepthMap::DepthMap(const PhysicalDevice& device, VkCommandPool commandPool, const utils::vkDefault::ImageInfo& imageInfo)
-    : map(device, imageInfo), emptyTextureWhite(utils::Texture::empty(device, commandPool, false)), imageInfo(imageInfo), device(device.device())
+    : map(device, imageInfo), emptyTextureWhite(utils::Texture::createEmpty(device, commandPool, utils::Texture::EmptyType::White)), imageInfo(imageInfo), device(device.device())
 {}
 
 const utils::vkDefault::DescriptorSets& DepthMap::descriptorSets() const{

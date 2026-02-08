@@ -22,11 +22,11 @@ struct SkyboxAttachments
 
 struct SkyboxParameters : workflows::Parameters {
     struct{
-        std::string camera;
+        utils::BufferName camera;
     }in;
     struct{
-        std::string baseColor;
-        std::string bloom;
+        utils::AttachmentName baseColor;
+        utils::AttachmentName bloom;
     }out;
 };
 

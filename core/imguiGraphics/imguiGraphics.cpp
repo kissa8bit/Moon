@@ -11,7 +11,6 @@ ImguiGraphics::ImguiGraphics(VkInstance instance, uint32_t imageCount)
     : instance(instance), imageCount(imageCount)
 {
     setupImguiContext();
-    link = std::make_unique<ImguiLink>();
 }
 
 ImguiGraphics::~ImguiGraphics(){
@@ -28,6 +27,10 @@ void ImguiGraphics::setupImguiContext(){
 }
 
 void ImguiGraphics::reset() {
+    if (isImGuilVulkanInit) {
+        ImGui_ImplVulkan_Shutdown();
+    }
+
     std::vector<VkDescriptorPoolSize> descriptorPoolSize = { VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 } };
     VkDescriptorPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -51,16 +54,21 @@ void ImguiGraphics::reset() {
         initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
         initInfo.Allocator = VK_NULL_HANDLE;
         initInfo.CheckVkResultFn = [](VkResult result){moon::utils::debug::checkResult(result,"");};
-        initInfo.RenderPass = link->renderPass();
+        initInfo.RenderPass = pRenderPass;
     ImGui_ImplVulkan_Init(&initInfo);
 
     ImGui_ImplVulkan_CreateFontsTexture();
+	isImGuilVulkanInit = true;
 }
 
 void ImguiGraphics::update(uint32_t) {}
 
 utils::vkDefault::VkSemaphores ImguiGraphics::submit(uint32_t, const utils::vkDefault::VkSemaphores& externalSemaphore) {
     return externalSemaphore;
+}
+
+void ImguiGraphics::draw(VkCommandBuffer commandBuffer, uint32_t imageNumber) const {
+    linkMember.draw(commandBuffer, imageNumber);
 }
 
 } // moon::imguiGraphics

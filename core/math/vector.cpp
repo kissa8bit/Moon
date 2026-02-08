@@ -7,6 +7,5 @@ namespace moon::math {
 VEC_TMEP(2)
 VEC_TMEP(3)
 VEC_TMEP(4)
-#undef VEC_EXT_TMEP
 
 }

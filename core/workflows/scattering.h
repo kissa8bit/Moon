@@ -9,11 +9,11 @@ namespace moon::workflows {
 
 struct ScatteringParameters : workflows::Parameters{
     struct{
-        std::string camera;
-        std::string depth;
+        utils::BufferName camera;
+        utils::AttachmentName depth;
     }in;
     struct{
-        std::string scattering;
+        utils::AttachmentName scattering;
     }out;
 };
 

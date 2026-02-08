@@ -20,10 +20,15 @@ private:
 
     utils::vkDefault::DescriptorPool descriptorPool;
 
+    ImguiLink linkMember;
+
+	bool isImGuilVulkanInit{ false };
+
     void setupImguiContext();
 
     void update(uint32_t imageIndex) override;
     utils::vkDefault::VkSemaphores submit(uint32_t frameIndex, const utils::vkDefault::VkSemaphores& externalSemaphore = {}) override;
+    void draw(VkCommandBuffer commandBuffer, uint32_t imageNumber) const override;
 
 public:
     ImguiGraphics(VkInstance instance, uint32_t maxImageCount);

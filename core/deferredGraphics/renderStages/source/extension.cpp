@@ -48,6 +48,7 @@ void Graphics::OutliningExtension::create(interfaces::ObjectType type, const wor
     std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachment = {
         utils::vkDefault::colorBlendAttachmentState(VK_FALSE),
         utils::vkDefault::colorBlendAttachmentState(VK_FALSE),
+        utils::vkDefault::colorBlendAttachmentState(VK_FALSE),
         utils::vkDefault::colorBlendAttachmentState(VK_FALSE)
     };
     VkPipelineColorBlendStateCreateInfo colorBlending = utils::vkDefault::colorBlendState(static_cast<uint32_t>(colorBlendAttachment.size()),colorBlendAttachment.data());
@@ -56,7 +57,7 @@ void Graphics::OutliningExtension::create(interfaces::ObjectType type, const wor
 
     std::vector<VkPushConstantRange> pushConstantRange;
     pushConstantRange.push_back(VkPushConstantRange{});
-        pushConstantRange.back().stageFlags = VK_PIPELINE_STAGE_FLAG_BITS_MAX_ENUM;
+        pushConstantRange.back().stageFlags = VK_SHADER_STAGE_ALL;
         pushConstantRange.back().offset = 0;
         pushConstantRange.back().size = sizeof(interfaces::Material::Buffer);
     std::vector<VkDescriptorSetLayout> descriptorSetLayout = {

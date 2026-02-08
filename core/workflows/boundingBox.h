@@ -9,10 +9,10 @@ namespace moon::workflows {
 
 struct BoundingBoxParameters : workflows::Parameters {
     struct{
-        std::string camera;
+        utils::BufferName camera;
     }in;
     struct{
-        std::string boundingBox;
+        utils::AttachmentName boundingBox;
     }out;
 };
 

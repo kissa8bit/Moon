@@ -3,6 +3,8 @@
 
 #include <workflows/workflow.h>
 
+#include "layerIndex.h"
+
 namespace moon::deferredGraphics {
 
 struct LayersCombinerAttachments{
@@ -16,28 +18,25 @@ struct LayersCombinerAttachments{
 
 struct LayersCombinerParameters : workflows::Parameters {
     struct{
-        std::string camera;
-        std::string color;
-        std::string bloom;
-        std::string position;
-        std::string normal;
-        std::string depth;
-        std::string skyboxColor;
-        std::string skyboxBloom;
-        std::string scattering;
-        std::string sslr;
-        std::string transparency;
-        std::string defaultDepthTexture;
+        utils::BufferName camera;
+        utils::AttachmentName color;
+        utils::AttachmentName bloom;
+        utils::AttachmentName position;
+        utils::AttachmentName normal;
+        utils::AttachmentName depth;
+        utils::AttachmentName skyboxColor;
+        utils::AttachmentName skyboxBloom;
+        utils::AttachmentName scattering;
+        utils::AttachmentName sslr;
+        utils::ImageName defaultDepthTexture;
     }in;
     struct{
-        std::string color;
-        std::string bloom;
-        std::string blur;
+        utils::AttachmentName color;
+        utils::AttachmentName bloom;
+        utils::AttachmentName blur;
     }out;
     float blurDepth{ 1.0f };
-    uint32_t transparentLayersCount{ 1 };
-    bool enableTransparentLayers{ true };
-    bool enableScatteringRefraction{ true };
+    LayerIndex layersCount{ 1 };
 };
 
 class LayersCombiner : public workflows::Workflow

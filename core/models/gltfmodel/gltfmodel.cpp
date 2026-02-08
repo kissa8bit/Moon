@@ -25,7 +25,7 @@ GltfModel::GltfModel(std::filesystem::path filename, uint32_t instanceCount) :
 }
 
 void GltfModel::destroyCache() {
-    for(auto& texture: textures) texture.destroyCache();
+    for(auto& [_, texture] : textures) texture.destroyCache();
     cache = Cache();
 }
 
@@ -38,8 +38,7 @@ bool GltfModel::loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffe
 
     if (!CHECK_M(loadSuccess, "[ GltfModel::loadFromFile ] fail to load file")) return loadSuccess;
 
-    loadTextures(gltfModel, device, commandBuffer);
-    loadMaterials(gltfModel);
+    loadMaterials(gltfModel, device, commandBuffer);
 
     struct {
         interfaces::Indices indices;

@@ -7,13 +7,13 @@
 #include <utils/attachments.h>
 #include <utils/vkdefault.h>
 
-#include <graphicsManager/linkable.h>
+#include <graphicsManager/graphicsInterface.h>
 
 #include <math/linearAlgebra.h>
 
 namespace moon::deferredGraphics {
 
-class DeferredLink : public graphicsManager::Linkable
+class DeferredLink
 {
 private:
     utils::vkDefault::PipelineLayout        pipelineLayout;
@@ -23,13 +23,15 @@ private:
     utils::vkDefault::DescriptorPool        descriptorPool;
     utils::vkDefault::DescriptorSets        descriptorSets;
 
-    void createPipeline(VkDevice device, const std::filesystem::path& shadersPath, const utils::vkDefault::ImageInfo& info);
+    graphicsManager::PositionInWindow       position;
+
+    void createPipeline(VkDevice device, const std::filesystem::path& shadersPath, const utils::vkDefault::ImageInfo& info, VkRenderPass renderPass);
     void createDescriptors(VkDevice device, const utils::vkDefault::ImageInfo& info, const utils::Attachments* attachment);
 
 public:
     DeferredLink() = default;
     DeferredLink(VkDevice device, const std::filesystem::path& shadersPath, const utils::vkDefault::ImageInfo& info, VkRenderPass renderPass, const graphicsManager::PositionInWindow& position, const utils::Attachments* attachment);
-    void draw(VkCommandBuffer commandBuffer, uint32_t imageNumber) const override;
+    void draw(VkCommandBuffer commandBuffer, uint32_t imageNumber) const;
 };
 
 } // moon::deferredGraphics

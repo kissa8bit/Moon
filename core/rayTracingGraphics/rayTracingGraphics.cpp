@@ -12,7 +12,6 @@ namespace moon::rayTracingGraphics {
 RayTracingGraphics::RayTracingGraphics(const std::filesystem::path& shadersPath, const std::filesystem::path& workflowsShadersPath, VkExtent2D extent)
     : shadersPath(shadersPath), workflowsShadersPath(workflowsShadersPath), extent(extent) {
     setExtent(extent);
-    link = std::make_unique<RayTracingLink>();
 }
 
 RayTracingGraphics::ImageResource::ImageResource(const std::string& id, const moon::utils::PhysicalDevice& phDevice, const moon::utils::vkDefault::ImageInfo& imageInfo){
@@ -65,7 +64,7 @@ void RayTracingGraphics::reset()
     aDatabase.destroy();
     commandPool = utils::vkDefault::CommandPool(device->device());
 
-    emptyTexture = utils::Texture::empty(*device, commandPool);
+    emptyTexture = utils::Texture::createEmpty(*device, commandPool);
     aDatabase.addEmptyTexture("black", &emptyTexture);
 
     moon::utils::vkDefault::ImageInfo imageInfo{ resourceCount, swapChainKHR->info().Format, extent, VK_SAMPLE_COUNT_1_BIT };
@@ -101,7 +100,7 @@ void RayTracingGraphics::reset()
     linkParams.shadersPath = shadersPath;
     linkParams.imageInfo = utils::vkDefault::ImageInfo{ resourceCount, swapChainKHR->info().Format, swapChainKHR->info().Extent, VK_SAMPLE_COUNT_1_BIT };
 
-    link = std::make_unique<RayTracingLink>(device->device(), linkParams, link->renderPass(), aDatabase);
+    linkMember = RayTracingLink(device->device(), linkParams, pRenderPass, aDatabase);
 
     rayTracer.create();
 }
@@ -204,4 +203,9 @@ void RayTracingGraphics::buildBoundingBoxes(bool primitive, bool tree, bool only
         }
     }
 }
+
+void RayTracingGraphics::draw(VkCommandBuffer commandBuffer, uint32_t imageNumber) const {
+    linkMember.draw(commandBuffer, imageNumber);
+}
+
 }

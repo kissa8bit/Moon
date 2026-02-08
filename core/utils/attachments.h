@@ -7,6 +7,7 @@
 #include <string>
 #include <optional>
 
+#include "types.h"
 #include "vkdefault.h"
 #include "texture.h"
 
@@ -90,27 +91,28 @@ struct AttachmentsDatabase {
         const Attachments* pImages{nullptr};
     };
 
-    std::string defaultEmptyTexture;
-    std::unordered_map<std::string, Texture*> emptyTexturesMap;
-    std::unordered_map<std::string, data> attachmentsMap;
+    utils::ImageName defaultEmptyTexture;
+    std::unordered_map<utils::ImageName, Texture*> emptyTexturesMap;
+    std::unordered_map<utils::AttachmentName, data> attachmentsMap;
 
     AttachmentsDatabase() = default;
-    AttachmentsDatabase(const std::string& emptyTextureId, Texture* emptyTexture);
+    AttachmentsDatabase(const utils::ImageName& emptyTextureId, Texture* emptyTexture);
     AttachmentsDatabase(const AttachmentsDatabase&) = default;
     AttachmentsDatabase& operator=(const AttachmentsDatabase&) = default;
 
     void destroy();
 
-    bool addEmptyTexture(const std::string& id, Texture* emptyTexture);
-    bool addAttachmentData(const std::string& id, bool enable, const Attachments* pImages);
-    bool enable(const std::string& id) const;
-    const Attachments* get(const std::string& id) const;
-    const Texture* getEmpty(const std::string& id = "") const;
-    VkImageView imageView(const std::string& id, const uint32_t imageIndex, const std::optional<std::string>& emptyTextureId = std::nullopt) const;
-    VkSampler sampler(const std::string& id, const std::optional<std::string>& emptyTextureId = std::nullopt) const;
-    VkDescriptorImageInfo descriptorImageInfo(const std::string& id, const uint32_t imageIndex, const std::optional<std::string>& emptyTextureId = std::nullopt) const;
-    VkDescriptorImageInfo descriptorEmptyInfo(const std::string& id = "") const;
+    bool addEmptyTexture(const utils::ImageName& id, Texture* emptyTexture);
+    bool addAttachmentData(const utils::AttachmentName& id, bool enable, const Attachments* pImages);
+    bool enable(const utils::AttachmentName& id) const;
+    const Attachments* get(const utils::AttachmentName& id) const;
+    const Texture* getEmpty(const utils::ImageName& id = utils::ImageName("")) const;
+    VkImageView imageView(const utils::AttachmentName& id, const uint32_t imageIndex, const std::optional<utils::ImageName>& emptyTextureId = std::nullopt) const;
+    VkSampler sampler(const utils::AttachmentName& id, const std::optional<utils::ImageName>& emptyTextureId = std::nullopt) const;
+    VkDescriptorImageInfo descriptorImageInfo(const utils::AttachmentName& id, const uint32_t imageIndex, const std::optional<utils::ImageName>& emptyTextureId = std::nullopt) const;
+    VkDescriptorImageInfo descriptorEmptyInfo(const utils::ImageName& id = utils::ImageName("")) const;
 };
 
-}
+} // moon::utils
+
 #endif // MOON_UTILS_ATTACHMENTS_H

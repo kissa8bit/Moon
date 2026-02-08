@@ -10,13 +10,14 @@ namespace moon::workflows {
 BoundingBoxGraphics::BoundingBoxGraphics(BoundingBoxParameters& parameters, const interfaces::Objects* objects) : parameters(parameters), box(parameters, objects) {}
 
 void BoundingBoxGraphics::createAttachments(utils::AttachmentsDatabase& aDatabase){
-    utils::createAttachments(physicalDevice, device, parameters.imageInfo, 1, &frame);
+    const utils::vkDefault::ImageInfo info = { parameters.imageInfo.Count, VK_FORMAT_R8G8B8A8_UNORM, parameters.imageInfo.Extent, parameters.imageInfo.Samples };
+    utils::createAttachments(physicalDevice, device, info, 1, &frame);
     aDatabase.addAttachmentData(parameters.out.boundingBox, parameters.enable, &frame);
 }
 
 void BoundingBoxGraphics::createRenderPass(){
     utils::vkDefault::RenderPass::AttachmentDescriptions attachments = {
-        utils::Attachments::imageDescription(parameters.imageInfo.Format)
+        utils::Attachments::imageDescription(VK_FORMAT_R8G8B8A8_UNORM)
     };
 
     utils::vkDefault::SubpassInfos subpassInfos = utils::vkDefault::subpassInfos(attachments.size());

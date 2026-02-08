@@ -8,12 +8,13 @@
 
 namespace moon::deferredGraphics {
 
-Graphics::Lighting::Lighting(const GraphicsParameters& parameters, const interfaces::Lights* lightSources, const interfaces::DepthMaps* depthMaps)
-    : parameters(parameters), lightSources(lightSources), depthMaps(depthMaps)
+Graphics::Lighting::Lighting(const GraphicsParameters& parameters, LayerIndex layerIndex, const interfaces::Lights* lightSources, const interfaces::DepthMaps* depthMaps)
+    : parameters(parameters), layerIndex(layerIndex), lightSources(lightSources), depthMaps(depthMaps)
 {}
 
 void Graphics::Lighting::create(VkDevice device, VkRenderPass renderPass) {
     std::vector<VkDescriptorSetLayoutBinding> bindings;
+        bindings.push_back(utils::vkDefault::inAttachmentFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
         bindings.push_back(utils::vkDefault::inAttachmentFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
         bindings.push_back(utils::vkDefault::inAttachmentFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
         bindings.push_back(utils::vkDefault::inAttachmentFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
@@ -47,11 +48,14 @@ void Graphics::Lighting::update(VkDevice device, const utils::BuffersDatabase& b
     for (uint32_t i = 0; i < parameters.imageInfo.Count; i++){
         auto descriptorSet = descriptorSets[i];
 
+        auto pref = layerPrefix(layerIndex);
+
         utils::descriptorSet::Writes writes;
-        WRITE_DESCRIPTOR_T(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.out.position, i), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
-        WRITE_DESCRIPTOR_T(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.out.normal, i), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
-        WRITE_DESCRIPTOR_T(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.out.color, i), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
-        WRITE_DESCRIPTOR_T(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.out.depth, i), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
+        WRITE_DESCRIPTOR_T(writes, descriptorSet, aDatabase.descriptorImageInfo(pref + parameters.out.position, i), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
+        WRITE_DESCRIPTOR_T(writes, descriptorSet, aDatabase.descriptorImageInfo(pref + parameters.out.normal, i), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
+        WRITE_DESCRIPTOR_T(writes, descriptorSet, aDatabase.descriptorImageInfo(pref + parameters.out.color, i), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
+        WRITE_DESCRIPTOR_T(writes, descriptorSet, aDatabase.descriptorImageInfo(pref + parameters.out.emission, i), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
+        WRITE_DESCRIPTOR_T(writes, descriptorSet, aDatabase.descriptorImageInfo(pref + parameters.out.depth, i), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
         WRITE_DESCRIPTOR(writes, descriptorSet, bDatabase.descriptorBufferInfo(parameters.in.camera, i));
         utils::descriptorSet::update(device, writes);
     }

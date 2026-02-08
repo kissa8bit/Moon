@@ -163,7 +163,7 @@ Material::Buffer::Buffer(const Material& material, uint32_t primitive) : primiti
     normalTextureSet = material.normal.coordSet;
     occlusionTextureSet = material.occlusion.coordSet;
     emissiveTextureSet = material.emissive.coordSet;
-    alphaMask = static_cast<float>(material.alphaMode == interfaces::Material::ALPHAMODE_MASK);
+    alphaMask = static_cast<float>(material.alphaMode);
     alphaMaskCutoff = material.alphaCutoff;
     workflow = static_cast<float>(material.pbrWorkflows);
 

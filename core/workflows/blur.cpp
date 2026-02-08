@@ -9,15 +9,16 @@ GaussianBlur::GaussianBlur(GaussianBlurParameters& parameters) : parameters(para
 
 void GaussianBlur::createAttachments(utils::AttachmentsDatabase& aDatabase)
 {
-    utils::createAttachments(physicalDevice, device, parameters.imageInfo, 1, &bufferAttachment, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
-    utils::createAttachments(physicalDevice, device, parameters.imageInfo, 1, &frame, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+    const utils::vkDefault::ImageInfo info = { parameters.imageInfo.Count, VK_FORMAT_R32G32B32A32_SFLOAT, parameters.imageInfo.Extent, parameters.imageInfo.Samples };
+    utils::createAttachments(physicalDevice, device, info, 1, &bufferAttachment, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+    utils::createAttachments(physicalDevice, device, info, 1, &frame, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
     aDatabase.addAttachmentData(parameters.out.blur, parameters.enable, &frame);
 }
 
 void GaussianBlur::createRenderPass(){
     utils::vkDefault::RenderPass::AttachmentDescriptions attachments = {
-        utils::Attachments::imageDescription(parameters.imageInfo.Format),
-        utils::Attachments::imageDescription(parameters.imageInfo.Format)
+        utils::Attachments::imageDescription(VK_FORMAT_R32G32B32A32_SFLOAT),
+        utils::Attachments::imageDescription(VK_FORMAT_R32G32B32A32_SFLOAT)
     };
 
     utils::vkDefault::SubpassInfos subpassInfos;

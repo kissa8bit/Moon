@@ -143,7 +143,7 @@ MAT_TEMP MAT_4 scale(const VEC_3& v) {
     MAT_4 m{1.0f}; for_(i, 3) m[i][i] *= v[i]; return m;
 }
 
-MAT_TEMP MAT_4 perspective(const type& fovy, const type& aspect, const type& n = std::numeric_limits<type>::min(), const type& f = std::numeric_limits<type>::max()) {
+MAT_TEMP MAT_4 perspective(const type& fovy, const type& aspect, const type& n = std::numeric_limits<type>::lowest(), const type& f = std::numeric_limits<type>::max()) {
     MAT_4 m;
     m[1][1] = - type(1) / std::tan(fovy / type(2));
     m[0][0] = - m[1][1] / aspect;

@@ -32,9 +32,8 @@ private:
     } cache;
 
     bool loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffer commandBuffer);
-    void loadTextures(const tinygltf::Model& gltfModel, const utils::PhysicalDevice& device, VkCommandBuffer commandBuffer);
     void loadAnimations(const tinygltf::Model& gltfModel);
-    void loadMaterials(const tinygltf::Model& gltfModel);
+    void loadMaterials(const tinygltf::Model& gltfModel, const utils::PhysicalDevice& device, VkCommandBuffer commandBuffer);
 
     void createDescriptors(const utils::PhysicalDevice& device);
     void destroyCache();

@@ -3,6 +3,7 @@
 
 #include <filesystem>
 #include <unordered_map>
+#include <optional>
 
 #include <vulkan.h>
 #include "buffer.h"
@@ -30,7 +31,7 @@ struct TextureImage {
     VkDeviceSize size{ 0 };
     float mipLevel{ 0.0f };
     uint32_t mipLevels{ 1 };
-    VkFormat format{ VK_FORMAT_R8G8B8A8_UNORM };
+    VkFormat format{ VK_FORMAT_R8G8B8A8_SRGB };
 
     Buffer cache;
 
@@ -48,12 +49,14 @@ struct TextureImage {
             const std::vector<void*>&   buffers);
 
     VkResult create(
-            VkPhysicalDevice    physicalDevice,
-            VkDevice            device,
-            VkCommandBuffer     commandBuffer,
-            VkImageCreateFlags  flags,
-            const uint32_t&     imageCount,
-            const TextureSampler& textureSampler);
+            VkPhysicalDevice            physicalDevice,
+            VkDevice                    device,
+            VkCommandBuffer             commandBuffer,
+            VkImageCreateFlags          flags,
+            const uint32_t&             imageCount,
+		    VkFormat                    format,
+            const TextureSampler&       textureSampler,
+            std::optional<uint32_t>     mipLevelsOpt = std::nullopt);
 };
 
 class Texture{
@@ -74,34 +77,40 @@ public:
 
     void destroyCache();
 
-    Texture(VkPhysicalDevice    physicalDevice,
-            VkDevice            device,
-            VkCommandBuffer     commandBuffer,
-            int                 width,
-            int                 height,
-            void*               buffer,
-            const TextureSampler& textureSampler = TextureSampler{});
+    Texture(VkPhysicalDevice                physicalDevice,
+            VkDevice                        device,
+            VkCommandBuffer                 commandBuffer,
+            int                             width,
+            int                             height,
+            void*                           buffer,
+		    VkFormat                        format = VK_FORMAT_R8G8B8A8_SRGB,
+            const TextureSampler&           textureSampler = TextureSampler{},
+            std::optional<uint32_t>         mipLevels = std::nullopt);
 
 #ifdef USE_STB_IMAGE
     Texture(const std::filesystem::path&    path,
             VkPhysicalDevice                physicalDevice,
             VkDevice                        device,
             VkCommandBuffer                 commandBuffer,
-            const TextureSampler&           textureSampler = TextureSampler{});
+            VkFormat                        format = VK_FORMAT_R8G8B8A8_SRGB,
+            const TextureSampler&           textureSampler = TextureSampler{},
+            std::optional<uint32_t>         mipLevels = std::nullopt);
 #endif
-
-    void setMipLevel(float mipLevel);
-    void setTextureFormat(VkFormat format);
 
     VkImageView imageView() const;
     VkSampler sampler() const;
     VkDescriptorImageInfo descriptorImageInfo() const;
 
-    static Texture empty(const PhysicalDevice&, VkCommandPool, bool isBlack = true);
-    static Texture empty(const PhysicalDevice&, VkCommandBuffer, bool isBlack = true);
+    enum class EmptyType {
+        Black,
+        White
+	};
+
+    static Texture createEmpty(const PhysicalDevice&, VkCommandPool, EmptyType type = EmptyType::Black);
+    static Texture createEmpty(const PhysicalDevice&, VkCommandBuffer, EmptyType type = EmptyType::Black);
 };
 
-using Textures= std::vector<Texture>;
+using Textures = std::unordered_map<int, Texture>;
 using TextureMap = std::unordered_map<std::string, Texture>;
 
 class CubeTexture: public Texture {
@@ -116,7 +125,9 @@ public:
                 VkPhysicalDevice                    physicalDevice,
                 VkDevice                            device,
                 VkCommandBuffer                     commandBuffer,
-                const TextureSampler&               textureSampler = TextureSampler{});
+                VkFormat                            format = VK_FORMAT_R8G8B8A8_SRGB,
+                const TextureSampler&               textureSampler = TextureSampler{},
+                std::optional<uint32_t>             mipLevels = std::nullopt);
 #endif
 };
 

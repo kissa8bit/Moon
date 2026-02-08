@@ -10,6 +10,7 @@ float factorial(uint n){
 }
 
 float C(uint n, uint m){
+    if (m > n) return 0.0;
     return factorial(n) / factorial(n - m) / factorial(m);
 }
 

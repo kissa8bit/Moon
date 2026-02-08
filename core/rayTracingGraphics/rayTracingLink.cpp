@@ -6,12 +6,12 @@
 namespace moon::rayTracingGraphics {
 
 RayTracingLink::RayTracingLink(VkDevice device, const RayTracingLinkParameters& parameters, VkRenderPass renderPass, const moon::utils::AttachmentsDatabase& aDatabase)
-    : Linkable(renderPass), parameters(parameters) {
-    createPipeline(device);
+    : parameters(parameters) {
+    createPipeline(device, renderPass);
     createDescriptors(device, aDatabase);
 };
 
-void RayTracingLink::createPipeline(VkDevice device) {
+void RayTracingLink::createPipeline(VkDevice device, VkRenderPass renderPass) {
     std::vector<VkDescriptorSetLayoutBinding> bindings;
     bindings.push_back(moon::utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
     bindings.push_back(moon::utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
@@ -55,7 +55,7 @@ void RayTracingLink::createPipeline(VkDevice device) {
     pipelineInfo.back().pMultisampleState = &multisampling;
     pipelineInfo.back().pColorBlendState = &colorBlending;
     pipelineInfo.back().layout = pipelineLayout;
-    pipelineInfo.back().renderPass = renderPass();
+    pipelineInfo.back().renderPass = renderPass;
     pipelineInfo.back().subpass = 0;
     pipelineInfo.back().basePipelineHandle = VK_NULL_HANDLE;
     pipelineInfo.back().pDepthStencilState = &depthStencil;
