@@ -54,7 +54,7 @@
 		};																								\
 																										\
 		MaskName(TypeFlag type = static_cast<TypeFlag>(0), PropFlag prop = static_cast<PropFlag>(0))	\
-			: mask((Type)type | (Type)prop << 32)														\
+			: mask((Type)type | ((Type)prop << 32))														\
 		{}																								\
 																										\
 		operator Type() const {																			\

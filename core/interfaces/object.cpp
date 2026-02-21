@@ -13,7 +13,7 @@ Model* Object::model() {
 }
 
 uint32_t Object::getInstanceNumber(uint32_t imageNumber) const {
-    return instance.range.first + (instance.range.first > imageNumber ? imageNumber : 0);
+    return instance.range.count > 1 ? instance.range.first + imageNumber : instance.range.first;
 }
 
 ObjectMask& Object::objectMask() {

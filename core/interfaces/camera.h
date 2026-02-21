@@ -35,7 +35,7 @@ protected:
 public:
     virtual ~Camera(){};
 
-    CameraMask& lightMask() { return mask; }
+    CameraMask& cameraMask() { return mask; }
     virtual utils::Buffers& buffers() = 0;
     virtual void create(const utils::PhysicalDevice& device, uint32_t imageCount) = 0;
     virtual void update(uint32_t frameNumber, VkCommandBuffer commandBuffer) = 0;
