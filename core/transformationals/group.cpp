@@ -21,7 +21,7 @@ bool Group::add(Transformational* object) {
 }
 
 bool Group::remove(Transformational* object) {
-    return objects.erase(object);
+    return objects.erase(object) > 0;
 }
 
 bool Group::find(Transformational* object) {
