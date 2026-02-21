@@ -15,7 +15,9 @@ BaseObject::BaseObject(interfaces::Model* model, uint32_t firstInstance , uint32
     if (model) {
         for (auto instance = 0; instance < instanceCount; ++instance) {
             animationControl.animationsMap[instance] = model->animations(firstInstance + instance);
-            animationControl.total = animationControl.animationsMap[instance].size();
+        }
+        if (!animationControl.animationsMap.empty()) {
+            animationControl.total = animationControl.animationsMap.begin()->second.size();
         }
     }
 }
@@ -39,7 +41,7 @@ BaseObject& BaseObject::setColor(std::optional<math::vec4> constant, std::option
     auto pBaseObject = static_cast<implementations::BaseObject*>(pObject.get());
     if (!pBaseObject) return *this;
 
-    if (pObject && constant.has_value()) {
+    if (constant.has_value()) {
         pBaseObject->buffer(true).base.constant = constant.value();
     }
     if (factor.has_value()) {
@@ -81,7 +83,7 @@ size_t BaseObject::AnimationControl::size() const {
     return total;
 }
 
-size_t BaseObject::AnimationControl::current() const {
+int BaseObject::AnimationControl::current() const {
     return animIndex;
 }
 

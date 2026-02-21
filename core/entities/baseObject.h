@@ -36,7 +36,7 @@ public:
 
     public:
         size_t size() const;
-        size_t current() const;
+        int current() const;
         void set(int animIndex, float changeTime = 0);
         bool update(size_t frameNumber, float dtime);
     } animationControl;

@@ -14,14 +14,14 @@ BaseCamera::BaseCamera(const float& angle, const float& aspect, const float& nea
 
 math::mat4 BaseCamera::getProjMatrix() const {
     if (auto pBaseCamera = static_cast<implementations::BaseCamera*>(pCamera.get()); pBaseCamera) {
-        return transpose(pBaseCamera->buffer(true).proj);
+        return transpose(pBaseCamera->buffer(false).proj);
     }
     return math::mat4::identity();
 }
 
 math::mat4 BaseCamera::getViewMatrix() const {
     if (auto pBaseCamera = static_cast<implementations::BaseCamera*>(pCamera.get()); pBaseCamera) {
-        return transpose(pBaseCamera->buffer(true).view);
+        return transpose(pBaseCamera->buffer(false).view);
     }
     return math::mat4::identity();
 }

@@ -10,8 +10,6 @@ SpotLight::SpotLight(const Coloring& coloring, const math::mat4& projection, con
 	setDrop(props.drop).setPower(props.power).setColor(coloring.uniformColor).setProjectionMatrix(projection);
 
 	auto pSpotLight = static_cast<implementations::SpotLight*>(pLight.get());
-	if (!pSpotLight) return;
-
 	pSpotLight->setTexture(coloring.texturePath);
 	interfaces::LightProperty properties;
 	properties.set(interfaces::LightProperty::enableScattering, props.enableScattering);
@@ -44,18 +42,18 @@ SpotLight& SpotLight::setPower(const float& power) {
 IsotropicLight::IsotropicLight(const math::vec4& color, float radius, bool enableShadow, bool enableScattering) {
 	const auto proj = math::perspective(math::radians(91.0f), 1.0f, 0.1f, radius);
 
-	lights.reserve(6);
-
 	const SpotLight::Coloring coloring(color);
 	const SpotLight::Props props{ enableShadow, enableScattering };
 	const auto type = implementations::SpotLight::Type::square;
 
-	add(&lights.emplace_back(coloring, proj, props, type).rotate(math::radians(90.0f), math::vec3(1.0f, 0.0f, 0.0f)));
-	add(&lights.emplace_back(coloring, proj, props, type).rotate(math::radians(-90.0f), math::vec3(1.0f, 0.0f, 0.0f)));
-	add(&lights.emplace_back(coloring, proj, props, type).rotate(math::radians(0.0f), math::vec3(0.0f, 1.0f, 0.0f)));
-	add(&lights.emplace_back(coloring, proj, props, type).rotate(math::radians(90.0f), math::vec3(0.0f, 1.0f, 0.0f)));
-	add(&lights.emplace_back(coloring, proj, props, type).rotate(math::radians(-90.0f), math::vec3(0.0f, 1.0f, 0.0f)));
-	add(&lights.emplace_back(coloring, proj, props, type).rotate(math::radians(180.0f), math::vec3(1.0f, 0.0f, 0.0f)));
+	lights.reserve(6);
+	lights.emplace_back(coloring, proj, props, type).rotate(math::radians(90.0f), math::vec3(1.0f, 0.0f, 0.0f));
+	lights.emplace_back(coloring, proj, props, type).rotate(math::radians(-90.0f), math::vec3(1.0f, 0.0f, 0.0f));
+	lights.emplace_back(coloring, proj, props, type).rotate(math::radians(0.0f), math::vec3(0.0f, 1.0f, 0.0f));
+	lights.emplace_back(coloring, proj, props, type).rotate(math::radians(90.0f), math::vec3(0.0f, 1.0f, 0.0f));
+	lights.emplace_back(coloring, proj, props, type).rotate(math::radians(-90.0f), math::vec3(0.0f, 1.0f, 0.0f));
+	lights.emplace_back(coloring, proj, props, type).rotate(math::radians(180.0f), math::vec3(1.0f, 0.0f, 0.0f));
+	for (auto& light : lights) add(&light);
 
 	// colors for debug if color = {0, 0, 0, 0}
 	if (dot(color, color) == 0.0f && lights.size() == 6) {
