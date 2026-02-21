@@ -1,16 +1,11 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.14)
 
 project(Moon LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
-else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-endif()
 
-find_package(Vulkan REQUIRED FATAL_ERROR)
+find_package(Vulkan REQUIRED)
 
 set(GLFW_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dependences/libs/glfw)
 set(STB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dependences/libs/stb)
@@ -28,10 +23,10 @@ endif()
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set(GLFW_LIB ${GLFW_DIR}/build/src/libglfw.so.3.4)
 endif()
-set(LIBS_DIRS ${Vulkan_LIBRARIES} ${GLFW_LIB})
+set(LINK_LIBS ${Vulkan_LIBRARIES} ${GLFW_LIB})
 
-message("CMAKE_CURRENT_LIST_DIR is ${CMAKE_CURRENT_LIST_DIR}")
-add_definitions(-DROOT_PATH="${CMAKE_CURRENT_LIST_DIR}")
+message(STATUS "CMAKE_CURRENT_LIST_DIR is ${CMAKE_CURRENT_LIST_DIR}")
+add_compile_definitions(ROOT_PATH="${CMAKE_CURRENT_LIST_DIR}")
 
 add_subdirectory(core/utils)
 add_subdirectory(core/workflows)
