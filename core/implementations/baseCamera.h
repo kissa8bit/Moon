@@ -20,7 +20,7 @@ public:
     };
 
     BaseCamera();
-    Buffer& buffer(bool update);
+    Buffer& buffer(bool markDirty);
 
     void setTransformation(const math::mat4& transformation) override;
 

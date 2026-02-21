@@ -120,6 +120,17 @@ public:
     CubeTexture(CubeTexture&&) noexcept = default;
     CubeTexture& operator=(CubeTexture&&) noexcept = default;
     CubeTexture(Texture&& texture);
+
+    CubeTexture(VkPhysicalDevice                physicalDevice,
+                VkDevice                        device,
+                VkCommandBuffer                 commandBuffer,
+                int                             width,
+                int                             height,
+                const std::vector<void*>&       buffers,
+                VkFormat                        format = VK_FORMAT_R8G8B8A8_SRGB,
+                const TextureSampler& textureSampler = TextureSampler{},
+                std::optional<uint32_t>         mipLevels = std::nullopt);
+
 #ifdef USE_STB_IMAGE
     CubeTexture(const utils::vkDefault::Paths&      path,
                 VkPhysicalDevice                    physicalDevice,
@@ -129,6 +140,9 @@ public:
                 const TextureSampler&               textureSampler = TextureSampler{},
                 std::optional<uint32_t>             mipLevels = std::nullopt);
 #endif
+
+    static CubeTexture createEmpty(const PhysicalDevice&, VkCommandPool, EmptyType type = EmptyType::Black);
+    static CubeTexture createEmpty(const PhysicalDevice&, VkCommandBuffer, EmptyType type = EmptyType::Black);
 };
 
 }

@@ -29,10 +29,8 @@ void BaseObject::createDescriptors(const utils::PhysicalDevice& device, uint32_t
     descriptorPool = utils::vkDefault::DescriptorPool(device.device(), { &descriptorSetLayout }, imageCount);
     descriptors = descriptorPool.allocateDescriptorSets(descriptorSetLayout, imageCount);
     for (size_t i = 0; i < imageCount; i++) {
-        const auto bufferInfo = uniformBuffer.device[i].descriptorBufferInfo();
-
         utils::descriptorSet::Writes writes;
-        utils::descriptorSet::write(writes, descriptors[i], bufferInfo);
+        WRITE_DESCRIPTOR(writes, descriptors.at(i), uniformBuffer.device.at(i).descriptorBufferInfo());
         utils::descriptorSet::update(device.device(), writes);
     }
 }
@@ -46,8 +44,8 @@ utils::Buffers& BaseObject::buffers() {
     return uniformBuffer.device;
 }
 
-BaseObject::Buffer& BaseObject::buffer(bool update) {
-    if (update) {
+BaseObject::Buffer& BaseObject::buffer(bool markDirty) {
+    if (markDirty) {
         utils::vkDefault::raiseFlags(uniformBuffer.device);
     }
     return hostBuffer;

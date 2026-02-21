@@ -191,6 +191,27 @@ VkDescriptorImageInfo Texture::descriptorImageInfo() const {
 
 CubeTexture::CubeTexture(Texture&& texture) : Texture(std::move(texture)){}
 
+CubeTexture::CubeTexture(
+    VkPhysicalDevice                physicalDevice,
+    VkDevice                        device,
+    VkCommandBuffer                 commandBuffer,
+    int                             width,
+    int                             height,
+    const std::vector<void*>&       buffers,
+    VkFormat                        format,
+    const TextureSampler&           textureSampler,
+    std::optional<uint32_t>         mipLevels) 
+{
+    if (buffers.size() != 6) throw std::runtime_error("[CubeTexture::CubeTexture] : must be 6 images");
+
+    image.width = width;
+    image.height = height;
+    image.channels = 4;
+    image.size = 4 * image.width * image.height;
+    image.makeCache(physicalDevice, device, buffers);
+    CHECK(image.create(physicalDevice, device, commandBuffer, VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT, 6, format, textureSampler, mipLevels));
+}
+
 #ifdef USE_STB_IMAGE
 CubeTexture::CubeTexture(
         const utils::vkDefault::Paths&  path, 
@@ -199,22 +220,23 @@ CubeTexture::CubeTexture(
         VkCommandBuffer                 commandBuffer,
         VkFormat                        format,
         const TextureSampler&           textureSampler,
-        std::optional<uint32_t>         mipLevels ) : Texture(path)
+        std::optional<uint32_t>         mipLevels) : 
+    Texture(path)
 {
-    if (paths.size() != 6) throw std::runtime_error("[CubeTexture::create] : must be 6 images");
+    if (paths.size() != 6) throw std::runtime_error("[CubeTexture::CubeTexture] : must be 6 images");
 
     int maxWidth = -1, maxHeight = -1, maxChannels = -1;
     std::vector<void*> buffers;
     for(uint32_t i = 0; i < 6; i++) {
         buffers.push_back(stbi_load(paths[i].string().c_str(), &image.width, &image.height, &image.channels, STBI_rgb_alpha));
         image.size += 4 * image.width * image.height;
-        if (!buffers.back()) throw std::runtime_error("[CubeTexture::create] : failed to load texture image!");
+        if (!buffers.back()) throw std::runtime_error("[CubeTexture::CubeTexture] : failed to load texture image!");
 
         if (maxWidth == -1 && maxHeight == -1 && maxChannels == -1) {
             maxWidth = image.width; maxHeight = image.height; maxChannels = image.channels;
         }
         else if (maxWidth != image.width && maxHeight != image.height && maxChannels != image.channels) {
-            throw std::runtime_error("[CubeTexture::create] : images must be same size!");
+            throw std::runtime_error("[CubeTexture::CubeTexture] : images must be same size!");
         }
     }
 
@@ -246,5 +268,28 @@ Texture Texture::createEmpty(const PhysicalDevice& device, VkCommandBuffer comma
     const int width = 1, height = 1;
     return Texture(device, device.device(), commandBuffer, width, height, &buffer);
 }
+
+CubeTexture CubeTexture::createEmpty(const PhysicalDevice& device, VkCommandPool commandPool, Texture::EmptyType type) {
+    VkCommandBuffer commandBuffer = singleCommandBuffer::create(device.device(), commandPool);
+    Texture tex = CubeTexture::createEmpty(device, commandBuffer, type);
+    singleCommandBuffer::submit(device.device(), device.device()(0, 0), commandPool, &commandBuffer);
+    tex.destroyCache();
+    return tex;
+};
+
+CubeTexture CubeTexture::createEmpty(const PhysicalDevice& device, VkCommandBuffer commandBuffer, Texture::EmptyType type) {
+    uint32_t buffer = 0;
+    switch (type) {
+    case Texture::EmptyType::Black:
+        buffer = 0xff000000; // RGBA for black
+        break;
+    case Texture::EmptyType::White:
+        buffer = 0xffffffff; // RGBA for white
+        break;
+    }
+    const std::vector<void*> buffers(6, &buffer);
+    const int width = 1, height = 1;
+    return CubeTexture(device, device.device(), commandBuffer, width, height, buffers);
+};
 
 }

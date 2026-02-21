@@ -9,7 +9,7 @@ namespace moon::entities {
 
 class SkyboxObject : public transformational::Object {
 public:
-    SkyboxObject(const utils::vkDefault::Paths& texturePaths, const float& mipLevel = 1.0f);
+    SkyboxObject(const utils::vkDefault::Paths& texturePaths);
 
     SkyboxObject(const SkyboxObject&) = delete;
     SkyboxObject& operator=(const SkyboxObject&) = delete;

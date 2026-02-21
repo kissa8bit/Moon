@@ -13,6 +13,9 @@ interfaces::LightType toLightType(SpotLight::Type type)
 	case SpotLight::Type::square:
 		res = moon::interfaces::LightType::spotSquare;
 		break;
+	default:
+		CHECK_M(false, "unknown SpotLight::Type");
+		break;
 	}
 	return res;
 }
@@ -61,7 +64,7 @@ void SpotLight::createDescriptors(const utils::PhysicalDevice& device, uint32_t 
 
 	for (size_t i = 0; i < imageCount; i++) {
 		utils::descriptorSet::Writes writes;
-		WRITE_DESCRIPTOR(writes, descriptorSets.at(i), uniformBuffer.device[i].descriptorBufferInfo());
+		WRITE_DESCRIPTOR(writes, descriptorSets.at(i), uniformBuffer.device.at(i).descriptorBufferInfo());
 		WRITE_DESCRIPTOR(writes, descriptorSets.at(i), texture.descriptorImageInfo());
 		utils::descriptorSet::update(device.device(), writes);
 	}
@@ -71,8 +74,8 @@ utils::Buffers& SpotLight::buffers() {
 	return uniformBuffer.device;
 }
 
-SpotLight::Buffer& SpotLight::buffer(bool update) {
-	if (update) {
+SpotLight::Buffer& SpotLight::buffer(bool markDirty) {
+	if (markDirty) {
 		utils::vkDefault::raiseFlags(uniformBuffer.device);
 	}
 	return hostBuffer;

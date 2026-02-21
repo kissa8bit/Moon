@@ -31,7 +31,7 @@ public:
     };
 
     BaseObject(interfaces::Model* model, uint32_t firstInstance, uint32_t instanceCount);
-    Buffer& buffer(bool update);
+    Buffer& buffer(bool markDirty);
 
     void setTransformation(const math::mat4& transformation) override;
 

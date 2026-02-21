@@ -9,8 +9,10 @@ utils::vkDefault::DescriptorSetLayout SkyboxObject::createDescriptorSetLayout(Vk
     return utils::vkDefault::DescriptorSetLayout(device, binding);
 }
 
-SkyboxObject::SkyboxObject(const utils::vkDefault::Paths& texturePaths, const float& mipLevel)
-    : interfaces::Object(interfaces::ObjectMask(interfaces::ObjectType::skybox, interfaces::ObjectProperty::enable)), uniformBuffer(&hostBuffer, sizeof(hostBuffer)), texturePaths(texturePaths)
+SkyboxObject::SkyboxObject(const utils::vkDefault::Paths& texturePaths) : 
+    interfaces::Object(interfaces::ObjectMask(interfaces::ObjectType::skybox, interfaces::ObjectProperty::enable)), 
+    uniformBuffer(&hostBuffer, sizeof(hostBuffer)), 
+    texturePaths(texturePaths)
 {}
 
 void SkyboxObject::createDescriptors(const utils::PhysicalDevice& device, uint32_t imageCount) {
@@ -19,13 +21,9 @@ void SkyboxObject::createDescriptors(const utils::PhysicalDevice& device, uint32
     descriptors = descriptorPool.allocateDescriptorSets(descriptorSetLayout, imageCount);
 
     for (size_t i = 0; i < imageCount; i++) {
-        auto descriptorSet = descriptors[i];
-        const auto bufferInfo = uniformBuffer.device[i].descriptorBufferInfo();
-        const auto imageInfo = texture.descriptorImageInfo();
-
         utils::descriptorSet::Writes writes;
-        utils::descriptorSet::write(writes, descriptorSet, bufferInfo);
-        utils::descriptorSet::write(writes, descriptorSet, imageInfo);
+		WRITE_DESCRIPTOR(writes, descriptors.at(i), uniformBuffer.device.at(i).descriptorBufferInfo());
+        WRITE_DESCRIPTOR(writes, descriptors.at(i), texture.descriptorImageInfo());
         utils::descriptorSet::update(device.device(), writes);
     }
 }
@@ -34,7 +32,7 @@ void SkyboxObject::create(const utils::PhysicalDevice& device, VkCommandPool com
     uniformBuffer = utils::UniformBuffer(device, imageCount, uniformBuffer.host, uniformBuffer.size);
 
     VkCommandBuffer commandBuffer = utils::singleCommandBuffer::create(device.device(), commandPool);
-    texture = texturePaths.empty() ? utils::Texture::createEmpty(device, commandBuffer) : utils::CubeTexture(texturePaths, device, device.device(), commandBuffer);
+    texture = texturePaths.empty() ? utils::CubeTexture::createEmpty(device, commandBuffer) : utils::CubeTexture(texturePaths, device, device.device(), commandBuffer);
     CHECK(utils::singleCommandBuffer::submit(device.device(), device.device()(0, 0), commandPool, &commandBuffer));
     texture.destroyCache();
 
@@ -49,8 +47,8 @@ utils::Buffers& SkyboxObject::buffers() {
     return uniformBuffer.device;
 }
 
-SkyboxObject::Buffer& SkyboxObject::buffer(bool update) {
-    if (update) {
+SkyboxObject::Buffer& SkyboxObject::buffer(bool markDirty) {
+    if (markDirty) {
         utils::vkDefault::raiseFlags(uniformBuffer.device);
     }
     return hostBuffer;

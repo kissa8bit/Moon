@@ -18,8 +18,8 @@ utils::Buffers& BaseCamera::buffers() {
     return uniformBuffer.device;
 }
 
-BaseCamera::Buffer& BaseCamera::buffer(bool update) {
-	if (update) {
+BaseCamera::Buffer& BaseCamera::buffer(bool markDirty) {
+	if (markDirty) {
 		utils::vkDefault::raiseFlags(uniformBuffer.device);
 	}
 	return hostBuffer;

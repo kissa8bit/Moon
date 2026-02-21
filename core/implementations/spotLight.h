@@ -24,15 +24,15 @@ public:
         alignas(16) math::mat4 view;
         alignas(16) math::vec4 color;
         alignas(16) struct {
-            float x{ 0.0 };
+            float _pad0{ 0.0 };
             float powerFactor{ 10.0f };
             float dropFactor{ 1.0f };
-            float w{ 0.0f };
+            float _pad1{ 0.0f };
         }props;
     };
 
     SpotLight(Type type);
-    Buffer& buffer(bool update);
+    Buffer& buffer(bool markDirty);
 
     void setTexture(const std::filesystem::path& texturePath);
     void setTransformation(const math::mat4& transformation) override;

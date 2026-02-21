@@ -20,8 +20,8 @@ public:
         BaseObject::Buffer::ColorLinearProperties base;
     };
 
-    SkyboxObject(const utils::vkDefault::Paths& texturePaths, const float& mipLevel);
-    Buffer& buffer(bool update);
+    SkyboxObject(const utils::vkDefault::Paths& texturePaths);
+    Buffer& buffer(bool markDirty);
 
     void setTransformation(const math::mat4& transformation) override;
 

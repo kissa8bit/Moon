@@ -4,10 +4,10 @@
 
 namespace moon::entities {
 
-SkyboxObject::SkyboxObject(const utils::vkDefault::Paths& texturePaths, const float& mipLevel)
+SkyboxObject::SkyboxObject(const utils::vkDefault::Paths& texturePaths)
     : transformational::Object()
 {
-    pObject = std::make_unique<implementations::SkyboxObject>(texturePaths, mipLevel);
+    pObject = std::make_unique<implementations::SkyboxObject>(texturePaths);
 }
 
 SkyboxObject& SkyboxObject::setColor(std::optional<math::vec4> constant, std::optional<math::vec4> factor) {
