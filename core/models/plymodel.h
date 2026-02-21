@@ -50,4 +50,4 @@ public:
 
 } // moon::models
 
-#endif // PLYMODEL_H
+#endif // MOON_MODELS_PLYMODEL_H

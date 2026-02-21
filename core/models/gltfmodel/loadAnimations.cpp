@@ -83,8 +83,8 @@ class Cubic {
             result[i] =
                 (2.0f * t3 - 3.0f * t2 + 1.0f) * p0 +
                 (-2.0f * t3 + 3.0f * t2) * p1 +
-                (t3 - 2.0f * t2 + t) * d1 +
-                (t3 - t2) * d0;
+                (t3 - 2.0f * t2 + t) * d0 +
+                (t3 - t2) * d1;
         }
         return result;
     }
@@ -106,7 +106,7 @@ class Cubic {
 
 public:
     using signature = void (*)(Node*, const OutputData&, const OutputData&, float, float, float);
-    static constexpr struct { size_t a; size_t b; } tangent = { 0, 2 };
+    static constexpr struct { size_t a; size_t b; } tangent = { 2, 0 };  // a=outTangent(p0), b=inTangent(p1)
     static constexpr size_t value = 1;
 
     static signature update(GltfAnimation::Channel::PathType path) {
@@ -251,7 +251,7 @@ bool GltfAnimation::update(float time){
     bool needUpdate = false;
     if (time < changeTime) {
         for (const auto& channel : channels) {
-            if (channel.samplerIndex >= samplers.size()) continue;
+            if (channel.samplerIndex < 0 || static_cast<size_t>(channel.samplerIndex) >= samplers.size()) continue;
             const auto& sampler = samplers[channel.samplerIndex];
             if (sampler.points.size() == 0) continue;
             float t = time / changeTime;
@@ -260,7 +260,7 @@ bool GltfAnimation::update(float time){
         needUpdate |= true;
     } else {
         for (const auto& channel : channels) {
-            if(channel.samplerIndex >= samplers.size()) continue;
+            if(channel.samplerIndex < 0 || static_cast<size_t>(channel.samplerIndex) >= samplers.size()) continue;
             const auto& sampler = samplers[channel.samplerIndex];
             for (size_t i = 0; i < sampler.points.size() - 1; i++) {
                 if (const auto& x0 = sampler.points[i], &x1 = sampler.points[i + 1]; time > x0.inputTime && time < x1.inputTime) {
@@ -272,7 +272,7 @@ bool GltfAnimation::update(float time){
                         case Sampler::InterpolationType::LINEAR: Linear::update(channel.path)(channel.node, x0d, x1d, t); break;
                         case Sampler::InterpolationType::CUBICSPLINE: Cubic::update(channel.path)(channel.node, x0d, x1d, x0t, x1t, t); break;
                     }
-                    needUpdate |= true;
+                    needUpdate = true;
                 }
             }
         }

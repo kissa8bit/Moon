@@ -62,7 +62,10 @@ void calculateTangent(uint32_t indexOffset, interfaces::Vertices& vertices, inte
         const auto duv1 = v1.uv0 - v0.uv0;
         const auto duv2 = v2.uv0 - v0.uv0;
 
-        const float det = 1.0f / (duv1[0] * duv2[1] - duv1[1] * duv2[0]);
+        const float denom = duv1[0] * duv2[1] - duv1[1] * duv2[0];
+        if (std::abs(denom) < 1e-7f) continue;
+
+        const float det = 1.0f / denom;
         const auto bitangent = normalized(det * (duv1[0] * dv2 - duv2[0] * dv1));
         auto tangent = normalized(det * (duv2[1] * dv1 - duv1[1] * dv2));
 
@@ -71,8 +74,14 @@ void calculateTangent(uint32_t indexOffset, interfaces::Vertices& vertices, inte
         }
 
         for (uint32_t j = i; j < i + 3; j++) {
-            auto& v = vertices[indices[j]];
-            v.tangent = normalized(tangent - v.normal * dot(v.normal, tangent));
+            vertices[indices[j]].tangent += tangent;
+        }
+    }
+
+    for (uint32_t i = indexOffset; i < indices.size(); ++i) {
+        auto& v = vertices[indices[i]];
+        if (dot(v.tangent, v.tangent) > 1e-7f) {
+            v.tangent = normalized(v.tangent - v.normal * dot(v.normal, v.tangent));
         }
     }
 }
