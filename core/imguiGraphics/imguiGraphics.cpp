@@ -14,7 +14,9 @@ ImguiGraphics::ImguiGraphics(VkInstance instance, uint32_t imageCount)
 }
 
 ImguiGraphics::~ImguiGraphics(){
-    ImGui_ImplVulkan_Shutdown();
+    if (isImGuilVulkanInit) {
+        ImGui_ImplVulkan_Shutdown();
+    }
     ImGui::DestroyContext();
 }
 
@@ -57,7 +59,9 @@ void ImguiGraphics::reset() {
         initInfo.RenderPass = pRenderPass;
     ImGui_ImplVulkan_Init(&initInfo);
 
-    ImGui_ImplVulkan_CreateFontsTexture();
+    if (!ImGui_ImplVulkan_CreateFontsTexture()) {
+        utils::debug::checkResult(VK_ERROR_INITIALIZATION_FAILED, "ImGui_ImplVulkan_CreateFontsTexture");
+    }
 	isImGuilVulkanInit = true;
 }
 
