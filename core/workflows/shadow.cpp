@@ -53,14 +53,13 @@ void ShadowGraphics::Shadow::create(interfaces::ObjectType type, const workflows
     VkPipelineMultisampleStateCreateInfo multisampling = utils::vkDefault::multisampleState();
     VkPipelineDepthStencilStateCreateInfo depthStencil = utils::vkDefault::depthStencilEnable();
 
-    std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachment = {utils::vkDefault::colorBlendAttachmentState(VK_FALSE)};
-    VkPipelineColorBlendStateCreateInfo colorBlending = utils::vkDefault::colorBlendState(static_cast<uint32_t>(colorBlendAttachment.size()),colorBlendAttachment.data());
+    VkPipelineColorBlendStateCreateInfo colorBlending = utils::vkDefault::colorBlendState(0, nullptr);
 
     auto& pipelineDesc = pipelineDescs[type];
 
     std::vector<VkPushConstantRange> pushConstantRange;
     pushConstantRange.push_back(VkPushConstantRange{});
-        pushConstantRange.back().stageFlags = VK_PIPELINE_STAGE_FLAG_BITS_MAX_ENUM;
+        pushConstantRange.back().stageFlags = VK_SHADER_STAGE_ALL;
         pushConstantRange.back().offset = 0;
         pushConstantRange.back().size = sizeof(interfaces::Material::Buffer);
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts = {

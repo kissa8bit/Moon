@@ -29,50 +29,50 @@ layout (push_constant) uniform PushConstants{
     vec4 max;
 } pushConstants;
 
-vec3 min = pushConstants.min.xyz;
-vec3 max = pushConstants.max.xyz;
-int joint = int(pushConstants.max.w);
-
-vec3 vertex[24] = vec3[](
-    vec3(min.x,min.y,min.z),
-    vec3(max.x,min.y,min.z),
-
-    vec3(max.x,min.y,min.z),
-    vec3(max.x,max.y,min.z),
-
-    vec3(max.x,max.y,min.z),
-    vec3(min.x,max.y,min.z),
-
-    vec3(min.x,max.y,min.z),
-    vec3(min.x,min.y,min.z),
-
-    vec3(min.x,min.y,max.z),
-    vec3(max.x,min.y,max.z),
-
-    vec3(max.x,min.y,max.z),
-    vec3(max.x,max.y,max.z),
-
-    vec3(max.x,max.y,max.z),
-    vec3(min.x,max.y,max.z),
-
-    vec3(min.x,max.y,max.z),
-    vec3(min.x,min.y,max.z),
-
-    vec3(min.x,min.y,min.z),
-    vec3(min.x,min.y,max.z),
-
-    vec3(max.x,min.y,min.z),
-    vec3(max.x,min.y,max.z),
-
-    vec3(max.x,max.y,min.z),
-    vec3(max.x,max.y,max.z),
-
-    vec3(min.x,max.y,min.z),
-    vec3(min.x,max.y,max.z)
-);
-
 void main()
 {
+    vec3 bmin = pushConstants.min.xyz;
+    vec3 bmax = pushConstants.max.xyz;
+    int joint = int(pushConstants.max.w);
+
+    vec3 vertices[24] = vec3[](
+        vec3(bmin.x,bmin.y,bmin.z),
+        vec3(bmax.x,bmin.y,bmin.z),
+
+        vec3(bmax.x,bmin.y,bmin.z),
+        vec3(bmax.x,bmax.y,bmin.z),
+
+        vec3(bmax.x,bmax.y,bmin.z),
+        vec3(bmin.x,bmax.y,bmin.z),
+
+        vec3(bmin.x,bmax.y,bmin.z),
+        vec3(bmin.x,bmin.y,bmin.z),
+
+        vec3(bmin.x,bmin.y,bmax.z),
+        vec3(bmax.x,bmin.y,bmax.z),
+
+        vec3(bmax.x,bmin.y,bmax.z),
+        vec3(bmax.x,bmax.y,bmax.z),
+
+        vec3(bmax.x,bmax.y,bmax.z),
+        vec3(bmin.x,bmax.y,bmax.z),
+
+        vec3(bmin.x,bmax.y,bmax.z),
+        vec3(bmin.x,bmin.y,bmax.z),
+
+        vec3(bmin.x,bmin.y,bmin.z),
+        vec3(bmin.x,bmin.y,bmax.z),
+
+        vec3(bmax.x,bmin.y,bmin.z),
+        vec3(bmax.x,bmin.y,bmax.z),
+
+        vec3(bmax.x,bmax.y,bmin.z),
+        vec3(bmax.x,bmax.y,bmax.z),
+
+        vec3(bmin.x,bmax.y,bmin.z),
+        vec3(bmin.x,bmax.y,bmax.z)
+    );
+
     mat4 skinMat = (joint != -1 ? node.jointMatrix[joint] : mat4(1.0f));
-    gl_Position = global.proj * global.view * local.matrix * node.matrix * skinMat * vec4(vertex[gl_VertexIndex], 1.0f);
+    gl_Position = global.proj * global.view * local.matrix * node.matrix * skinMat * vec4(vertices[gl_VertexIndex], 1.0f);
 }

@@ -83,7 +83,7 @@ void BoundingBoxGraphics::BoundingBox::create(const workflows::ShaderNames& shad
 
     std::vector<VkPushConstantRange> pushConstantRange;
         pushConstantRange.push_back(VkPushConstantRange{});
-        pushConstantRange.back().stageFlags = VK_PIPELINE_STAGE_FLAG_BITS_MAX_ENUM;
+        pushConstantRange.back().stageFlags = VK_SHADER_STAGE_ALL;
         pushConstantRange.back().offset = 0;
         pushConstantRange.back().size = sizeof(math::box);
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts = {
