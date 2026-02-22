@@ -54,6 +54,8 @@ VkDescriptorSetLayoutBinding bufferVertexLayoutBinding(const uint32_t& binding, 
 VkDescriptorSetLayoutBinding bufferFragmentLayoutBinding(const uint32_t& binding, const uint32_t& count);
 VkDescriptorSetLayoutBinding imageFragmentLayoutBinding(const uint32_t& binding, const uint32_t& count);
 VkDescriptorSetLayoutBinding inAttachmentFragmentLayoutBinding(const uint32_t& binding, const uint32_t& count);
+VkDescriptorSetLayoutBinding imageComputeLayoutBinding(const uint32_t& binding, const uint32_t& count);
+VkDescriptorSetLayoutBinding bufferComputeLayoutBinding(const uint32_t& binding, const uint32_t& count);
 
 #define VKDEFAULT_INIT_DESCRIPTOR(Name, BaseDescriptor)	\
 private:												\
@@ -78,6 +80,7 @@ class Pipeline {
 
 public:
 	Pipeline(VkDevice device, const std::vector<VkGraphicsPipelineCreateInfo>& graphicsPipelineCreateInfos);
+	Pipeline(VkDevice device, const VkComputePipelineCreateInfo& computePipelineCreateInfo);
 };
 
 using PipelineMap = std::unordered_map<MaskType, utils::vkDefault::Pipeline>;
@@ -167,6 +170,26 @@ public:
 	}
 
 	VertrxShaderModule(VkDevice device, const std::filesystem::path& shaderPath, const VkSpecializationInfo& specializationInfo = VkSpecializationInfo{});
+	operator const VkPipelineShaderStageCreateInfo& () const;
+};
+
+class ComputeShaderModule : public ShaderModule {
+private:
+	VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfo{};
+
+public:
+	~ComputeShaderModule();
+	ComputeShaderModule() = default;
+	ComputeShaderModule(const ComputeShaderModule&) = delete;
+	ComputeShaderModule& operator=(const ComputeShaderModule&) = delete;
+	ComputeShaderModule(ComputeShaderModule&& other) noexcept { swap(other); }
+	ComputeShaderModule& operator=(ComputeShaderModule&& other) noexcept { swap(other); return *this; }
+	void swap(ComputeShaderModule& other) noexcept {
+		std::swap(pipelineShaderStageCreateInfo, other.pipelineShaderStageCreateInfo);
+		ShaderModule::swap(other);
+	}
+
+	ComputeShaderModule(VkDevice device, const std::filesystem::path& shaderPath);
 	operator const VkPipelineShaderStageCreateInfo& () const;
 };
 

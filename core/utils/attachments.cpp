@@ -214,7 +214,7 @@ std::vector<VkImage> Attachments::getImages() const {
 
 void createAttachments(VkPhysicalDevice physicalDevice, VkDevice device, const utils::vkDefault::ImageInfo image, uint32_t attachmentsCount, Attachments* pAttachments, VkImageUsageFlags usage, VkSamplerCreateInfo samplerInfo){
     for(uint32_t i = 0; i < attachmentsCount; i++){
-        pAttachments[i] = Attachments(physicalDevice, device, image, usage, { {0.0f,0.0f,0.0f,0.0f}}, samplerInfo);
+        pAttachments[i] = Attachments(physicalDevice, device, image, usage, { {0.0f,0.0f,0.0f,0.0f} }, samplerInfo);
     }
 }
 

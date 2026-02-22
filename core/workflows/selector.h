@@ -13,16 +13,12 @@ struct SelectorParameters : workflows::Parameters {
         utils::AttachmentName depth;
         utils::ImageName defaultDepthTexture;
     }in;
-    struct{
-        utils::AttachmentName selector;
-    }out;
 };
 
 class SelectorGraphics : public Workflow
 {
 private:
     SelectorParameters& parameters;
-    utils::Attachments frame;
     utils::Cursor** cursor{ nullptr };
 
     struct Selector : public Workbody{
@@ -31,9 +27,6 @@ private:
         void create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass) override;
     }selector;
 
-    void createAttachments(utils::AttachmentsDatabase& aDatabase);
-    void createRenderPass();
-    void createFramebuffers();
     void updateCommandBuffer(uint32_t frameNumber) override;
 
 public:
@@ -45,4 +38,4 @@ public:
 
 } // moon::workflows
 
-#endif // SELECTOR_H
+#endif // MOON_WORKFLOWS_SELECTOR_H

@@ -153,7 +153,6 @@ void DeferredGraphics::createGraphicsPasses()
     selectorParams.in.normal = l0 + Names::MainGraphics::GBuffer::normal;
     selectorParams.in.depth = l0 + Names::MainGraphics::GBuffer::depth;
     selectorParams.in.defaultDepthTexture = Names::whiteTexture;
-    selectorParams.out.selector = Names::Selector::output;
     selectorParams.shadersPath = params.workflowsShadersPath;
     selectorParams.imageInfo = imageInfo;
 

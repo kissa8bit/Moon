@@ -16,7 +16,8 @@ namespace moon::workflows {
 enum class ShaderType
 {
     Vertex,
-    Fragment
+    Fragment,
+    Compute
 };
 
 using ShaderNames = std::unordered_map<ShaderType, std::string>;

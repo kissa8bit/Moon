@@ -24,5 +24,7 @@ if __name__ == '__main__':
                         subprocess.run([args.compiler, os.path.join(args.directory, entry, file), '-o', os.path.join(args.output, entry, filename + 'Frag.spv')])
                     case '.vert':
                         subprocess.run([args.compiler, os.path.join(args.directory, entry, file), '-o', os.path.join(args.output, entry, filename + 'Vert.spv')])
+                    case '.comp':
+                        subprocess.run([args.compiler, os.path.join(args.directory, entry, file), '-o', os.path.join(args.output, entry, filename + 'Comp.spv')])
                     case _:
                         pass
