@@ -20,10 +20,6 @@ layout(set = 0, binding = 7) uniform sampler2D skyboxBloomMap;
 layout(set = 0, binding = 8) uniform sampler2D scatteringMap;
 layout(set = 0, binding = 9) uniform sampler2D sslrMap;
 
-layout(push_constant) uniform PC {
-    float blurDepth;
-} pc;
-
 layout(location = 0) in vec2 fragTexCoord;
 
 layout(location = 0) out vec4 outColor;
@@ -51,19 +47,11 @@ void main() {
     outColor = accum(colorMap);
     outBloom = accum(bloomMap);
     
-    float depth = 0.0;
-    for(int i = layersCount - 1; i >= 0; --i)
-    {
-        float layerDepth = texture(depthMap[i], fragTexCoord).r;
-        depth = max(depth, layerDepth);
+    if(texture(depthMap[0], fragTexCoord).r == 1.0) {
+        outColor += texture(skyboxMap, fragTexCoord);
+        outBloom += texture(skyboxBloomMap, fragTexCoord);
     }
-
     
-    // if(depth == 1.0f) {
-    //     outColor += texture(skyboxMap, fragTexCoord);
-    //     outBloom += texture(skyboxBloomMap, fragTexCoord);
-    // }
-    // 
-    // outColor += vec4(texture(scatteringMap, fragTexCoord.xy).xyz, 0.0);
-    // outBlur = vec4(outColor.xyz, depth);
+    outColor += vec4(texture(scatteringMap, fragTexCoord.xy).xyz, 0.0);
+    outBlur = outColor;
 }

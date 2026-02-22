@@ -15,7 +15,6 @@ struct CursorPose {
 
 struct CursorInfo {
     alignas(4) uint32_t number;
-    alignas(4) float depth;
 };
 
 struct CursorBuffer {

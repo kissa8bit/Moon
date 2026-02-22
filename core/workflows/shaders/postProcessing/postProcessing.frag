@@ -74,9 +74,10 @@ void main() {
 
     vec4 baseColor = texture(Sampler, fragTexCoord);
 
-    outColor += dot(baseColor,baseColor) > 0.0f ? baseColor : texture(blurSampler, fragTexCoord);
+    vec4 blurColor = texture(blurSampler, fragTexCoord);
+    outColor += dot(blurColor.xyz, blurColor.xyz) > 0.0f ? blurColor : baseColor;
     outColor += texture(bloomSampler, fragTexCoord);
-    //outColor += texture(sslrSampler,fragTexCoord);
+    // outColor += texture(sslrSampler,fragTexCoord);
     outColor += texture(bbSampler,fragTexCoord);
-    outColor += vec4(texture(ssaoSampler,fragTexCoord).xyz,0.0f);
+    outColor += vec4(texture(ssaoSampler,fragTexCoord).xyz, 0.0f);
 }

@@ -35,7 +35,7 @@ struct LayersCombinerParameters : workflows::Parameters {
         utils::AttachmentName bloom;
         utils::AttachmentName blur;
     }out;
-    float blurDepth{ 1.0f };
+
     LayerIndex layersCount{ 1 };
 };
 

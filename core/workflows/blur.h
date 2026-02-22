@@ -7,7 +7,8 @@ namespace moon::workflows {
 
 struct GaussianBlurParameters : workflows::Parameters {
     struct{
-        utils::AttachmentName blur;
+        utils::AttachmentName color;
+        utils::AttachmentName depth;
     }in;
     struct{
         utils::AttachmentName blur;
@@ -45,4 +46,4 @@ public:
 
 } // moon::workflows
 
-#endif // BLUR_H
+#endif // MOON_WORKFLOWS_BLUR_H

@@ -146,7 +146,7 @@ struct Parameters {
         utils::DirtyValue<uint32_t> blitAttachmentsCount{ 8 };
         utils::DirtyValue<uint32_t> layersCount{ 3 };
         utils::DirtyValue<float>    blitFactor{ 1.5f };
-        utils::DirtyValue<float>    blurDepth{ 1.0f };
+        utils::DirtyValue<float>    blurDepth{ 0.0f };
         utils::DirtyValue<float>    minAmbientFactor{ 0.05f };
     } workflowsParameters;
 

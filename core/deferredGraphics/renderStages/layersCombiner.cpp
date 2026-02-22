@@ -7,10 +7,6 @@
 
 namespace moon::deferredGraphics {
 
-struct LayersCombinerPushConst {
-    alignas(4) float blurDepth{ 1.0f };
-};
-
 LayersCombiner::LayersCombiner(LayersCombinerParameters& parameters) : combiner(parameters), parameters(parameters) {}
 
 void LayersCombiner::createAttachments(utils::AttachmentsDatabase& aDatabase)
@@ -109,13 +105,8 @@ void LayersCombiner::Combiner::create(const workflows::ShaderNames& shadersNames
     std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachment(LayersCombinerAttachments::size(), utils::vkDefault::colorBlendAttachmentState(VK_FALSE));
     VkPipelineColorBlendStateCreateInfo colorBlending = utils::vkDefault::colorBlendState(static_cast<uint32_t>(colorBlendAttachment.size()),colorBlendAttachment.data());
 
-    std::vector<VkPushConstantRange> pushConstantRange;
-    pushConstantRange.push_back(VkPushConstantRange{});
-        pushConstantRange.back().stageFlags = VK_SHADER_STAGE_ALL;
-        pushConstantRange.back().offset = 0;
-        pushConstantRange.back().size = sizeof(LayersCombinerPushConst);
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts = { descriptorSetLayout };
-    pipelineLayout = utils::vkDefault::PipelineLayout(device, descriptorSetLayouts, pushConstantRange);
+    pipelineLayout = utils::vkDefault::PipelineLayout(device, descriptorSetLayouts);
 
     std::vector<VkGraphicsPipelineCreateInfo> pipelineInfo;
     pipelineInfo.push_back(VkGraphicsPipelineCreateInfo{});
@@ -210,10 +201,6 @@ void LayersCombiner::updateCommandBuffer(uint32_t frameNumber){
         renderPassInfo.pClearValues = clearValues.data();
 
     vkCmdBeginRenderPass(commandBuffers.at(frameNumber), &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-        LayersCombinerPushConst pushConst{};
-            pushConst.blurDepth = parameters.blurDepth;
-        vkCmdPushConstants(commandBuffers.at(frameNumber), combiner.pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(LayersCombinerPushConst), &pushConst);
 
         vkCmdBindPipeline(commandBuffers.at(frameNumber), VK_PIPELINE_BIND_POINT_GRAPHICS, combiner.pipeline);
         vkCmdBindDescriptorSets(commandBuffers.at(frameNumber), VK_PIPELINE_BIND_POINT_GRAPHICS, combiner.pipelineLayout, 0, 1, &combiner.descriptorSets.at(frameNumber), 0, nullptr);

@@ -21,7 +21,6 @@ void Cursor::update(const float& x, const float& y) {
     cursorBuffer.pose.x = x;
     cursorBuffer.pose.y = y;
     cursorBuffer.info.number = std::numeric_limits<uint32_t>::max();
-    cursorBuffer.info.depth = 1.0f;
     buffer.copy(&cursorBuffer);
 }
 

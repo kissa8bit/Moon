@@ -2,39 +2,27 @@
 
 #include "../__methods__/defines.glsl"
 #include "../__methods__/math.glsl"
+#include "blur.glsl"
 
-layout(set = 0, binding = 0) uniform sampler2D blurSampler;
+layout(set = 0, binding = 0) uniform sampler2D color;
+layout(set = 0, binding = 1) uniform sampler2D depth;
 
 layout(location = 0) in vec2 fragTexCoord;
 
-layout(location = 0) out vec4 outColor;
-layout(location = 1) out vec4 outBlur;
+layout(location = 0) out vec4 outColor0;
+layout(location = 1) out vec4 outColor1;
 
 layout(push_constant) uniform PC {
     float depth;
 } pc;
 
-vec4 blur(sampler2D blurSampler, vec2 TexCoord) {
-    float Nf = (texture(blurSampler, TexCoord).a - pc.depth) / (1.0f - pc.depth);
-    Nf = 10.0f * clamp(Nf, 0.0f, 1.0f);
-    uint N = uint(Nf);
-    uint n = 2 * N;
-    float sum = power(2, n);
-
-    vec2 texOffset = 1.0 / textureSize(blurSampler, 0);
-    vec3 result = texture(blurSampler, TexCoord).rgb * C(n, N) / sum;
-
-    for(int i = 1; i < N + 1; ++i) {
-        float x = texOffset.x * i;
-        float weight = C(n, N - i) / sum;
-        result += texture(blurSampler, TexCoord + vec2(x, 0.0)).rgb * weight;
-        result += texture(blurSampler, TexCoord - vec2(x, 0.0)).rgb * weight;
-    }
-
-    return vec4(result, 1.0);
-}
-
 void main() {
-    outColor = vec4(0.0);
-    outBlur = blur(blurSampler, fragTexCoord);
+    outColor0 = vec4(0.0);
+    // outColor1 is read by the y-pass (yBlur) as bufferAttachment. Its in-focus pixels
+    // must NOT be written as vec4(0.0): the y-pass blur kernel samples neighbors from
+    // this buffer, and zeros at in-focus positions get mixed into the blurred result of
+    // nearby out-of-focus pixels, producing large tile-sized patches of incorrectly dark
+    // color that flicker randomly each frame. blur() avoids this by returning
+    // texture(tex, texCoord) for in-focus pixels — always a valid color, never a black hole.
+    outColor1 = blur(color, depth, fragTexCoord, vec2(1.0, 0.0), pc.depth);
 }

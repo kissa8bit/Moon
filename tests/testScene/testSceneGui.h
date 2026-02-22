@@ -181,12 +181,21 @@ bool graphicsProps(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> gra
         graphics->parameters().blitFactor() = val;
     }
 
-    if (cursor) {
+    static bool manualBlurDepth = false;
+    static float farBlurDepth = 1.0f;
+    auto depthTransform = [](float val) {
+		constexpr float deg = 0.1;
+		return std::pow(val, deg) + std::numeric_limits<float>::epsilon();
+	};
+    if (ImGui::RadioButton("manual blur depth", manualBlurDepth)) {
+        manualBlurDepth = !manualBlurDepth;
+        graphics->parameters().blurDepth() = manualBlurDepth ? depthTransform(farBlurDepth) : 0.0f;
+    }
+    if (manualBlurDepth) {
         ImGui::SetNextItemWidth(150.0f);
-        const moon::utils::CursorBuffer& cursorBuffer = cursor->read();
-        float farBlurDepth = cursorBuffer.info.depth;
-        ImGui::SliderFloat("far blur depth", &farBlurDepth, 0.0f, 1.0f);
-        graphics->parameters().blurDepth() = graphics->getEnable(moon::deferredGraphics::Names::Blur::param) ? 1.02f * farBlurDepth : 1.0f;
+        if (ImGui::SliderFloat("blur depth", &farBlurDepth, 0.0f, 1.0f)) {
+            graphics->parameters().blurDepth() = depthTransform(farBlurDepth);
+        }
     }
 
     return true;

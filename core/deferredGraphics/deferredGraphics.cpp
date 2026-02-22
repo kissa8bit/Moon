@@ -117,7 +117,6 @@ void DeferredGraphics::createGraphicsPasses()
     layersCombinerParams.out.blur = Names::LayersCombiner::blur;
     layersCombinerParams.layersCount = LayerIndex(params.layersCount().get());
     layersCombinerParams.shadersPath = params.shadersPath;
-    layersCombinerParams.blurDepth = params.blurDepth();
     layersCombinerParams.imageInfo = imageInfo;
 
     bloomParams.in.bloom = Names::LayersCombiner::bloom;
@@ -129,10 +128,10 @@ void DeferredGraphics::createGraphicsPasses()
     bloomParams.ySamplerStep = params.blitFactor();
     bloomParams.imageInfo = imageInfo;
 
-    blurParams.in.blur = Names::LayersCombiner::blur;
+    blurParams.in.color = Names::LayersCombiner::color;
+    blurParams.in.depth = l0 + Names::MainGraphics::GBuffer::depth;
     blurParams.out.blur = Names::Blur::output;
     blurParams.shadersPath = params.workflowsShadersPath;
-    blurParams.blurDepth = params.blurDepth();
     blurParams.imageInfo = imageInfo;
 
     bbParams.in.camera = Names::camera;
@@ -260,7 +259,6 @@ void DeferredGraphics::updateParameters() {
     if (params.blurDepth().isDirty()) {
         const auto blurDepth = params.blurDepth().consume();
         blurParams.blurDepth = blurDepth;
-        layersCombinerParams.blurDepth = blurDepth;
         requestUpdate(Names::Blur::name);
         requestUpdate(Names::LayersCombiner::name);
     }
