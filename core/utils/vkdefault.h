@@ -47,7 +47,7 @@ VkPipelineRasterizationStateCreateInfo rasterizationState(VkFrontFace frontFace)
 VkPipelineMultisampleStateCreateInfo multisampleState();
 VkPipelineDepthStencilStateCreateInfo depthStencilDisable();
 VkPipelineDepthStencilStateCreateInfo depthStencilEnable();
-VkPipelineColorBlendAttachmentState colorBlendAttachmentState(VkBool32 enable);
+VkPipelineColorBlendAttachmentState colorBlendAttachmentState(VkBool32 enable, VkBlendOp blendOp = VK_BLEND_OP_ADD);
 VkPipelineColorBlendStateCreateInfo colorBlendState(uint32_t attachmentCount, const VkPipelineColorBlendAttachmentState* pAttachments);
 SubpassInfos subpassInfos(uint32_t attachmentCount = 1);
 VkDescriptorSetLayoutBinding bufferVertexLayoutBinding(const uint32_t& binding, const uint32_t& count);

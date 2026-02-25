@@ -86,7 +86,7 @@ void DeferredGraphics::createGraphicsPasses()
     skyboxParams.imageInfo = imageInfo;
 
     scatteringParams.in.camera = Names::camera;
-    scatteringParams.in.depth = Names::MainGraphics::GBuffer::depth;
+    scatteringParams.in.depth = l0 + Names::MainGraphics::GBuffer::depth;
     scatteringParams.out.scattering = Names::Scattering::output;
     scatteringParams.shadersPath = params.workflowsShadersPath;
     scatteringParams.imageInfo = imageInfo;

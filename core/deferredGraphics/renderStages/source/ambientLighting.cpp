@@ -24,11 +24,14 @@ void Graphics::AmbientLighting::create(const workflows::ShaderNames& shadersName
     VkPipelineMultisampleStateCreateInfo multisampling = utils::vkDefault::multisampleState();
     VkPipelineDepthStencilStateCreateInfo depthStencil = utils::vkDefault::depthStencilDisable();
 
-    std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachment = {
-        utils::vkDefault::colorBlendAttachmentState(VK_TRUE),
+    VkPipelineColorBlendAttachmentState colorBlendAttachment = utils::vkDefault::colorBlendAttachmentState(VK_TRUE);
+        colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
+
+    std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments = {
+        colorBlendAttachment,
         utils::vkDefault::colorBlendAttachmentState(VK_TRUE)
     };
-    VkPipelineColorBlendStateCreateInfo colorBlending = utils::vkDefault::colorBlendState(static_cast<uint32_t>(colorBlendAttachment.size()),colorBlendAttachment.data());
+    VkPipelineColorBlendStateCreateInfo colorBlending = utils::vkDefault::colorBlendState(static_cast<uint32_t>(colorBlendAttachments.size()), colorBlendAttachments.data());
 
     std::vector<VkPushConstantRange> pushConstantRange;
     pushConstantRange.push_back(VkPushConstantRange{});

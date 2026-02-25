@@ -19,11 +19,11 @@ void Graphics::Lighting::createPipeline(interfaces::LightType type, const workfl
     VkPipelineMultisampleStateCreateInfo multisampling = utils::vkDefault::multisampleState();
     VkPipelineDepthStencilStateCreateInfo depthStencil = utils::vkDefault::depthStencilDisable();
 
-    std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachment = {
+    std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments = {
         utils::vkDefault::colorBlendAttachmentState(VK_TRUE),
         utils::vkDefault::colorBlendAttachmentState(VK_TRUE)
     };
-    VkPipelineColorBlendStateCreateInfo colorBlending = utils::vkDefault::colorBlendState(static_cast<uint32_t>(colorBlendAttachment.size()), colorBlendAttachment.data());
+    VkPipelineColorBlendStateCreateInfo colorBlending = utils::vkDefault::colorBlendState(static_cast<uint32_t>(colorBlendAttachments.size()), colorBlendAttachments.data());
 
     auto& pipelineDesc = pipelineDescs[type];
 
