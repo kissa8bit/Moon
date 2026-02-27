@@ -72,15 +72,15 @@ float pcf(sampler2D shadowMap, vec2 uv, float currentDepth, float filterRadius, 
     return 1.0 - shadow / 16.0;
 }
 
-float shadowFactor(const in mat4 proj, sampler2D shadowMap, vec4 coordinates) {
-    vec2 uv = coordinates.xy / coordinates.w * 0.5 + 0.5;
-    float currentDepth = coordinates.z / coordinates.w;
+float calcShadowFactor(const in mat4 proj, sampler2D shadowMap, const in vec3 projectedCoordinates) {
+    const vec2 uv = projectedCoordinates.xy;
+    const float currentDepth = projectedCoordinates.z;
 
     // Small bias: prevents self-shadowing without breaking contact and distant shadows.
     // 0.002 was too large — far from the light NDC is compressed,
     // the depth difference between blocker and receiver is < 0.0001, and a large bias hid blockers.
     const float bias = 0.0001;
-    float biasedDepth = currentDepth - bias;
+    const float biasedDepth = currentDepth - bias;
 
     // Per-pixel random rotation of the Poisson disk using screen-space coordinates.
     // NOTE: gl_FragCoord.xy is used instead of light-space uv, because uv is
@@ -88,14 +88,14 @@ float shadowFactor(const in mat4 proj, sampler2D shadowMap, vec4 coordinates) {
     // A tiny change in uv → sin(...)*43758 → completely different hash → different pattern → flickering.
     // gl_FragCoord.xy are integer pixel coordinates, stable within a frame.
     // IGN (Interleaved Gradient Noise) — uniform distribution without moire at low sample counts
-    float angle = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))) * 2.0 * pi;
-    mat2 rot = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
+    const float angle = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))) * 2.0 * pi;
+    const mat2 rot = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
 
     const float lightSize = 10.0; // virtual light source size (5–25)
 
     // Step 1: average linear blocker depth
-    float currentLinearDepth = linearDepth(proj, currentDepth);
-    float avgBlockerLinearDepth = findBlockerDepth(shadowMap, proj, uv, biasedDepth, lightSize, rot);
+    const float currentLinearDepth = linearDepth(proj, currentDepth);
+    const float avgBlockerLinearDepth = findBlockerDepth(shadowMap, proj, uv, biasedDepth, lightSize, rot);
 
     if (avgBlockerLinearDepth < 0.0) {
         // PCSS found no blockers: either fragment is in light or precision issue at distance.
@@ -106,7 +106,7 @@ float shadowFactor(const in mat4 proj, sampler2D shadowMap, vec4 coordinates) {
 
     // Step 2: penumbra width in linear space.
     // Linear depth gives correct results at any distance from the light source.
-    float penumbraWidth = clamp(
+    const float penumbraWidth = clamp(
         (currentLinearDepth - avgBlockerLinearDepth) / avgBlockerLinearDepth * lightSize,
         1.0,            // minimum: always at least slightly soft
         lightSize * 3.0 // maximum: avoid sampling far outside the shadow map

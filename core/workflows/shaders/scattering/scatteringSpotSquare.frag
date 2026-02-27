@@ -44,6 +44,6 @@ void main()
             lightTexture,
             shadowMap,
             depthMap,
-            light.prop.z,       // lightDropFactor
+            light.prop,
             1.0);
 }

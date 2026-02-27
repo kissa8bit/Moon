@@ -56,7 +56,7 @@ vec4 pbr(
     vec3 diffuseContrib = (1.0f - F) * diffuse(BaseColor, metallic);
     vec3 specContrib = F * G * D / (4.0f * clamp(dot(Normal, LightDirection), 0.001f, 1.0f) * clamp(abs(dot(Normal, Direction)), 0.001f, 1.0f));
 
-    vec4 outColor = vec4(clamp(dot(Normal, LightDirection), 0.0f, 1.0f) * lightColor.xyz * (diffuseContrib + specContrib), BaseColor.a);
+    vec4 outColor = vec4(ao * clamp(dot(Normal, LightDirection), 0.0f, 1.0f) * lightColor.xyz * (diffuseContrib + specContrib), BaseColor.a);
 
     return outColor;
 }

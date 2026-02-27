@@ -74,7 +74,8 @@ void testScene::create()
     deferredGraphicsParameters.shadersPath = ExternalPath / "core/deferredGraphics/spv";
     deferredGraphicsParameters.workflowsShadersPath = ExternalPath / "core/workflows/spv";
     deferredGraphicsParameters.extent = window.sizes();
-	deferredGraphicsParameters.workflowsParameters.layersCount = 4;
+	deferredGraphicsParameters.layersCount() = 3;
+	deferredGraphicsParameters.minAmbientFactor() = 0.01f;
     graphics["base"] = std::make_shared<moon::deferredGraphics::DeferredGraphics>(deferredGraphicsParameters);
     app.setGraphics(graphics["base"].get());
     graphics["base"]->bind(*cameras["base"].get());
@@ -513,16 +514,16 @@ void testScene::createLight()
 
     using namespace moon::entities;
 
-    groups["ufo0"]->add(lightSources.emplace_back(std::make_shared<SpotLight>(SpotLight(LIGHT_TEXTURE0, proj, { true, true, 0.05f }))).get());
-    groups["ufo1"]->add(lightSources.emplace_back(std::make_shared<SpotLight>(SpotLight(LIGHT_TEXTURE1, proj, { true, true, 0.05f }))).get());
-    groups["ufo2"]->add(lightSources.emplace_back(std::make_shared<SpotLight>(SpotLight(LIGHT_TEXTURE2, proj, { true, true, 0.05f }))).get());
-    groups["ufo3"]->add(lightSources.emplace_back(std::make_shared<SpotLight>(SpotLight(LIGHT_TEXTURE3, proj, { true, true, 0.05f }))).get());
+    groups["ufo0"]->add(lightSources.emplace_back(std::make_shared<SpotLight>(SpotLight(LIGHT_TEXTURE0, proj, { true, true, 0.05f, 10.0f, 0.3f }))).get());
+    groups["ufo1"]->add(lightSources.emplace_back(std::make_shared<SpotLight>(SpotLight(LIGHT_TEXTURE1, proj, { true, true, 0.05f, 10.0f, 0.3f }))).get());
+    groups["ufo2"]->add(lightSources.emplace_back(std::make_shared<SpotLight>(SpotLight(LIGHT_TEXTURE2, proj, { true, true, 0.05f, 10.0f, 0.3f }))).get());
+    groups["ufo3"]->add(lightSources.emplace_back(std::make_shared<SpotLight>(SpotLight(LIGHT_TEXTURE3, proj, { true, true, 0.05f, 10.0f, 0.3f }))).get());
 
-    groups["ufo_light_0"]->add(lightSources.emplace_back(std::make_shared<SpotLight>(SpotLight(moon::math::vec4(1.00f, 0.65f, 0.20f, 1.00f), proj, {  true,  true, 0.05f }))).get());
-    groups["ufo_light_1"]->add(lightSources.emplace_back(std::make_shared<SpotLight>(SpotLight(moon::math::vec4(0.90f, 0.85f, 0.95f, 1.00f), proj, {  true, false, 0.05f }))).get());
-    groups["ufo_light_2"]->add(lightSources.emplace_back(std::make_shared<SpotLight>(SpotLight(moon::math::vec4(0.90f, 0.85f, 0.75f, 1.00f), proj, {  true,  true, 0.05f }))).get());
-    groups["ufo_light_3"]->add(lightSources.emplace_back(std::make_shared<SpotLight>(SpotLight(moon::math::vec4(0.90f, 0.30f, 0.40f, 1.00f), proj, {  true,  true, 0.05f }))).get());
-    groups["ufo_light_4"]->add(lightSources.emplace_back(std::make_shared<SpotLight>(SpotLight(moon::math::vec4(0.20f, 0.50f, 0.95f, 1.00f), proj, {  true,  true, 0.05f }))).get());
+    groups["ufo_light_0"]->add(lightSources.emplace_back(std::make_shared<SpotLight>(SpotLight(moon::math::vec4(1.00f, 0.65f, 0.20f, 1.00f), proj, {  true,  true, 0.05f, 10.0f, 0.3f }))).get());
+    groups["ufo_light_1"]->add(lightSources.emplace_back(std::make_shared<SpotLight>(SpotLight(moon::math::vec4(0.90f, 0.85f, 0.95f, 1.00f), proj, {  true, false, 0.05f, 10.0f, 0.3f }))).get());
+    groups["ufo_light_2"]->add(lightSources.emplace_back(std::make_shared<SpotLight>(SpotLight(moon::math::vec4(0.90f, 0.85f, 0.75f, 1.00f), proj, {  true,  true, 0.05f, 10.0f, 0.3f }))).get());
+    groups["ufo_light_3"]->add(lightSources.emplace_back(std::make_shared<SpotLight>(SpotLight(moon::math::vec4(0.90f, 0.30f, 0.40f, 1.00f), proj, {  true,  true, 0.05f, 10.0f, 0.3f }))).get());
+    groups["ufo_light_4"]->add(lightSources.emplace_back(std::make_shared<SpotLight>(SpotLight(moon::math::vec4(0.20f, 0.50f, 0.95f, 1.00f), proj, {  true,  true, 0.05f, 10.0f, 0.3f }))).get());
 
     for (auto& [_, graph] : graphics) {
         for (const auto& light : lightPoints["lightBox"]->getLights()) {
@@ -650,7 +651,7 @@ void testScene::keyboardEvent()
 
         groups["ufo_gr" + std::to_string(ufoCounter)] = std::make_shared<moon::transformational::Group>();
         groups["ufo_gr" + std::to_string(ufoCounter)]->translate(cameras["base"]->translation().im());
-        groups["ufo_gr" + std::to_string(ufoCounter)]->add(lightSources.emplace_back(std::make_shared<moon::entities::SpotLight>(moon::entities::SpotLight(newColor, moon::math::perspective(moon::math::radians(90.0f), 1.0f, 0.1f, 20.0f), { true, true, 0.2f }))).get());
+        groups["ufo_gr" + std::to_string(ufoCounter)]->add(lightSources.emplace_back(std::make_shared<moon::entities::SpotLight>(moon::entities::SpotLight(newColor, moon::math::perspective(moon::math::radians(90.0f), 1.0f, 0.1f, 20.0f), { true, true, 0.2f, 10.0f, 0.3f }))).get());
         groups["ufo_gr" + std::to_string(ufoCounter)]->add(objects["new_ufo" + std::to_string(ufoCounter)].get());
 
         for(auto& [_,graph]: graphics){

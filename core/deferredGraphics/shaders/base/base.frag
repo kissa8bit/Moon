@@ -5,10 +5,6 @@
 #include "../../../workflows/shaders/__methods__/math.glsl"
 #include "material.glsl"
 
-const uint PBR_WORKFLOW_METALLIC_ROUGHNESS = 0;
-const uint PBR_WORKFLOW_SPECULAR_GLOSINESS = 1;
-const float c_MinRoughness = 0.04;
-
 layout(constant_id = 0) const int layerIndex = 0;
 
 layout(set = 0, binding = 1) uniform samplerCube samplerCubeMap;
@@ -55,12 +51,12 @@ vec3 getNormal() {
 float convertMetallic(vec3 diffuse, vec3 specular, float maxSpecular) {
     float perceivedDiffuse = sqrt(0.299 * diffuse.r * diffuse.r + 0.587 * diffuse.g * diffuse.g + 0.114 * diffuse.b * diffuse.b);
     float perceivedSpecular = sqrt(0.299 * specular.r * specular.r + 0.587 * specular.g * specular.g + 0.114 * specular.b * specular.b);
-    if(perceivedSpecular < c_MinRoughness) {
+    if(perceivedSpecular < MIN_ROUGHNESS) {
         return 0.0;
     }
-    float a = c_MinRoughness;
-    float b = perceivedDiffuse * (1.0 - maxSpecular) / (1.0 - c_MinRoughness) + perceivedSpecular - 2.0 * c_MinRoughness;
-    float c = c_MinRoughness - perceivedSpecular;
+    float a = MIN_ROUGHNESS;
+    float b = perceivedDiffuse * (1.0 - maxSpecular) / (1.0 - MIN_ROUGHNESS) + perceivedSpecular - 2.0 * MIN_ROUGHNESS;
+    float c = MIN_ROUGHNESS - perceivedSpecular;
     float D = max(b * b - 4.0 * a * c, 0.0);
     return clamp((-b + sqrt(D)) / (2.0 * a), 0.0, 1.0);
 }
@@ -71,7 +67,7 @@ void metallicRoughnessWorkflow(inout float perceptualRoughness, inout float meta
         perceptualRoughness = clamp(mrSample.g * pc.material.roughnessFactor, 0.0, 1.0);
         metallic = clamp(mrSample.b * pc.material.metallicFactor, 0.0, 1.0);
     } else {
-        perceptualRoughness = clamp(pc.material.roughnessFactor, c_MinRoughness, 1.0);
+        perceptualRoughness = clamp(pc.material.roughnessFactor, MIN_ROUGHNESS, 1.0);
         metallic = clamp(pc.material.metallicFactor, 0.0, 1.0);
     }
 
@@ -89,8 +85,8 @@ void specularGlosinessWorkflow(inout float perceptualRoughness, inout float meta
 
     const float epsilon = 1e-6;
 
-    vec3 baseColorDiffusePart = diffuse.rgb * ((1.0 - maxSpecular) / (1 - c_MinRoughness) / max(1 - metallic, epsilon)) * pc.material.diffuseFactor.rgb;
-    vec3 baseColorSpecularPart = specular - (vec3(c_MinRoughness) * (1 - metallic) * (1 / max(metallic, epsilon))) * pc.material.specularFactor.rgb;
+    vec3 baseColorDiffusePart = diffuse.rgb * ((1.0 - maxSpecular) / (1 - MIN_ROUGHNESS) / max(1 - metallic, epsilon)) * pc.material.diffuseFactor.rgb;
+    vec3 baseColorSpecularPart = specular - (vec3(MIN_ROUGHNESS) * (1 - metallic) * (1 / max(metallic, epsilon))) * pc.material.specularFactor.rgb;
     baseColor = vec4(mix(baseColorDiffusePart, baseColorSpecularPart, metallic * metallic), diffuse.a);
 }
 
@@ -128,11 +124,11 @@ void main()
     float perceptualRoughness;
     float metallic;
     switch(uint(pc.material.workflow)) {
-        case PBR_WORKFLOW_METALLIC_ROUGHNESS: {
+        case WORKFLOW_METALLIC_ROUGHNESS: {
             metallicRoughnessWorkflow(perceptualRoughness, metallic, baseColor);
             break;
         }
-        case PBR_WORKFLOW_SPECULAR_GLOSINESS: {
+        case WORKFLOW_SPECULAR_GLOSINESS: {
             specularGlosinessWorkflow(perceptualRoughness, metallic, baseColor);
             break;
         }

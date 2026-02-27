@@ -24,10 +24,10 @@ public:
         alignas(16) math::mat4 view;
         alignas(16) math::vec4 color;
         alignas(16) struct {
-            float _pad0{ 0.0 };
+            float innerFraction{ 1.0f };
+            float exponent{ 4.0f };
             float powerFactor{ 10.0f };
             float dropFactor{ 1.0f };
-            float _pad1{ 0.0f };
         }props;
     };
 

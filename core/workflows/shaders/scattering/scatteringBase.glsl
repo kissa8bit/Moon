@@ -106,26 +106,26 @@ float findDirectionCone(intersectionOutput outputStatus, const in vec4 position,
     return !outputStatus.inside || !isPositionBehind(position,lightPosition,lightDirection) ? 1.0f : (outputStatus.intersectionPoint1<0.0f&&outputStatus.intersectionPoint2<0.0f ? 1.0f : -1.0f);
 }
 
-vec4 findConePointColor(const in vec3 point, sampler2D shadowMap, sampler2D lightTexture, const in vec4 lightColor, const in mat4 lightProjViewMatrix, const in mat4 lightProjMatrix, const in vec3 lightPosition, const in vec3 lightDirection, const float dropFactor){
+vec4 findConePointColor(const in vec3 point, sampler2D shadowMap, sampler2D lightTexture, const in vec4 lightColor, const in mat4 lightProjViewMatrix, const in mat4 lightProjMatrix, const in mat4 lightViewMatrix, const in vec3 lightPosition, const in vec3 lightDirection, const float dropFactor, float innerFraction, float exponent, uint type){
     vec4 color = vec4(0.0f);
 
     vec3 coordinates = coordinatesInLocalBasis(lightProjViewMatrix,vec4(point.xyz,1.0f));
     if(coordinates.z<texture(shadowMap, coordinates.xy).x){
-        float drop = dropFactor * lightDrop(length(lightPosition - point));
+        float drop = dropFactor * lightDrop(max(length(lightPosition - point), 0.01));
         drop = drop > 0.0f ? drop : 1.0f;
-        float distribusion = lightDistribusion(point,lightPosition,lightProjMatrix,lightDirection);
+        float distribusion = lightDistribusion(point,lightPosition,lightProjMatrix,lightViewMatrix,lightDirection,innerFraction,exponent,type);
 
         color = max(texture(lightTexture, coordinates.xy), lightColor)/drop*distribusion;
     }
     return color;
 }
 
-vec4 findConePointColor(const in vec3 point, sampler2D lightTexture, const in vec4 lightColor, const in mat4 lightProjViewMatrix, const in mat4 lightProjMatrix, const in vec3 lightPosition, const in vec3 lightDirection, const float dropFactor){
+vec4 findConePointColor(const in vec3 point, sampler2D lightTexture, const in vec4 lightColor, const in mat4 lightProjViewMatrix, const in mat4 lightProjMatrix, const in mat4 lightViewMatrix, const in vec3 lightPosition, const in vec3 lightDirection, const float dropFactor, float innerFraction, float exponent, uint type){
     vec4 color = vec4(0.0f);
 
-    float drop = dropFactor * lightDrop(length(lightPosition - point));
+    float drop = dropFactor * lightDrop(max(length(lightPosition - point), 0.01));
     drop = drop > 0.0f ? drop : 1.0f;
-    float distribusion = lightDistribusion(point,lightPosition,lightProjMatrix,lightDirection);
+    float distribusion = lightDistribusion(point,lightPosition,lightProjMatrix,lightViewMatrix,lightDirection,innerFraction,exponent,type);
 
     vec3 coordinates = coordinatesInLocalBasis(lightProjViewMatrix,vec4(point.xyz,1.0f));
     color = max(texture(lightTexture, coordinates.xy), lightColor)/drop*distribusion;
@@ -203,31 +203,29 @@ bool outsidePyramidCondition(vec3 coordinates)
     return abs(coordinates.x) < 1.0f && abs(coordinates.y) < 1.0f && abs(coordinates.z) < 1.0f;
 }
 
-vec4 findPyramidPointColor(const in vec3 point, sampler2D shadowMap, sampler2D lightTexture, const in vec4 lightColor, const in mat4 lightProjViewMatrix, const in mat4 lightProjMatrix, const in vec3 lightPosition, const in vec3 lightDirection, const float dropFactor){
+vec4 findPyramidPointColor(const in vec3 point, sampler2D shadowMap, sampler2D lightTexture, const in vec4 lightColor, const in mat4 lightProjViewMatrix, const in mat4 lightProjMatrix, const in mat4 lightViewMatrix, const in vec3 lightPosition, const in vec3 lightDirection, const float dropFactor, float innerFraction, float exponent, uint type){
     vec4 color = vec4(0.0f);
 
     vec3 coordinates = coordinatesInLocalBasis(lightProjViewMatrix,vec4(point.xyz,1.0f));
     if(outsidePyramidCondition(vec3(2.0f*coordinates.x - 1.0f, 2.0f*coordinates.y - 1.0f,coordinates.z)) && coordinates.z<texture(shadowMap, coordinates.xy).x){
-        float drop = dropFactor * lightDrop(length(lightPosition - point));
+        float drop = dropFactor * lightDrop(max(length(lightPosition - point), 0.01));
         drop = drop > 0.0f ? drop : 1.0f;
+        float distribusion = lightDistribusion(point,lightPosition,lightProjMatrix,lightViewMatrix,lightDirection,innerFraction,exponent,type);
 
-        float distribusion = lightDistribusion(point,lightPosition,lightProjMatrix,lightDirection);
-
-        color = max(texture(lightTexture, coordinates.xy), lightColor)/drop/drop;
+        color = max(texture(lightTexture, coordinates.xy), lightColor)/drop/drop*distribusion;
     }
     return color;
 }
 
-vec4 findPyramidPointColor(const in vec3 point, sampler2D lightTexture, const in vec4 lightColor, const in mat4 lightProjViewMatrix, const in mat4 lightProjMatrix, const in vec3 lightPosition, const in vec3 lightDirection, const float dropFactor){
+vec4 findPyramidPointColor(const in vec3 point, sampler2D lightTexture, const in vec4 lightColor, const in mat4 lightProjViewMatrix, const in mat4 lightProjMatrix, const in mat4 lightViewMatrix, const in vec3 lightPosition, const in vec3 lightDirection, const float dropFactor, float innerFraction, float exponent, uint type){
     vec4 color = vec4(0.0f);
 
-    float drop = dropFactor * lightDrop(length(lightPosition - point));
+    float drop = dropFactor * lightDrop(max(length(lightPosition - point), 0.01));
     drop = drop > 0.0f ? drop : 1.0f;
-
-    float distribusion = lightDistribusion(point,lightPosition,lightProjMatrix,lightDirection);
+    float distribusion = lightDistribusion(point,lightPosition,lightProjMatrix,lightViewMatrix,lightDirection,innerFraction,exponent,type);
 
     vec3 coordinates = coordinatesInLocalBasis(lightProjViewMatrix,vec4(point.xyz,1.0f));
-    color = max(texture(lightTexture, coordinates.xy), lightColor)/drop/drop;
+    color = max(texture(lightTexture, coordinates.xy), lightColor)/drop/drop*distribusion;
 
     return color;
 }
@@ -256,9 +254,13 @@ vec4 LightScattering(
         sampler2D lightTexture,
         sampler2D shadowMap,
         const float depthMap,
-        const float dropFactor,
+        const vec4 prop,
         const float type)
 {
+    const float innerFraction = prop.x;
+    const float exponent      = prop.y;
+    const float dropFactor    = prop.w;
+
     vec4 outScatteringColor = vec4(0.0f, 0.0f, 0.0f, 1.0f);
     float minDepth = 1.0f;
 
@@ -285,8 +287,8 @@ vec4 LightScattering(
             vec4 pointOfScattering = start + direction * t;
             float depthOfScattering = depthProj(projView,pointOfScattering);
             if((depthMap > depthOfScattering) && (t > 0)){
-                outScatteringColor = type == 0.0f ? outScatteringColor + step * findConePointColor(pointOfScattering.xyz,shadowMap,lightTexture,lightColor,lightProjViewMatrix,lightProjMatrix,lightPosition.xyz,lightDirection.xyz, dropFactor)
-                                                  : max(outScatteringColor, 0.5f * findPyramidPointColor(pointOfScattering.xyz,shadowMap,lightTexture,lightColor,lightProjViewMatrix,lightProjMatrix,lightPosition.xyz,lightDirection.xyz, dropFactor));
+                outScatteringColor = type == 0.0f ? outScatteringColor + step * findConePointColor(pointOfScattering.xyz,shadowMap,lightTexture,lightColor,lightProjViewMatrix,lightProjMatrix,lightViewMatrix,lightPosition.xyz,lightDirection.xyz,dropFactor,innerFraction,exponent,uint(type))
+                                                  : max(outScatteringColor, 0.5f * findPyramidPointColor(pointOfScattering.xyz,shadowMap,lightTexture,lightColor,lightProjViewMatrix,lightProjMatrix,lightViewMatrix,lightPosition.xyz,lightDirection.xyz,dropFactor,innerFraction,exponent,uint(type)));
                 minDepth = min(minDepth, depthOfScattering);
             }
         }

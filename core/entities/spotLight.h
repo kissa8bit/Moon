@@ -27,8 +27,10 @@ public:
     {
         bool enableShadow{ true };
         bool enableScattering{ false };
-        float drop{ 1.0 };
+        float drop{ 1.0f };
         float power{ 10.0f };
+        float innerFraction{ 1.0f };
+        float exponent{ 4.0f };
     };
 
     SpotLight(const Coloring& coloring, const math::mat4& projection, const Props& props = {}, implementations::SpotLight::Type type = implementations::SpotLight::Type::circle);
@@ -43,6 +45,8 @@ public:
     SpotLight& setColor(const math::vec4& color);
     SpotLight& setDrop(const float& drop);
     SpotLight& setPower(const float& power);
+    SpotLight& setInnerFraction(const float& innerFraction);
+    SpotLight& setExponent(const float& exponent);
     SpotLight& setProjectionMatrix(const math::mat4& projection);
 };
 

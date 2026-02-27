@@ -26,14 +26,14 @@ void Graphics::Lighting::create(VkDevice device, VkRenderPass renderPass) {
 
     {
         const workflows::ShaderNames shaderNames = {
-            {workflows::ShaderType::Vertex, "spotLightingPass/spotLightingCircleVert.spv"},
+            {workflows::ShaderType::Vertex, "spotLightingPass/spotLightingVert.spv"},
             {workflows::ShaderType::Fragment, "spotLightingPass/spotLightingCircleFrag.spv"}
         };
         createPipeline(interfaces::LightType::spotCircle, shaderNames, device, renderPass);
     }
     {
         const workflows::ShaderNames shaderNames = {
-            {workflows::ShaderType::Vertex, "spotLightingPass/spotLightingSquareVert.spv"},
+            {workflows::ShaderType::Vertex, "spotLightingPass/spotLightingVert.spv"},
             {workflows::ShaderType::Fragment, "spotLightingPass/spotLightingSquareFrag.spv"}
         };
         createPipeline(interfaces::LightType::spotSquare, shaderNames, device, renderPass);

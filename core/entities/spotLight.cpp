@@ -7,7 +7,7 @@ SpotLight::SpotLight(const Coloring& coloring, const math::mat4& projection, con
 {
 	pLight = std::make_unique<implementations::SpotLight>(type);
 
-	setDrop(props.drop).setPower(props.power).setColor(coloring.uniformColor).setProjectionMatrix(projection);
+	setDrop(props.drop).setPower(props.power).setInnerFraction(props.innerFraction).setExponent(props.exponent).setColor(coloring.uniformColor).setProjectionMatrix(projection);
 
 	auto pSpotLight = static_cast<implementations::SpotLight*>(pLight.get());
 	pSpotLight->setTexture(coloring.texturePath);
@@ -37,6 +37,14 @@ SpotLight& SpotLight::setDrop(const float& drop) {
 
 SpotLight& SpotLight::setPower(const float& power) {
 	SpotLightSetter(props.powerFactor, power)
+}
+
+SpotLight& SpotLight::setInnerFraction(const float& innerFraction) {
+	SpotLightSetter(props.innerFraction, innerFraction)
+}
+
+SpotLight& SpotLight::setExponent(const float& exponent) {
+	SpotLightSetter(props.exponent, exponent)
 }
 
 IsotropicLight::IsotropicLight(const math::vec4& color, float radius, bool enableShadow, bool enableScattering) {

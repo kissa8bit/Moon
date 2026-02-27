@@ -26,6 +26,6 @@ void main() {
     vec4 emissive = subpassLoad(inEmissiveColorTexture);
     vec4 depth = subpassLoad(inDepthTexture);
     
-    outColor = calcLight(position, normal, color, eyePosition, shadowMap, lightTexture, 1.0f);
+    outColor = calcLight(position, normal, color, eyePosition, shadowMap, lightTexture, SPOT_LIGHTING_TYPE_SQUARE);
     outBloom = emissive + (checkBrightness(outColor) ? outColor : vec4(0.0));
 }
