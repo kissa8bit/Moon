@@ -16,14 +16,18 @@ vec3 getDirection(const in mat4 view){
 }
 
 bool outsideSpot(const in mat4 proj, const in uint type, const in vec4 localPosition) {
-    vec4 coordinates = localPosition * vec4(getAspect(proj), 1.0, -1.0, 1.0);
+    // Project x and y using the projection matrix elements, which encode both fov and aspect.
+    // At the frustum boundary, |ex| and |ey| equal -localPosition.z (nz).
+    float nz = -localPosition.z;
+    float ex = localPosition.x * proj[0][0];
+    float ey = localPosition.y * proj[1][1];
 
     switch(type) {
         case SPOT_LIGHTING_TYPE_CIRCLE: {
-            return sqrt(coordinates.x * coordinates.x + coordinates.y * coordinates.y) >= coordinates.z;
+            return sqrt(ex * ex + ey * ey) >= nz;
         }
         case SPOT_LIGHTING_TYPE_SQUARE: {
-            return abs(coordinates.x) >= abs(coordinates.z) || abs(coordinates.y) >= abs(coordinates.z);
+            return abs(ex) >= nz || abs(ey) >= nz;
         }
         default: {
             break;

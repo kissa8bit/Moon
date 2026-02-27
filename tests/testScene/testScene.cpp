@@ -135,7 +135,7 @@ void testScene::requestUpdate() {
     }
 #ifdef SECOND_VIEW_WINDOW
     if (graphics["view"]) {
-        graphics["view"]->requestUpdate("DeferredGraphics");
+        graphics["view"]->requestUpdate(moon::deferredGraphics::Names::MainGraphics::name);
     }
 #endif
 }
@@ -222,11 +222,27 @@ void testScene::makeGui() {
 
     if (controledObject && ImGui::TreeNodeEx(std::string("Object : " + controledObject.name).c_str(), ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen))
     {
+        std::string groupKey;
+        moon::transformational::Group* controlGroup = nullptr;
+        for (auto& [key, g] : groups) {
+            if (g->find(controledObject.ptr)) {
+                controlGroup = g.get();
+                groupKey = key;
+                break;
+            }
+        }
+
         ImGui::BeginGroup();
             ImGui::Text("translation : "); ImGui::SameLine(); ImGui::Separator();
-            moon::tests::gui::transManipulator<0>(controledObject, "x_tr");
-            moon::tests::gui::transManipulator<1>(controledObject, "y_tr");
-            moon::tests::gui::transManipulator<2>(controledObject, "z_tr");
+            if (controlGroup) {
+                moon::tests::gui::transManipulator<0>(*controlGroup, "x_tr");
+                moon::tests::gui::transManipulator<1>(*controlGroup, "y_tr");
+                moon::tests::gui::transManipulator<2>(*controlGroup, "z_tr");
+            } else {
+                moon::tests::gui::transManipulator<0>(*controledObject.ptr, "x_tr");
+                moon::tests::gui::transManipulator<1>(*controledObject.ptr, "y_tr");
+                moon::tests::gui::transManipulator<2>(*controledObject.ptr, "z_tr");
+            }
         ImGui::EndGroup();
 
         ImGui::BeginGroup();
@@ -245,9 +261,15 @@ void testScene::makeGui() {
 
         ImGui::BeginGroup();
             ImGui::Text("rotation : "); ImGui::SameLine(); ImGui::Separator();
-            moon::tests::gui::rotationmManipulator(controledObject, dynamic_cast<moon::entities::BaseCamera*>(cameras["base"].get()));
-            ImGui::SameLine(0.0, 10.0);
-            moon::tests::gui::printQuaternion(controledObject->rotation());
+            if (controlGroup) {
+                moon::tests::gui::rotationmManipulator(*controlGroup, dynamic_cast<moon::entities::BaseCamera*>(cameras["base"].get()));
+                ImGui::SameLine(0.0, 10.0);
+                moon::tests::gui::printQuaternion(controlGroup->rotation());
+            } else {
+                moon::tests::gui::rotationmManipulator(*controledObject.ptr, dynamic_cast<moon::entities::BaseCamera*>(cameras["base"].get()));
+                ImGui::SameLine(0.0, 10.0);
+                moon::tests::gui::printQuaternion(controledObject->rotation());
+            }
         ImGui::EndGroup();
 
         ImGui::BeginGroup();
@@ -265,6 +287,35 @@ void testScene::makeGui() {
                     requestUpdate();
                 }
             ImGui::EndGroup();
+        }
+
+        if (!groupKey.empty()) {
+            auto it = groupSpotLights.find(groupKey);
+            if (it != groupSpotLights.end()) {
+                ImGui::BeginGroup();
+                    ImGui::Text("lights : "); ImGui::SameLine(); ImGui::Separator();
+                    for (int i = 0; i < static_cast<int>(it->second.size()); ++i) {
+                        if (moon::tests::gui::spotLightSliders(*it->second[i], i)) {
+                            graphics["base"]->requestUpdate(moon::deferredGraphics::Names::Shadow::name);
+                            graphics["base"]->requestUpdate(moon::deferredGraphics::Names::Names::Scattering::name);
+                            graphics["base"]->requestUpdate(moon::deferredGraphics::Names::Names::MainGraphics::name);
+                        }
+                        moon::tests::gui::spotLightProjectionSliders(*it->second[i], i);
+                    }
+                ImGui::EndGroup();
+            }
+
+            auto lit = lightPoints.find(groupKey);
+            if (lit != lightPoints.end()) {
+                ImGui::BeginGroup();
+                    ImGui::Text("isotropic light : "); ImGui::SameLine(); ImGui::Separator();
+                    if (moon::tests::gui::spotLightSliders(*lit->second, 0)) {
+                        graphics["base"]->requestUpdate(moon::deferredGraphics::Names::Shadow::name);
+                        graphics["base"]->requestUpdate(moon::deferredGraphics::Names::Names::Scattering::name);
+                        graphics["base"]->requestUpdate(moon::deferredGraphics::Names::Names::MainGraphics::name);
+					}
+                ImGui::EndGroup();
+            }
         }
 
         ImGui::TreePop();
@@ -506,24 +557,27 @@ void testScene::createLight()
     std::filesystem::path LIGHT_TEXTURE2  = ExternalPath / "dependences/texture/light2.jpg";
     std::filesystem::path LIGHT_TEXTURE3  = ExternalPath / "dependences/texture/light3.jpg";
 
-    lightPoints["lightBox"] = std::make_shared<moon::entities::IsotropicLight>(moon::math::vec4(1.0f));
-    lightPoints["lightBox"]->setDrop(0.05f);
+    lightPoints["lightBox"] = std::make_shared<moon::entities::IsotropicLight>(
+        moon::entities::IsotropicLight::Props{ moon::math::vec4(1.0f), 100.0f, true, false, 0.05f });
     groups["lightBox"]->add(lightPoints["lightBox"].get());
-
-    const auto proj = moon::math::perspective(moon::math::radians(90.0f), 1.0f, 0.1f, 20.0f);
 
     using namespace moon::entities;
 
-    groups["ufo0"]->add(lightSources.emplace_back(std::make_shared<SpotLight>(SpotLight(LIGHT_TEXTURE0, proj, { true, true, 0.05f, 10.0f, 0.3f }))).get());
-    groups["ufo1"]->add(lightSources.emplace_back(std::make_shared<SpotLight>(SpotLight(LIGHT_TEXTURE1, proj, { true, true, 0.05f, 10.0f, 0.3f }))).get());
-    groups["ufo2"]->add(lightSources.emplace_back(std::make_shared<SpotLight>(SpotLight(LIGHT_TEXTURE2, proj, { true, true, 0.05f, 10.0f, 0.3f }))).get());
-    groups["ufo3"]->add(lightSources.emplace_back(std::make_shared<SpotLight>(SpotLight(LIGHT_TEXTURE3, proj, { true, true, 0.05f, 10.0f, 0.3f }))).get());
+    auto addGroupLight = [&](const std::string& groupKey, std::shared_ptr<SpotLight> light) {
+        groups[groupKey]->add(lightSources.emplace_back(std::move(light)).get());
+        groupSpotLights[groupKey].push_back(static_cast<SpotLight*>(lightSources.back().get()));
+    };
 
-    groups["ufo_light_0"]->add(lightSources.emplace_back(std::make_shared<SpotLight>(SpotLight(moon::math::vec4(1.00f, 0.65f, 0.20f, 1.00f), proj, {  true,  true, 0.05f, 10.0f, 0.3f }))).get());
-    groups["ufo_light_1"]->add(lightSources.emplace_back(std::make_shared<SpotLight>(SpotLight(moon::math::vec4(0.90f, 0.85f, 0.95f, 1.00f), proj, {  true, false, 0.05f, 10.0f, 0.3f }))).get());
-    groups["ufo_light_2"]->add(lightSources.emplace_back(std::make_shared<SpotLight>(SpotLight(moon::math::vec4(0.90f, 0.85f, 0.75f, 1.00f), proj, {  true,  true, 0.05f, 10.0f, 0.3f }))).get());
-    groups["ufo_light_3"]->add(lightSources.emplace_back(std::make_shared<SpotLight>(SpotLight(moon::math::vec4(0.90f, 0.30f, 0.40f, 1.00f), proj, {  true,  true, 0.05f, 10.0f, 0.3f }))).get());
-    groups["ufo_light_4"]->add(lightSources.emplace_back(std::make_shared<SpotLight>(SpotLight(moon::math::vec4(0.20f, 0.50f, 0.95f, 1.00f), proj, {  true,  true, 0.05f, 10.0f, 0.3f }))).get());
+    addGroupLight("ufo0",      std::make_shared<SpotLight>(LIGHT_TEXTURE0, SpotLight::Props{ true, true, 0.05f, 10.0f, 0.3f }));
+    addGroupLight("ufo1",      std::make_shared<SpotLight>(LIGHT_TEXTURE1, SpotLight::Props{ true, true, 0.05f, 10.0f, 0.3f }));
+    addGroupLight("ufo2",      std::make_shared<SpotLight>(LIGHT_TEXTURE2, SpotLight::Props{ true, true, 0.05f, 10.0f, 0.3f }));
+    addGroupLight("ufo3",      std::make_shared<SpotLight>(LIGHT_TEXTURE3, SpotLight::Props{ true, true, 0.05f, 10.0f, 0.3f }));
+
+    addGroupLight("ufo_light_0", std::make_shared<SpotLight>(moon::math::vec4(1.00f, 0.65f, 0.20f, 1.00f), SpotLight::Props{  true,  true, 0.05f, 10.0f, 0.3f }));
+    addGroupLight("ufo_light_1", std::make_shared<SpotLight>(moon::math::vec4(0.90f, 0.85f, 0.95f, 1.00f), SpotLight::Props{  true, false, 0.05f, 10.0f, 0.3f }));
+    addGroupLight("ufo_light_2", std::make_shared<SpotLight>(moon::math::vec4(0.90f, 0.85f, 0.75f, 1.00f), SpotLight::Props{  true,  true, 0.05f, 10.0f, 0.3f }));
+    addGroupLight("ufo_light_3", std::make_shared<SpotLight>(moon::math::vec4(0.90f, 0.30f, 0.40f, 1.00f), SpotLight::Props{  true,  true, 0.05f, 10.0f, 0.3f }));
+    addGroupLight("ufo_light_4", std::make_shared<SpotLight>(moon::math::vec4(0.20f, 0.50f, 0.95f, 1.00f), SpotLight::Props{  true,  true, 0.05f, 10.0f, 0.3f }));
 
     for (auto& [_, graph] : graphics) {
         for (const auto& light : lightPoints["lightBox"]->getLights()) {
@@ -650,8 +704,11 @@ void testScene::keyboardEvent()
         objects["new_ufo" + std::to_string(ufoCounter)]->rotate(moon::math::radians(90.0f),{1.0f,0.0f,0.0f});
 
         groups["ufo_gr" + std::to_string(ufoCounter)] = std::make_shared<moon::transformational::Group>();
-        groups["ufo_gr" + std::to_string(ufoCounter)]->translate(cameras["base"]->translation().im());
-        groups["ufo_gr" + std::to_string(ufoCounter)]->add(lightSources.emplace_back(std::make_shared<moon::entities::SpotLight>(moon::entities::SpotLight(newColor, moon::math::perspective(moon::math::radians(90.0f), 1.0f, 0.1f, 20.0f), { true, true, 0.2f, 10.0f, 0.3f }))).get());
+        groups["ufo_gr" + std::to_string(ufoCounter)]->translate(cameras["base"]->translation().im()); moon::math::perspective(moon::math::radians(90.0f), 1.0f, 0.1f, 20.0f);
+        moon::entities::SpotLight::Props lightProps{ true, true, 0.2f, 10.0f, 0.3f};
+        lightProps.fov = 90.0f;
+		lightProps.farPlane = 20.0f;
+        groups["ufo_gr" + std::to_string(ufoCounter)]->add(lightSources.emplace_back(std::make_shared<moon::entities::SpotLight>(moon::entities::SpotLight(newColor, lightProps))).get());
         groups["ufo_gr" + std::to_string(ufoCounter)]->add(objects["new_ufo" + std::to_string(ufoCounter)].get());
 
         for(auto& [_,graph]: graphics){

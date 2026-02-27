@@ -13,6 +13,12 @@
 namespace moon::entities {
 
 class SpotLight : public transformational::Light {
+private:
+    static constexpr float kNear = 0.1f;
+    float m_fov{ math::radians(90.0f) };
+    float m_aspect{ 1.0f };
+    float m_far{ 20.0f };
+
 public:
     struct Coloring
     {
@@ -31,9 +37,12 @@ public:
         float power{ 10.0f };
         float innerFraction{ 1.0f };
         float exponent{ 4.0f };
+        float fov{ math::radians(90.0f) };
+        float aspect{ 1.0f };
+        float farPlane{ 20.0f };
     };
 
-    SpotLight(const Coloring& coloring, const math::mat4& projection, const Props& props = {}, implementations::SpotLight::Type type = implementations::SpotLight::Type::circle);
+    SpotLight(const Coloring& coloring, const Props& props = {}, implementations::SpotLight::Type type = implementations::SpotLight::Type::circle);
     ~SpotLight() override = default;
 
     SpotLight(const SpotLight&) = delete;
@@ -47,7 +56,22 @@ public:
     SpotLight& setPower(const float& power);
     SpotLight& setInnerFraction(const float& innerFraction);
     SpotLight& setExponent(const float& exponent);
+    SpotLight& setEnableShadow(bool enable);
+    SpotLight& setEnableScattering(bool enable);
+    SpotLight& setFov(float fov);
+    SpotLight& setAspect(float aspect);
+    SpotLight& setFar(float far);
     SpotLight& setProjectionMatrix(const math::mat4& projection);
+
+    float getDrop();
+    float getPower();
+    float getInnerFraction();
+    float getExponent();
+    bool getEnableShadow();
+    bool getEnableScattering();
+    float getFov() const;
+    float getAspect() const;
+    float getFar() const;
 };
 
 class IsotropicLight : public transformational::Group {
@@ -55,13 +79,36 @@ private:
     std::vector<SpotLight> lights;
 
 public:
-    IsotropicLight(const math::vec4& color = { 0.0f }, float radius = 100.0f, bool enableShadow = true, bool enableScattering = false);
+    struct Props
+    {
+        math::vec4 color{ 0.0f };
+        float radius{ 100.0f };
+        bool enableShadow{ true };
+        bool enableScattering{ false };
+        float drop{ 1.0f };
+        float power{ 10.0f };
+        float innerFraction{ 1.0f };
+        float exponent{ 4.0f };
+    };
+
+    IsotropicLight(const Props& props = {});
     ~IsotropicLight() = default;
 
     IsotropicLight& setColor(const math::vec4& color);
     IsotropicLight& setDrop(const float& drop);
     IsotropicLight& setPower(const float& power);
+    IsotropicLight& setInnerFraction(const float& innerFraction);
+    IsotropicLight& setExponent(const float& exponent);
+    IsotropicLight& setEnableShadow(bool enable);
+    IsotropicLight& setEnableScattering(bool enable);
     IsotropicLight& setProjectionMatrix(const math::mat4& projection);
+
+    float getDrop();
+    float getPower();
+    float getInnerFraction();
+    float getExponent();
+    bool getEnableShadow();
+    bool getEnableScattering();
 
     std::vector<interfaces::Light*> getLights() const;
 };

@@ -133,7 +133,6 @@ void ShadowGraphics::updateCommandBuffer(uint32_t frameNumber) {
 
     for(const auto& [light, depthMap] : *shadow.depthMaps){
         if (!light) continue;
-        if (const auto lightProps = light->lightMask().property(); !lightProps.has(interfaces::LightProperty::enableShadow)) continue;
 
         if(framebuffersMap.find(&depthMap) == framebuffersMap.end()) {
             framebuffersMap[&depthMap].resize(parameters.imageInfo.Count);
@@ -172,26 +171,29 @@ void ShadowGraphics::render(uint32_t frameNumber, VkCommandBuffer commandBuffer,
 
     vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    for(const auto& object: *shadow.objects){
-        if(!object) continue;
+    if (const auto lightProps = lightSource->lightMask().property(); lightProps.has(interfaces::LightProperty::enableShadow))
+    {
+        for (const auto& object : *shadow.objects) {
+            if (!object) continue;
 
-        const auto mask = object->objectMask();
-        const auto property = mask.property();
-        const auto type = mask.type();
-        const auto model = object->model();
+            const auto mask = object->objectMask();
+            const auto property = mask.property();
+            const auto type = mask.type();
+            const auto model = object->model();
 
-        if (!property.has(interfaces::ObjectProperty::enable)) continue;
-        if (!property.has(interfaces::ObjectProperty::enableShadow)) continue;
-        if (!type.has_any(interfaces::ObjectType::Value::baseTypes)) continue;
-        if (!model) continue;
+            if (!property.has(interfaces::ObjectProperty::enable)) continue;
+            if (!property.has(interfaces::ObjectProperty::enableShadow)) continue;
+            if (!type.has_any(interfaces::ObjectType::Value::baseTypes)) continue;
+            if (!model) continue;
 
-        const auto& pipelineDesc = shadow.pipelineDescs.at(type);
+            const auto& pipelineDesc = shadow.pipelineDescs.at(type);
 
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineDesc.pipeline);
+            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineDesc.pipeline);
 
-        uint32_t primitives = 0;
-        utils::vkDefault::DescriptorSets descriptorSets = { lightSource->getDescriptorSet(frameNumber), object->getDescriptorSet(frameNumber) };
-        model->render(object->getInstanceNumber(frameNumber), commandBuffer, pipelineDesc.pipelineLayout, descriptorSets, primitives);
+            uint32_t primitives = 0;
+            utils::vkDefault::DescriptorSets descriptorSets = { lightSource->getDescriptorSet(frameNumber), object->getDescriptorSet(frameNumber) };
+            model->render(object->getInstanceNumber(frameNumber), commandBuffer, pipelineDesc.pipelineLayout, descriptorSets, primitives);
+        }
     }
 
     vkCmdEndRenderPass(commandBuffer);

@@ -9,6 +9,7 @@
 
 #include <entities/baseCamera.h>
 #include <entities/baseObject.h>
+#include <entities/spotLight.h>
 #include <transformationals/cameras.h>
 #include <transformationals/objects.h>
 #include <deferredGraphics/deferredGraphics.h>
@@ -21,9 +22,9 @@ namespace moon::tests::gui {
     moveVec[ax] = 1.0f;                             \
     move = 0.0f;
 
-template<int ax>
+template<int ax, typename T>
 void sliderTransManipulator(
-    transformational::Object& obj,
+    T& obj,
     const char* name,
     float min,
     float max,
@@ -40,8 +41,8 @@ void sliderTransManipulator(
 }
 
 
-template<int ax>
-void transManipulator(transformational::Object& obj, const char* name, float width = 100) {
+template<int ax, typename T>
+void transManipulator(T& obj, const char* name, float width = 100) {
     sliderTransManipulator<ax>(obj, name, -0.5f, 0.5f, width);
 }
 
@@ -116,7 +117,8 @@ bool setOutlighting(tests::ControledObject& obj, float width = 300.0f) {
     return res;
 }
 
-void rotationmManipulator(transformational::Object& obj, const moon::entities::BaseCamera* cam, float size = 100.0f) {
+template<typename T>
+void rotationmManipulator(T& obj, const moon::entities::BaseCamera* cam, float size = 100.0f) {
     float* rotation = (float*)&obj.rotation();
     if(!cam) return;
     float* camDir = (float*)&cam->getViewMatrix()[2].dvec();
@@ -166,6 +168,51 @@ bool setPlyMaterial(moon::models::PlyModel* model) {
     ImGui::SetNextItemWidth(150.0f);
     update |= ImGui::SliderFloat("roughness", &material.metallicRoughness.factor[moon::interfaces::Material::roughnessIndex], 0.0f, 1.0f);
     return update;
+}
+
+template<typename T>
+bool spotLightSliders(T& light, int index, float width = 150.0f) {
+	bool res = false;
+    ImGui::PushID(index);
+    float drop = light.getDrop();
+    ImGui::SetNextItemWidth(width);
+    if (ImGui::SliderFloat("drop",         &drop,         0.0f,  1.0f))  light.setDrop(drop);
+    float power = light.getPower();
+    ImGui::SetNextItemWidth(width);
+    if (ImGui::SliderFloat("power",        &power,        0.0f, 100.0f)) light.setPower(power);
+    float inner = light.getInnerFraction();
+    ImGui::SetNextItemWidth(width);
+    if (ImGui::SliderFloat("innerFraction",&inner,        0.0f,  1.0f))  light.setInnerFraction(inner);
+    float exp = light.getExponent();
+    ImGui::SetNextItemWidth(width);
+    if (ImGui::SliderFloat("exponent",     &exp,          0.0f, 20.0f))  light.setExponent(exp);
+    bool shadow = light.getEnableShadow();
+    if (ImGui::RadioButton("shadow", shadow)) {
+        light.setEnableShadow(!shadow);
+        res = true;
+    }
+    ImGui::SameLine();
+    bool scattering = light.getEnableScattering();
+    if (ImGui::RadioButton("scattering", scattering)) {
+        light.setEnableScattering(!scattering);
+        res = true;
+    }
+    ImGui::PopID();
+    return res;
+}
+
+void spotLightProjectionSliders(moon::entities::SpotLight& light, int index, float width = 150.0f) {
+    ImGui::PushID(index);
+    float fovDeg = light.getFov() / moon::math::radians(1.0f);
+    ImGui::SetNextItemWidth(width);
+    if (ImGui::SliderFloat("fov",    &fovDeg,          5.0f, 175.0f)) light.setFov(moon::math::radians(fovDeg));
+    float aspect = light.getAspect();
+    ImGui::SetNextItemWidth(width);
+    if (ImGui::SliderFloat("aspect", &aspect,           0.1f,   4.0f)) light.setAspect(aspect);
+    float farPlane = light.getFar();
+    ImGui::SetNextItemWidth(width);
+    if (ImGui::SliderFloat("far",    &farPlane,         0.1f, 100.0f)) light.setFar(farPlane);
+    ImGui::PopID();
 }
 
 bool graphicsProps(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> graphics, std::shared_ptr<utils::Cursor> cursor = nullptr) {

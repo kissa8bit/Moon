@@ -113,7 +113,7 @@ vec4 findConePointColor(const in vec3 point, sampler2D shadowMap, sampler2D ligh
     if(coordinates.z<texture(shadowMap, coordinates.xy).x){
         float drop = dropFactor * lightDrop(max(length(lightPosition - point), 0.01));
         drop = drop > 0.0f ? drop : 1.0f;
-        float distribusion = lightDistribusion(point,lightPosition,lightProjMatrix,lightViewMatrix,lightDirection,innerFraction,exponent,type);
+        float distribusion = lightDistribusion(point,lightProjMatrix,lightViewMatrix,innerFraction,exponent,type);
 
         color = max(texture(lightTexture, coordinates.xy), lightColor)/drop*distribusion;
     }
@@ -125,7 +125,7 @@ vec4 findConePointColor(const in vec3 point, sampler2D lightTexture, const in ve
 
     float drop = dropFactor * lightDrop(max(length(lightPosition - point), 0.01));
     drop = drop > 0.0f ? drop : 1.0f;
-    float distribusion = lightDistribusion(point,lightPosition,lightProjMatrix,lightViewMatrix,lightDirection,innerFraction,exponent,type);
+    float distribusion = lightDistribusion(point,lightProjMatrix,lightViewMatrix,innerFraction,exponent,type);
 
     vec3 coordinates = coordinatesInLocalBasis(lightProjViewMatrix,vec4(point.xyz,1.0f));
     color = max(texture(lightTexture, coordinates.xy), lightColor)/drop*distribusion;
@@ -210,7 +210,7 @@ vec4 findPyramidPointColor(const in vec3 point, sampler2D shadowMap, sampler2D l
     if(outsidePyramidCondition(vec3(2.0f*coordinates.x - 1.0f, 2.0f*coordinates.y - 1.0f,coordinates.z)) && coordinates.z<texture(shadowMap, coordinates.xy).x){
         float drop = dropFactor * lightDrop(max(length(lightPosition - point), 0.01));
         drop = drop > 0.0f ? drop : 1.0f;
-        float distribusion = lightDistribusion(point,lightPosition,lightProjMatrix,lightViewMatrix,lightDirection,innerFraction,exponent,type);
+        float distribusion = lightDistribusion(point,lightProjMatrix,lightViewMatrix,innerFraction,exponent,type);
 
         color = max(texture(lightTexture, coordinates.xy), lightColor)/drop/drop*distribusion;
     }
@@ -222,7 +222,7 @@ vec4 findPyramidPointColor(const in vec3 point, sampler2D lightTexture, const in
 
     float drop = dropFactor * lightDrop(max(length(lightPosition - point), 0.01));
     drop = drop > 0.0f ? drop : 1.0f;
-    float distribusion = lightDistribusion(point,lightPosition,lightProjMatrix,lightViewMatrix,lightDirection,innerFraction,exponent,type);
+    float distribusion = lightDistribusion(point,lightProjMatrix,lightViewMatrix,innerFraction,exponent,type);
 
     vec3 coordinates = coordinatesInLocalBasis(lightProjViewMatrix,vec4(point.xyz,1.0f));
     color = max(texture(lightTexture, coordinates.xy), lightColor)/drop/drop*distribusion;

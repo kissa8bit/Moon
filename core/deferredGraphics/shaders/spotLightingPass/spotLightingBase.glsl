@@ -42,7 +42,7 @@ vec4 calcLight(
     vec3 lightPosition = viewPosition(light.view);
     const vec4 pbrColor = pbr(position, normal, color, eyePosition, lightColor, lightPosition);
 
-    const float distribusion = lightDistribusion(position.xyz, lightPosition, light.proj, light.view, getDirection(light.view), light.prop.x, light.prop.y, type);
+    const float distribusion = lightDistribusion(position.xyz, light.proj, light.view, light.prop.x, light.prop.y, type);
 
     const float lightDropFactor = light.prop.w;
     const float lightDrop = lightDropFactor * lightDrop(max(length(lightPosition - position.xyz), 0.01));
