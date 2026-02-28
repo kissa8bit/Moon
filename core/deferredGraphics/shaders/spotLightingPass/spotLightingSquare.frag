@@ -26,6 +26,13 @@ void main() {
     vec4 emissive = subpassLoad(inEmissiveColorTexture);
     vec4 depth = subpassLoad(inDepthTexture);
     
+    bool outlining = uint((0xff000000 & floatBitsToUint(position.a)) >> 24) == 1;
+    if(outlining) {
+        outColor = color;
+        outBloom = emissive;
+        return;
+    }
+
     outColor = calcLight(position, normal, color, eyePosition, shadowMap, lightTexture, SPOT_LIGHTING_TYPE_SQUARE);
     outBloom = emissive + (checkBrightness(outColor) ? outColor : vec4(0.0));
 }

@@ -139,7 +139,8 @@ void main()
     uint perceptualRoughness_u8 = uint(255.0f * perceptualRoughness);
     uint metallic_u8 = uint(255.0f * metallic);
     uint ao_u8 = uint(255.0f * ao);
-    float params = uintBitsToFloat((perceptualRoughness_u8 << 0) | (metallic_u8 << 8) | (ao_u8 << 16));
+    uint outlining = uint(0);
+    float params = uintBitsToFloat((perceptualRoughness_u8 << 0) | (metallic_u8 << 8) | (ao_u8 << 16) | (outlining << 24));
     
     float number = uintBitsToFloat(pc.material.number);
 

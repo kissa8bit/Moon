@@ -17,5 +17,11 @@ layout(location = 2) out vec4 outBaseColor;
 layout(location = 3) out vec4 outEmissiveColor;
 
 void main() {
-    outEmissiveColor = color;
+    uint outlining = uint(1);
+    float params = uintBitsToFloat(outlining << 24);
+
+    outPosition = vec4(vec3(0.0), params);
+    outNormal = vec4(0.0);
+    outBaseColor = vec4(color.xyz, 1.0);
+    outEmissiveColor = vec4((1.0 - color.a) * color.xyz, 1.0);
 }

@@ -100,20 +100,23 @@ void rotationmManipulator(T& obj, const moon::entities::BaseCamera* cam, float s
 }
 
 inline bool setColors(moon::transformational::Object* object, float width = 300.0f) {
+    bool res = false;
+
     auto pBaseObject = dynamic_cast<entities::BaseObject*>(object);
-    if (!pBaseObject) return false;
+    if (!pBaseObject) return res;
 
     static moon::math::vec4 constColor = { 0.0f };
     static moon::math::vec4 colorFactor = { 1.0f };
     ImGui::SetNextItemWidth(width);
-    ImGui::ColorEdit4("const color", (float*)&constColor, ImGuiColorEditFlags_NoDragDrop);
+    res |= ImGui::ColorEdit4("const color", (float*)&constColor, ImGuiColorEditFlags_NoDragDrop);
     ImGui::SetNextItemWidth(width);
-    ImGui::ColorEdit4("color factor", (float*)&colorFactor, ImGuiColorEditFlags_NoDragDrop);
-    if (ImGui::Button("update")) {
+    res |= ImGui::ColorEdit4("color factor", (float*)&colorFactor, ImGuiColorEditFlags_NoDragDrop);
+
+    if(res){
         pBaseObject->setColor(constColor, colorFactor);
-        return true;
     }
-    return false;
+
+    return res;
 }
 
 inline bool setPlyMaterial(moon::models::PlyModel* model) {
