@@ -27,7 +27,7 @@ void BloomGraphics::createRenderPass(){
         dependencies.back().srcSubpass = VK_SUBPASS_EXTERNAL;
         dependencies.back().dstSubpass = 0;
         dependencies.back().srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        dependencies.back().srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+        dependencies.back().srcAccessMask = 0;
         dependencies.back().dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
         dependencies.back().dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
@@ -85,7 +85,7 @@ void BloomGraphics::Filter::create(const workflows::ShaderNames& shadersNames, V
 
     std::vector<VkPushConstantRange> pushConstantRange;
     pushConstantRange.push_back(VkPushConstantRange{});
-        pushConstantRange.back().stageFlags = VK_PIPELINE_STAGE_FLAG_BITS_MAX_ENUM;
+        pushConstantRange.back().stageFlags = VK_SHADER_STAGE_ALL;
         pushConstantRange.back().offset = 0;
         pushConstantRange.back().size = sizeof(BloomPushConst);
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts = { descriptorSetLayout };
@@ -148,7 +148,7 @@ void BloomGraphics::Bloom::create(const workflows::ShaderNames& shadersNames, Vk
 
     std::vector<VkPushConstantRange> pushConstantRange;
         pushConstantRange.push_back(VkPushConstantRange{});
-        pushConstantRange.back().stageFlags = VK_PIPELINE_STAGE_FLAG_BITS_MAX_ENUM;
+        pushConstantRange.back().stageFlags = VK_SHADER_STAGE_ALL;
         pushConstantRange.back().offset = 0;
         pushConstantRange.back().size = sizeof(BloomPushConst);
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts = { descriptorSetLayout };

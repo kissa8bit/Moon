@@ -27,7 +27,7 @@ void BoundingBoxGraphics::createRenderPass(){
     dependencies.back().srcSubpass = VK_SUBPASS_EXTERNAL;
     dependencies.back().dstSubpass = 0;
     dependencies.back().srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    dependencies.back().srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+    dependencies.back().srcAccessMask = 0;
     dependencies.back().dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     dependencies.back().dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 

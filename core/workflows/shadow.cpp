@@ -186,6 +186,8 @@ void ShadowGraphics::render(uint32_t frameNumber, VkCommandBuffer commandBuffer,
             if (!type.has_any(interfaces::ObjectType::Value::baseTypes)) continue;
             if (!model) continue;
 
+            if(shadow.pipelineDescs.find(type) == shadow.pipelineDescs.end()) continue;
+
             const auto& pipelineDesc = shadow.pipelineDescs.at(type);
 
             vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineDesc.pipeline);
