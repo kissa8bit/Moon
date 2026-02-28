@@ -16,63 +16,28 @@
 
 namespace moon::tests::gui {
 
-#define MOVE_VEC_DEF                                \
-    static float move = 0.0f;                       \
-    moon::math::vec3 moveVec(0.0f);                 \
-    moveVec[ax] = 1.0f;                             \
-    move = 0.0f;
-
-template<int ax, typename T>
-void sliderTransManipulator(
-    T& obj,
-    const char* name,
-    float min,
-    float max,
-    float width)
-{
-    MOVE_VEC_DEF
-
-        ImGui::SetNextItemWidth(width);
-    if (ImGui::SliderFloat(name, &move, min, max)) {
-        obj.translate(move * moveVec);
-    }
-    std::string text = " : " + std::to_string(obj.translation().im()[ax]);
-    ImGui::SameLine(0.0, 10.0); ImGui::Text(text.c_str());
-}
-
-
+// DragFloat: drag to move, Ctrl+click to type exact value.
 template<int ax, typename T>
 void transManipulator(T& obj, const char* name, float width = 100) {
-    sliderTransManipulator<ax>(obj, name, -0.5f, 0.5f, width);
-}
-
-template<int ax>
-void scaleSliderManipulator(
-    transformational::Object& obj,
-    const char* name,
-    float min,
-    float max,
-    float width)
-{
-    MOVE_VEC_DEF
-
-        ImGui::SetNextItemWidth(width);
-    if (ImGui::SliderFloat(name, &move, min, max)) {
-        obj.scale(obj.scaling() + move * moveVec);
+    float pos = obj.translation().im()[ax];
+    ImGui::SetNextItemWidth(width);
+    if (ImGui::DragFloat(name, &pos, 0.05f, 0.0f, 0.0f, "%.2f")) {
+        moon::math::vec3 delta(0.0f);
+        delta[ax] = pos - obj.translation().im()[ax];
+        obj.translate(delta);
     }
-
-    std::string text = " : " + std::to_string(obj.scaling()[ax]);
-    ImGui::SameLine(0.0, 10.0); ImGui::Text(text.c_str());
 }
 
 template<int ax>
 void scaleManipulator(transformational::Object& obj, const char* name, float width = 100) {
-    scaleSliderManipulator<ax>(obj, name, -0.5f, 0.5f, width);
+    moon::math::vec3 newScale = obj.scaling();
+    ImGui::SetNextItemWidth(width);
+    if (ImGui::DragFloat(name, &newScale[ax], 0.01f, 0.0f, 0.0f, "%.3f")) {
+        obj.scale(newScale);
+    }
 }
 
-#undef MOVE_VEC_DEF
-
-bool switcher(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> graphics, const moon::workflows::ParameterName& name) {
+inline bool switcher(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> graphics, const moon::workflows::ParameterName& name) {
     if (auto val = graphics->getEnable(name); ImGui::RadioButton(name.get().c_str(), val)) {
         graphics->setEnable(name, !val);
         return true;
@@ -80,7 +45,7 @@ bool switcher(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> graphics
     return false;
 }
 
-bool switchers(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> graphics) {
+inline bool switchers(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> graphics) {
     bool framebufferResized = false;
     ImGui::BeginGroup();
     framebufferResized |= moon::tests::gui::switcher(graphics, moon::deferredGraphics::Names::Bloom::param);
@@ -95,7 +60,7 @@ bool switchers(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> graphic
     return framebufferResized;
 }
 
-bool setOutlighting(tests::ControledObject& obj, float width = 300.0f) {
+inline bool setOutlighting(tests::ControledObject& obj, float width = 300.0f) {
     auto pBaseObject = dynamic_cast<entities::BaseObject*>(obj.ptr);
     if(!pBaseObject) return false;
 
@@ -119,20 +84,23 @@ bool setOutlighting(tests::ControledObject& obj, float width = 300.0f) {
 
 template<typename T>
 void rotationmManipulator(T& obj, const moon::entities::BaseCamera* cam, float size = 100.0f) {
-    float* rotation = (float*)&obj.rotation();
-    if(!cam) return;
-    float* camDir = (float*)&cam->getViewMatrix()[2].dvec();
-    vec3 camdir(-camDir[0], -camDir[1], -camDir[2]);
-    if (quat qu(rotation[0], rotation[1], rotation[2], rotation[3]);
-        ImGui::gizmo3D("", qu, camdir, size, imguiGizmo::mode3Axes | imguiGizmo::sphereAtOrigin))
+    if (!cam) return;
+
+	const moon::math::mat3 camRotMat = cam->getViewMatrix().extract(3, 3);
+    const auto camRotation = moon::math::convert(camRotMat);
+    const auto localRotation = camRotation * obj.rotation();
+
+    float* p_rotation = (float*)&localRotation;
+    if (quat qu(p_rotation[0], p_rotation[1], p_rotation[2], p_rotation[3]);
+        ImGui::gizmo3D("", qu, size, imguiGizmo::mode3Axes | imguiGizmo::sphereAtOrigin))
     {
-        obj.rotation() = moon::math::quat(qu.w, qu.x, qu.y, qu.z);
+        obj.rotation() = camRotation.inverted() * moon::math::quat(qu.w, qu.x, qu.y, qu.z);
         obj.update();
     }
 }
 
-bool setColors(moon::transformational::Object* obecjt, float width = 300.0f) {
-    auto pBaseObject = dynamic_cast<entities::BaseObject*>(obecjt);
+inline bool setColors(moon::transformational::Object* object, float width = 300.0f) {
+    auto pBaseObject = dynamic_cast<entities::BaseObject*>(object);
     if (!pBaseObject) return false;
 
     static moon::math::vec4 constColor = { 0.0f };
@@ -148,7 +116,7 @@ bool setColors(moon::transformational::Object* obecjt, float width = 300.0f) {
     return false;
 }
 
-bool setPlyMaterial(moon::models::PlyModel* model) {
+inline bool setPlyMaterial(moon::models::PlyModel* model) {
     if (!model) return false;
     auto& material = model->material();
     static bool metallic = material.pbrWorkflows == moon::interfaces::Material::METALLIC_ROUGHNESS;
@@ -201,7 +169,7 @@ bool spotLightSliders(T& light, int index, float width = 150.0f) {
     return res;
 }
 
-void spotLightProjectionSliders(moon::entities::SpotLight& light, int index, float width = 150.0f) {
+inline void spotLightProjectionSliders(moon::entities::SpotLight& light, int index, float width = 150.0f) {
     ImGui::PushID(index);
     float fovDeg = light.getFov() / moon::math::radians(1.0f);
     ImGui::SetNextItemWidth(width);
@@ -215,7 +183,7 @@ void spotLightProjectionSliders(moon::entities::SpotLight& light, int index, flo
     ImGui::PopID();
 }
 
-bool graphicsProps(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> graphics, std::shared_ptr<utils::Cursor> cursor = nullptr) {
+inline bool graphicsProps(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> graphics, std::shared_ptr<utils::Cursor> cursor = nullptr) {
     if(!graphics) return false;
 
     ImGui::SetNextItemWidth(150.0f);
@@ -231,7 +199,7 @@ bool graphicsProps(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> gra
     static bool manualBlurDepth = false;
     static float farBlurDepth = 1.0f;
     auto depthTransform = [](float val) {
-		constexpr float deg = 0.1;
+        constexpr float deg = 0.1f;
 		return std::pow(val, deg) + std::numeric_limits<float>::epsilon();
 	};
     if (ImGui::RadioButton("manual blur depth", manualBlurDepth)) {

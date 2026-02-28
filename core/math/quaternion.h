@@ -69,7 +69,7 @@ public:
     Quaternion& conjugate() { x = -x; y = -y; z = -z; return *this; }
     Quaternion conjugated() const { return Quaternion(*this).conjugate(); }
     Quaternion& invert() { return (type(1) / dot(data, data)) * conjugate(); }
-    Quaternion inverted() const { return Quaternion(*this).inverted(); }
+    Quaternion inverted() const { return Quaternion(*this).invert(); }
 };
 
 QUAT_TEMP QUAT normalize(const QUAT& q) { return q.normalized(); }
