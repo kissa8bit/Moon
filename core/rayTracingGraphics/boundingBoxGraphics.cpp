@@ -15,7 +15,7 @@ struct CameraBuffer{
 };
 
 void BoundingBoxGraphics::createAttachments() {
-    moon::utils::createAttachments(physicalDevice, device, image, 1, &frame);
+    frame = moon::utils::Attachments(physicalDevice, device, image);
 }
 
 void BoundingBoxGraphics::BoundingBoxGraphics::createRenderPass(){

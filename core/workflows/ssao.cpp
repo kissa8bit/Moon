@@ -11,14 +11,14 @@ SSAOGraphics::SSAOGraphics(SSAOParameters& parameters) :
 
 void SSAOGraphics::createAttachments(utils::AttachmentsDatabase& aDatabase){
     const utils::vkDefault::ImageInfo info = { parameters.imageInfo.Count, VK_FORMAT_R8G8B8A8_UNORM, parameters.imageInfo.Extent, parameters.imageInfo.Samples };
-    utils::createAttachments(physicalDevice, device, info, 1, &frame);
+    frame = utils::Attachments(physicalDevice, device, info);
     aDatabase.addAttachmentData(parameters.out.ssao, parameters.enable, &frame);
 }
 
 void SSAOGraphics::createRenderPass()
 {
     utils::vkDefault::RenderPass::AttachmentDescriptions attachments = {
-        utils::Attachments::imageDescription(VK_FORMAT_R8G8B8A8_UNORM)
+        utils::Attachments::imageDescription(frame.format())
     };
 
     utils::vkDefault::SubpassInfos subpassInfos = utils::vkDefault::subpassInfos(attachments.size());

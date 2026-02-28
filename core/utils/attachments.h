@@ -37,7 +37,6 @@ struct Attachment {
     void blitDown(VkCommandBuffer commandBuffer, Attachment& dst, float blitFactor);
     void blitUp(VkCommandBuffer commandBuffer, Attachment& dst, float blitFactor);
     void downscale(VkCommandBuffer commandBuffer, Attachment& intermBfr, size_t count, float factor);
-    void createMipLevels(VkCommandBuffer commandBuffer);
 
     static VkAttachmentDescription imageDescription(VkFormat format);
     static VkAttachmentDescription imageDescription(VkFormat format, VkImageLayout layout);
@@ -58,7 +57,13 @@ public:
     Attachments& operator=(Attachments&& other) noexcept;
     void swap(Attachments& other) noexcept;
 
-    Attachments(VkPhysicalDevice physicalDevice, VkDevice device, const utils::vkDefault::ImageInfo& imageInfo, VkImageUsageFlags usage, const VkClearValue& clear = {{0.0f, 0.0f, 0.0f, 0.0f}}, VkSamplerCreateInfo samplerInfo = VkSamplerCreateInfo{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO });
+    Attachments(
+        VkPhysicalDevice                    physicalDevice, 
+        VkDevice                            device, 
+        const utils::vkDefault::ImageInfo&  imageInfo, 
+        VkImageUsageFlags                   usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, 
+        const VkClearValue&                 clear = {{0.0f, 0.0f, 0.0f, 0.0f}}, 
+        VkSamplerCreateInfo                 samplerInfo = utils::vkDefault::sampler());
 
     std::vector<VkImage> getImages() const;
 
@@ -83,7 +88,15 @@ public:
     static VkAttachmentDescription depthDescription(VkFormat format);
 };
 
-void createAttachments(VkPhysicalDevice physicalDevice, VkDevice device, const utils::vkDefault::ImageInfo image, uint32_t attachmentsCount, Attachments* pAttachments, VkImageUsageFlags usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VkSamplerCreateInfo samplerInfo = VkSamplerCreateInfo{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO });
+void createAttachments(
+    VkPhysicalDevice                    physicalDevice, 
+    VkDevice                            device, 
+    const utils::vkDefault::ImageInfo&  imageInfo, 
+    uint32_t                            attachmentsCount, 
+    Attachments*                        pAttachments, 
+    VkImageUsageFlags                   usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+    const VkClearValue&                 clear = { {0.0f, 0.0f, 0.0f, 0.0f} },
+    VkSamplerCreateInfo                 samplerInfo = utils::vkDefault::sampler());
 
 struct AttachmentsDatabase {
     struct data{

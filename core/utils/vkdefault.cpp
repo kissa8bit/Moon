@@ -8,12 +8,12 @@ VkSamplerCreateInfo vkDefault::sampler(){
         SamplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
         SamplerInfo.magFilter = VK_FILTER_LINEAR;
         SamplerInfo.minFilter = VK_FILTER_LINEAR;
-        SamplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-        SamplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-        SamplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        SamplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+        SamplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+        SamplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
         SamplerInfo.anisotropyEnable = VK_TRUE;
         SamplerInfo.maxAnisotropy = 1.0f;
-        SamplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+        SamplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
         SamplerInfo.unnormalizedCoordinates = VK_FALSE;
         SamplerInfo.compareEnable = VK_FALSE;
         SamplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
@@ -22,6 +22,18 @@ VkSamplerCreateInfo vkDefault::sampler(){
         SamplerInfo.maxLod = 0.0f;
         SamplerInfo.mipLodBias = 0.0f;
     return SamplerInfo;
+}
+
+VkSamplerCreateInfo vkDefault::depthSampler(){
+    VkSamplerCreateInfo s{};
+        s.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+        s.magFilter = VK_FILTER_LINEAR;
+        s.minFilter = VK_FILTER_LINEAR;
+        s.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        s.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        s.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        s.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+    return s;
 }
 
 VkPipelineInputAssemblyStateCreateInfo vkDefault::inputAssembly(){

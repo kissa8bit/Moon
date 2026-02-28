@@ -16,14 +16,14 @@ Scattering::Scattering(ScatteringParameters& parameters, const interfaces::Light
 
 void Scattering::createAttachments(utils::AttachmentsDatabase& aDatabase){
     const utils::vkDefault::ImageInfo info = { parameters.imageInfo.Count, VK_FORMAT_R32G32B32A32_SFLOAT, parameters.imageInfo.Extent, parameters.imageInfo.Samples };
-    utils::createAttachments(physicalDevice, device, info, 1, &frame);
+    frame = utils::Attachments(physicalDevice, device, info);
     aDatabase.addAttachmentData(parameters.out.scattering, parameters.enable, &frame);
 }
 
 void Scattering::createRenderPass()
 {
     utils::vkDefault::RenderPass::AttachmentDescriptions attachments = {
-        utils::Attachments::imageDescription(VK_FORMAT_R32G32B32A32_SFLOAT)
+        utils::Attachments::imageDescription(frame.format())
     };
 
     utils::vkDefault::SubpassInfos subpassInfos = utils::vkDefault::subpassInfos(attachments.size());

@@ -11,7 +11,7 @@ DepthMap::Map::Map(const PhysicalDevice& device, const utils::vkDefault::ImageIn
         imageInfo,
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
         { {1.0,0} },
-        utils::vkDefault::sampler())),
+        utils::vkDefault::depthSampler())),
     descriptorSetLayout(DepthMap::createDescriptorSetLayout(device.device())),
     descriptorPool(utils::vkDefault::DescriptorPool(device.device(), { &descriptorSetLayout }, imageInfo.Count)),
     descriptorSets(descriptorPool.allocateDescriptorSets(descriptorSetLayout, imageInfo.Count))

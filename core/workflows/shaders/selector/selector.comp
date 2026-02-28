@@ -12,5 +12,7 @@ layout(set = 0, binding = 1) uniform sampler2D normal;
 layout(set = 0, binding = 2) uniform sampler2D depth;
 
 void main() {
-    cursor.number = floatBitsToUint(texture(normal, vec2(cursor.x, cursor.y)).a);
+    ivec2 texSize = textureSize(normal, 0);
+    ivec2 texel = ivec2(int(cursor.x * float(texSize.x)), int(cursor.y * float(texSize.y)));
+    cursor.number = floatBitsToUint(texelFetch(normal, texel, 0).a);
 }

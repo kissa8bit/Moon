@@ -32,7 +32,7 @@ void Graphics::createAttachments(utils::AttachmentsDatabase& aDatabase) {
     deferredAttachments.emission() = utils::Attachments(physicalDevice, device, u8Info, usage | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
 
     const utils::vkDefault::ImageInfo depthImage = { parameters.imageInfo.Count, utils::image::depthStencilFormat(physicalDevice), parameters.imageInfo.Extent, parameters.imageInfo.Samples };
-    deferredAttachments.depth() = utils::Attachments(physicalDevice, device, depthImage, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, { { 1.0f, 0 } });
+    deferredAttachments.depth() = utils::Attachments(physicalDevice, device, depthImage, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, { { 1.0f, 0 } }, utils::vkDefault::depthSampler());
 
     const auto pref = layerPrefix(layerIndex);
     aDatabase.addAttachmentData(pref + parameters.out.image, parameters.enable, &deferredAttachments.image());

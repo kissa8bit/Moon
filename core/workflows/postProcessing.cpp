@@ -8,15 +8,15 @@ namespace moon::workflows{
 PostProcessingGraphics::PostProcessingGraphics(PostProcessingParameters& parameters) : parameters(parameters), postProcessing(parameters) {}
 
 void PostProcessingGraphics::createAttachments(utils::AttachmentsDatabase& aDatabase){
-    const utils::vkDefault::ImageInfo info = { parameters.imageInfo.Count, VK_FORMAT_R8G8B8A8_SRGB, parameters.imageInfo.Extent, parameters.imageInfo.Samples };
-    utils::createAttachments(physicalDevice, device, info, 1, &frame);
+    const utils::vkDefault::ImageInfo info = { parameters.imageInfo.Count, VK_FORMAT_R32G32B32A32_SFLOAT, parameters.imageInfo.Extent, parameters.imageInfo.Samples };
+    frame = utils::Attachments(physicalDevice, device, info);
     aDatabase.addAttachmentData(parameters.out.postProcessing, parameters.enable, &frame);
 }
 
 void PostProcessingGraphics::createRenderPass()
 {
     utils::vkDefault::RenderPass::AttachmentDescriptions attachments = {
-        utils::Attachments::imageDescription(VK_FORMAT_R8G8B8A8_SRGB)
+        utils::Attachments::imageDescription(frame.format())
     };
 
     utils::vkDefault::SubpassInfos subpassInfos = utils::vkDefault::subpassInfos(attachments.size());

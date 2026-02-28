@@ -37,6 +37,7 @@ void raiseFlags(Buffers& buffers) {
 }
 
 VkSamplerCreateInfo sampler();
+VkSamplerCreateInfo depthSampler();
 VkPipelineVertexInputStateCreateInfo vertexInputState();
 VkViewport viewport(VkOffset2D offset, VkExtent2D extent);
 VkRect2D scissor(VkOffset2D offset, VkExtent2D extent);

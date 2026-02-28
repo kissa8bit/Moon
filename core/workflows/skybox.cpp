@@ -12,8 +12,8 @@ SkyboxGraphics::SkyboxGraphics(SkyboxParameters& parameters, const interfaces::O
 {}
 
 void SkyboxGraphics::createAttachments(utils::AttachmentsDatabase& aDatabase){
-    const utils::vkDefault::ImageInfo info = { parameters.imageInfo.Count, VK_FORMAT_R8G8B8A8_UNORM, parameters.imageInfo.Extent, parameters.imageInfo.Samples };
-    utils::createAttachments(physicalDevice, device, info, 2, &frame, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, utils::vkDefault::sampler());
+    const utils::vkDefault::ImageInfo info = { parameters.imageInfo.Count, VK_FORMAT_R32G32B32A32_SFLOAT, parameters.imageInfo.Extent, parameters.imageInfo.Samples };
+    utils::createAttachments(physicalDevice, device, info, 2, &frame, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
     aDatabase.addAttachmentData(parameters.out.baseColor, parameters.enable, &frame.color);
     aDatabase.addAttachmentData(parameters.out.bloom, parameters.enable, &frame.bloom);
 }
@@ -21,8 +21,8 @@ void SkyboxGraphics::createAttachments(utils::AttachmentsDatabase& aDatabase){
 void SkyboxGraphics::createRenderPass()
 {
     utils::vkDefault::RenderPass::AttachmentDescriptions attachments = {
-        utils::Attachments::imageDescription(VK_FORMAT_R8G8B8A8_UNORM),
-        utils::Attachments::imageDescription(VK_FORMAT_R8G8B8A8_UNORM)
+        utils::Attachments::imageDescription(frame.color.format()),
+        utils::Attachments::imageDescription(frame.bloom.format())
     };
 
     utils::vkDefault::SubpassInfos subpassInfos = utils::vkDefault::subpassInfos(attachments.size());

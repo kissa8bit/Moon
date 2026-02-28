@@ -220,7 +220,7 @@ void testScene::makeGui() {
         ImGui::TreePop();
     }
 
-    if (controledObject && ImGui::TreeNodeEx(std::string("Object : " + controledObject.name).c_str(), ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen))
+    if (controledObject)
     {
         std::string groupKey;
         moon::transformational::Group* controlGroup = nullptr;
@@ -232,20 +232,22 @@ void testScene::makeGui() {
             }
         }
 
-        ImGui::BeginGroup();
+        if (ImGui::TreeNodeEx(std::string("Object : " + controledObject.name).c_str(), ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::BeginGroup();
             ImGui::Text("translation : "); ImGui::SameLine(); ImGui::Separator();
             if (controlGroup) {
                 moon::tests::gui::transManipulator<0>(*controlGroup, "x_tr");
                 moon::tests::gui::transManipulator<1>(*controlGroup, "y_tr");
                 moon::tests::gui::transManipulator<2>(*controlGroup, "z_tr");
-            } else {
+            }
+            else {
                 moon::tests::gui::transManipulator<0>(*controledObject.ptr, "x_tr");
                 moon::tests::gui::transManipulator<1>(*controledObject.ptr, "y_tr");
                 moon::tests::gui::transManipulator<2>(*controledObject.ptr, "z_tr");
             }
-        ImGui::EndGroup();
+            ImGui::EndGroup();
 
-        ImGui::BeginGroup();
+            ImGui::BeginGroup();
             ImGui::Text("scale : "); ImGui::SameLine(); ImGui::Separator();
             if (ImGui::Button("Align by max")) {
                 controledObject->scale({ controledObject->scaling().maxValue() });
@@ -257,39 +259,43 @@ void testScene::makeGui() {
             moon::tests::gui::scaleManipulator<0>(controledObject, "x_sc");
             moon::tests::gui::scaleManipulator<1>(controledObject, "y_sc");
             moon::tests::gui::scaleManipulator<2>(controledObject, "z_sc");
-        ImGui::EndGroup();
+            ImGui::EndGroup();
 
-        ImGui::BeginGroup();
+            ImGui::BeginGroup();
             ImGui::Text("rotation : "); ImGui::SameLine(); ImGui::Separator();
             if (controlGroup) {
                 moon::tests::gui::rotationmManipulator(*controlGroup, dynamic_cast<moon::entities::BaseCamera*>(cameras["base"].get()));
                 ImGui::SameLine(0.0, 10.0);
                 moon::tests::gui::printQuaternion(controlGroup->rotation());
-            } else {
+            }
+            else {
                 moon::tests::gui::rotationmManipulator(*controledObject.ptr, dynamic_cast<moon::entities::BaseCamera*>(cameras["base"].get()));
                 ImGui::SameLine(0.0, 10.0);
                 moon::tests::gui::printQuaternion(controledObject->rotation());
             }
-        ImGui::EndGroup();
+            ImGui::EndGroup();
 
-        ImGui::BeginGroup();
+            ImGui::BeginGroup();
             ImGui::Text("colors : "); ImGui::SameLine(); ImGui::Separator();
-            if(moon::tests::gui::setOutlighting(controledObject)){
+            if (moon::tests::gui::setOutlighting(controledObject)) {
                 requestUpdate();
             }
             moon::tests::gui::setColors(controledObject);
-        ImGui::EndGroup();
+            ImGui::EndGroup();
 
-        if(auto model = dynamic_cast<moon::models::PlyModel*>(static_cast<moon::interfaces::Object*>(*controledObject.ptr)->model()); model){
-            ImGui::BeginGroup();
+            if (auto model = dynamic_cast<moon::models::PlyModel*>(static_cast<moon::interfaces::Object*>(*controledObject.ptr)->model()); model) {
+                ImGui::BeginGroup();
                 ImGui::Text("materials : "); ImGui::SameLine(); ImGui::Separator();
-                if(moon::tests::gui::setPlyMaterial(model)){
+                if (moon::tests::gui::setPlyMaterial(model)) {
                     requestUpdate();
                 }
-            ImGui::EndGroup();
+                ImGui::EndGroup();
+            }
+
+            ImGui::TreePop();
         }
 
-        if (!groupKey.empty()) {
+        if (!groupKey.empty() && ImGui::TreeNodeEx(std::string("Lights : " + controledObject.name).c_str(), ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen)) {
             auto requestLightUpdate = [this]() {
                 auto& g = *graphics["base"];
                 g.requestUpdate(moon::deferredGraphics::Names::Shadow::name);
@@ -611,23 +617,27 @@ void testScene::mouseEvent()
     mouse.pose = xy;
 
     if(mouse.control->released(GLFW_MOUSE_BUTTON_LEFT)){
-        auto pBaseObject = dynamic_cast<moon::entities::BaseObject*>(controledObject.ptr);
-        if (pBaseObject) pBaseObject->setOutlining(false);
-        bool hit = false;
         for(auto& [key, object]: objects){
-            if(moon::interfaces::Object* pObject = *object.get(); pObject->comparePrimitive(primitiveNumber)){
-                if(controledObject.ptr == object.get()) break;
-                auto pBaseObject = dynamic_cast<moon::entities::BaseObject*>(object.get());
-                if(pBaseObject){
-                    controledObject.ptr = object.get();
-                    controledObject.name = key;
-                    pBaseObject->setOutlining(controledObject.outlighting.enable, 0.03f, controledObject.outlighting.color);
-                    hit = true;
-                    break;
-                }
+            moon::interfaces::Object* pObject = *object.get();
+            if (!pObject->comparePrimitive(primitiveNumber)) {
+                continue;
             }
+            if (controledObject.ptr == object.get()) {
+                break;
+            }
+            auto newObject = dynamic_cast<moon::entities::BaseObject*>(object.get());
+            if (!newObject) {
+                continue;
+            }
+            auto oldObject = dynamic_cast<moon::entities::BaseObject*>(controledObject.ptr);
+            if (oldObject) {
+                oldObject->setOutlining(false);
+            }
+            controledObject.ptr = object.get();
+            controledObject.name = key;
+            newObject->setOutlining(controledObject.outlighting.enable, 0.03f, controledObject.outlighting.color);
+            break;
         }
-        if(!hit) controledObject = moon::tests::ControledObject();
         requestUpdate();
     }
 
