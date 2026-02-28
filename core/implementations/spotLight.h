@@ -33,6 +33,7 @@ public:
 
     SpotLight(Type type);
     Buffer& buffer(bool markDirty);
+    const Buffer& buffer() const;
 
     void setTexture(const std::filesystem::path& texturePath);
     void setTransformation(const math::mat4& transformation) override;

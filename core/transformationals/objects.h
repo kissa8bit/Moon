@@ -1,15 +1,7 @@
 #ifndef MOON_TRANSFORMATIONALS_OBJECTS_H
 #define MOON_TRANSFORMATIONALS_OBJECTS_H
 
-#include <vulkan.h>
-
-#include <filesystem>
-#include <optional>
-
 #include "transformational.h"
-
-#include <utils/texture.h>
-#include <utils/buffer.h>
 
 #include <interfaces/object.h>
 
@@ -19,11 +11,9 @@ namespace moon::transformational {
 
 class Object : public Transformational
 {
-protected:
-    std::unique_ptr<interfaces::Object> pObject;
-
     DEFAULT_TRANSFORMATIONAL()
 
+protected:
     Object() = default;
 
 public:
@@ -38,7 +28,7 @@ public:
     DEFAULT_TRANSFORMATIONAL_OVERRIDE(Object)
     DEFAULT_TRANSFORMATIONAL_GETTERS()
 
-    operator interfaces::Object* () const;
+    virtual interfaces::Object* object() = 0;
 };
 
 }

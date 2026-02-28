@@ -2,6 +2,7 @@
 #define MOON_ENTITIES_SPOT_LIGHT_H
 
 #include <vector>
+#include <list>
 
 #include <transformationals/lights.h>
 #include <transformationals/group.h>
@@ -18,8 +19,10 @@ private:
     float m_fov{ math::radians(90.0f) };
     float m_aspect{ 1.0f };
     float m_far{ 20.0f };
+    implementations::SpotLight m_light;
 
 public:
+    interfaces::Light* light() override { return dynamic_cast<interfaces::Light*>(&m_light); }
     struct Coloring
     {
         math::vec4 uniformColor{ 0.0f };
@@ -48,8 +51,8 @@ public:
     SpotLight(const SpotLight&) = delete;
     SpotLight& operator=(const SpotLight&) = delete;
 
-    SpotLight(SpotLight&&) = default;
-    SpotLight& operator=(SpotLight&&) = default;
+    SpotLight(SpotLight&&) = delete;
+    SpotLight& operator=(SpotLight&&) = delete;
 
     SpotLight& setColor(const math::vec4& color);
     SpotLight& setDrop(const float& drop);
@@ -76,7 +79,7 @@ public:
 
 class IsotropicLight : public transformational::Group {
 private:
-    std::vector<SpotLight> lights;
+    std::list<SpotLight> lights;
 
 public:
     struct Props
@@ -110,7 +113,7 @@ public:
     bool getEnableShadow();
     bool getEnableScattering();
 
-    std::vector<interfaces::Light*> getLights() const;
+    std::vector<interfaces::Light*> getLights();
 };
 
 } // moon::entities

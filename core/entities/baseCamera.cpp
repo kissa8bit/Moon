@@ -1,35 +1,25 @@
 #include "baseCamera.h"
 
-#include <implementations/baseCamera.h>
+#include <math/linearAlgebra.h>
 
 namespace moon::entities {
 
 BaseCamera::BaseCamera(const float& angle, const float& aspect, const float& near, const float& far)
     : transformational::Camera()
 {
-    pCamera = std::make_unique<implementations::BaseCamera>();
-
     setProjMatrix(math::perspective(math::radians(angle), aspect, near, far));
 }
 
 math::mat4 BaseCamera::getProjMatrix() const {
-    if (auto pBaseCamera = static_cast<implementations::BaseCamera*>(pCamera.get()); pBaseCamera) {
-        return transpose(pBaseCamera->buffer(false).proj);
-    }
-    return math::mat4::identity();
+    return math::transpose(m_camera.buffer().proj);
 }
 
 math::mat4 BaseCamera::getViewMatrix() const {
-    if (auto pBaseCamera = static_cast<implementations::BaseCamera*>(pCamera.get()); pBaseCamera) {
-        return transpose(pBaseCamera->buffer(false).view);
-    }
-    return math::mat4::identity();
+    return math::transpose(m_camera.buffer().view);
 }
 
 BaseCamera& BaseCamera::setProjMatrix(const math::mat4& proj) {
-    if (auto pBaseCamera = static_cast<implementations::BaseCamera*>(pCamera.get()); pBaseCamera) {
-        pBaseCamera->buffer(true).proj = transpose(proj);
-    }
+    m_camera.buffer(true).proj = math::transpose(proj);
     return *this;
 }
 

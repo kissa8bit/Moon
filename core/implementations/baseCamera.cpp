@@ -25,6 +25,10 @@ BaseCamera::Buffer& BaseCamera::buffer(bool markDirty) {
 	return hostBuffer;
 }
 
+const BaseCamera::Buffer& BaseCamera::buffer() const {
+	return hostBuffer;
+}
+
 void BaseCamera::setTransformation(const math::mat4& transformation) {
 	buffer(true).view = transpose(inverse(transformation));
 }

@@ -4,18 +4,24 @@
 #include <optional>
 
 #include <transformationals/objects.h>
+#include <implementations/baseObject.h>
 
 namespace moon::entities {
 
 class BaseObject : public transformational::Object {
+private:
+    implementations::BaseObject m_object;
+
 public:
+    interfaces::Object* object() override { return dynamic_cast<interfaces::Object*>(&m_object); }
+
     BaseObject(interfaces::Model* model, uint32_t firstInstance = 0, uint32_t instanceCount = 1);
 
     BaseObject(const BaseObject&) = delete;
     BaseObject& operator=(const BaseObject&) = delete;
 
-    BaseObject(BaseObject&&) = default;
-    BaseObject& operator=(BaseObject&&) = default;
+    BaseObject(BaseObject&&) = delete;
+    BaseObject& operator=(BaseObject&&) = delete;
 
     bool isEnable() const;
 

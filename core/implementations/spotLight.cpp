@@ -81,6 +81,10 @@ SpotLight::Buffer& SpotLight::buffer(bool markDirty) {
 	return hostBuffer;
 }
 
+const SpotLight::Buffer& SpotLight::buffer() const {
+	return hostBuffer;
+}
+
 void SpotLight::setTransformation(const math::mat4& transformation) {
 	buffer(true).view = transpose(inverse(transformation));
 }

@@ -1,9 +1,6 @@
 #ifndef MOON_TRANSFORMATIONALS_LIGHTS_H
 #define MOON_TRANSFORMATIONALS_LIGHTS_H
 
-#include <filesystem>
-#include <memory>
-
 #include "transformational.h"
 
 #include <interfaces/light.h>
@@ -13,11 +10,9 @@
 namespace moon::transformational {
 
 class Light : public Transformational {
-protected:
-    std::unique_ptr<interfaces::Light> pLight;
-
     DEFAULT_TRANSFORMATIONAL()
 
+protected:
     Light() = default;
 
 public:
@@ -33,7 +28,7 @@ public:
     DEFAULT_TRANSFORMATIONAL_GETTERS()
     DEFAULT_TRANSFORMATIONAL_ROTATE_XY_DECL(Light)
 
-    operator interfaces::Light* () const;
+    virtual interfaces::Light* light() = 0;
 };
 
 } // moon::transformational

@@ -3,25 +3,20 @@
 namespace moon::entities {
 
 SpotLight::SpotLight(const Coloring& coloring, const Props& props, implementations::SpotLight::Type type)
-	: transformational::Light(), m_fov(props.fov), m_aspect(props.aspect), m_far(props.farPlane)
+	: transformational::Light(), m_light(type), m_fov(props.fov), m_aspect(props.aspect), m_far(props.farPlane)
 {
-	pLight = std::make_unique<implementations::SpotLight>(type);
-
 	setDrop(props.drop).setPower(props.power).setInnerFraction(props.innerFraction).setExponent(props.exponent)
 		.setColor(coloring.uniformColor).setProjectionMatrix(math::perspective(m_fov, m_aspect, kNear, m_far));
 
-	auto pSpotLight = static_cast<implementations::SpotLight*>(pLight.get());
-	pSpotLight->setTexture(coloring.texturePath);
+	m_light.setTexture(coloring.texturePath);
 	interfaces::LightProperty properties;
 	properties.set(interfaces::LightProperty::enableScattering, props.enableScattering);
 	properties.set(interfaces::LightProperty::enableShadow, props.enableShadow);
-	pSpotLight->lightMask().set(properties, true);
+	m_light.lightMask().set(properties, true);
 }
 
-#define SpotLightSetter(field, v)																	\
-if (auto pSpotLight = static_cast<implementations::SpotLight*>(pLight.get()); pSpotLight) {			\
-    pSpotLight->buffer(true).field = v;																\
-}																									\
+#define SpotLightSetter(field, v)		\
+m_light.buffer(true).field = v;			\
 return *this;
 
 SpotLight& SpotLight::setProjectionMatrix(const math::mat4& projection) {
@@ -48,11 +43,8 @@ SpotLight& SpotLight::setExponent(const float& exponent) {
 	SpotLightSetter(props.exponent, exponent)
 }
 
-#define SpotLightGetter(field, defaultVal)                                                  \
-if (auto pSpotLight = static_cast<implementations::SpotLight*>(pLight.get()); pSpotLight) {\
-    return pSpotLight->buffer(false).props.field;                                           \
-}                                                                                           \
-return defaultVal;
+#define SpotLightGetter(field, defaultVal)              \
+return m_light.buffer(false).props.field;
 
 float SpotLight::getDrop()         { SpotLightGetter(dropFactor,    0.0f) }
 float SpotLight::getPower()        { SpotLightGetter(powerFactor,   0.0f) }
@@ -60,17 +52,17 @@ float SpotLight::getInnerFraction(){ SpotLightGetter(innerFraction, 0.0f) }
 float SpotLight::getExponent()     { SpotLightGetter(exponent,      4.0f) }
 
 SpotLight& SpotLight::setEnableShadow(bool enable) {
-	if (pLight) pLight->lightMask().set(interfaces::LightProperty::enableShadow, enable);
+	m_light.lightMask().set(interfaces::LightProperty::enableShadow, enable);
 	return *this;
 }
 
 SpotLight& SpotLight::setEnableScattering(bool enable) {
-	if (pLight) pLight->lightMask().set(interfaces::LightProperty::enableScattering, enable);
+	m_light.lightMask().set(interfaces::LightProperty::enableScattering, enable);
 	return *this;
 }
 
-bool SpotLight::getEnableShadow()     { return pLight ? pLight->lightMask().property().has(interfaces::LightProperty::enableShadow)     : false; }
-bool SpotLight::getEnableScattering() { return pLight ? pLight->lightMask().property().has(interfaces::LightProperty::enableScattering) : false; }
+bool SpotLight::getEnableShadow()     { return m_light.lightMask().property().has(interfaces::LightProperty::enableShadow); }
+bool SpotLight::getEnableScattering() { return m_light.lightMask().property().has(interfaces::LightProperty::enableScattering); }
 
 SpotLight& SpotLight::setFov(float fov) {
 	m_fov = fov;
@@ -100,7 +92,6 @@ IsotropicLight::IsotropicLight(const Props& props) {
 	};
 	const auto type = implementations::SpotLight::Type::square;
 
-	lights.reserve(6);
 	lights.emplace_back(coloring, spotProps, type).rotate(math::radians(90.0f),  math::vec3(1.0f, 0.0f, 0.0f));
 	lights.emplace_back(coloring, spotProps, type).rotate(math::radians(-90.0f), math::vec3(1.0f, 0.0f, 0.0f));
 	lights.emplace_back(coloring, spotProps, type).rotate(math::radians(0.0f),   math::vec3(0.0f, 1.0f, 0.0f));
@@ -108,16 +99,6 @@ IsotropicLight::IsotropicLight(const Props& props) {
 	lights.emplace_back(coloring, spotProps, type).rotate(math::radians(-90.0f), math::vec3(0.0f, 1.0f, 0.0f));
 	lights.emplace_back(coloring, spotProps, type).rotate(math::radians(180.0f), math::vec3(1.0f, 0.0f, 0.0f));
 	for (auto& light : lights) add(&light);
-
-	// colors for debug if color = {0, 0, 0, 0}
-	if (dot(props.color, props.color) == 0.0f && lights.size() == 6) {
-		lights.at(0).setColor(math::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-		lights.at(1).setColor(math::vec4(0.0f, 1.0f, 0.0f, 1.0f));
-		lights.at(2).setColor(math::vec4(0.0f, 0.0f, 1.0f, 1.0f));
-		lights.at(3).setColor(math::vec4(0.3f, 0.6f, 0.9f, 1.0f));
-		lights.at(4).setColor(math::vec4(0.6f, 0.9f, 0.3f, 1.0f));
-		lights.at(5).setColor(math::vec4(0.9f, 0.3f, 0.6f, 1.0f));
-	}
 }
 
 #define GENERATE_SETTER(func)					\
@@ -164,10 +145,10 @@ IsotropicLight& IsotropicLight::setEnableScattering(bool val) {
 bool IsotropicLight::getEnableShadow()     { return lights.empty() ? false : lights.front().getEnableShadow(); }
 bool IsotropicLight::getEnableScattering() { return lights.empty() ? false : lights.front().getEnableScattering(); }
 
-std::vector<interfaces::Light*> IsotropicLight::getLights() const {
+std::vector<interfaces::Light*> IsotropicLight::getLights() {
 	std::vector<interfaces::Light*> pLights;
-	for (const auto& light : lights) {
-		pLights.push_back(static_cast<interfaces::Light*>(light));
+	for (auto& light : lights) {
+		pLights.push_back(light.light());
 	}
 	return pLights;
 }

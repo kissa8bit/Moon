@@ -1,16 +1,12 @@
 #include "baseObject.h"
 
-#include <implementations/baseObject.h>
-
 namespace moon::entities {
 
-BaseObject::BaseObject(interfaces::Model* model, uint32_t firstInstance , uint32_t instanceCount)
-    : transformational::Object()
+BaseObject::BaseObject(interfaces::Model* model, uint32_t firstInstance, uint32_t instanceCount)
+    : transformational::Object(), m_object(model, firstInstance, instanceCount)
 {
-    pObject = std::make_unique<implementations::BaseObject>(model, firstInstance, instanceCount);
-
-    pObject->objectMask().set(interfaces::ObjectProperty::enable, true);
-    pObject->objectMask().set(interfaces::ObjectProperty::enableShadow, true);
+    m_object.objectMask().set(interfaces::ObjectProperty::enable, true);
+    m_object.objectMask().set(interfaces::ObjectProperty::enableShadow, true);
 
     if (model) {
         for (auto instance = 0; instance < instanceCount; ++instance) {
@@ -23,58 +19,41 @@ BaseObject::BaseObject(interfaces::Model* model, uint32_t firstInstance , uint32
 }
 
 bool BaseObject::isEnable() const {
-    auto pBaseObject = static_cast<implementations::BaseObject*>(pObject.get());
-    if (!pBaseObject) return false;
-
-    return pBaseObject->objectMask().property().has(interfaces::ObjectProperty::enable);
+    return m_object.objectMask().property().has(interfaces::ObjectProperty::enable);
 }
 
 BaseObject& BaseObject::setEnable(const bool enable) {
-    auto pBaseObject = static_cast<implementations::BaseObject*>(pObject.get());
-    if (!pBaseObject) return *this;
-
-    pBaseObject->objectMask().property().set(interfaces::ObjectProperty::enable, enable);
+    m_object.objectMask().property().set(interfaces::ObjectProperty::enable, enable);
     return *this;
 }
 
 BaseObject& BaseObject::setColor(std::optional<math::vec4> constant, std::optional<math::vec4> factor) {
-    auto pBaseObject = static_cast<implementations::BaseObject*>(pObject.get());
-    if (!pBaseObject) return *this;
-
     if (constant.has_value()) {
-        pBaseObject->buffer(true).base.constant = constant.value();
+        m_object.buffer(true).base.constant = constant.value();
     }
     if (factor.has_value()) {
-        pBaseObject->buffer(true).base.factor = factor.value();
+        m_object.buffer(true).base.factor = factor.value();
     }
-
     return *this;
 }
 
 BaseObject& BaseObject::setBloom(std::optional<math::vec4> constant, std::optional<math::vec4> factor) {
-    auto pBaseObject = static_cast<implementations::BaseObject*>(pObject.get());
-    if (!pBaseObject) return *this;
-
     if (constant.has_value()) {
-        pBaseObject->buffer(true).bloom.constant = constant.value();
+        m_object.buffer(true).bloom.constant = constant.value();
     }
     if (factor.has_value()) {
-        pBaseObject->buffer(true).bloom.factor = factor.value();
+        m_object.buffer(true).bloom.factor = factor.value();
     }
-
     return *this;
 }
 
 BaseObject& BaseObject::setOutlining(const bool enable, const float width, const math::vec4& color) {
-    auto pBaseObject = static_cast<implementations::BaseObject*>(pObject.get());
-    if (!pBaseObject) return *this;
-
-    pBaseObject->objectMask().set(interfaces::ObjectType::outlining, enable);
+    m_object.objectMask().set(interfaces::ObjectType::outlining, enable);
     if (width > 0.0f) {
-        pBaseObject->buffer(true).outlining.width = width;
+        m_object.buffer(true).outlining.width = width;
     }
     if (math::dot(color, color) > 0.0f) {
-        pBaseObject->buffer(true).outlining.color = color;
+        m_object.buffer(true).outlining.color = color;
     }
     return *this;
 }

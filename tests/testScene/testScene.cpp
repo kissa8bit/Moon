@@ -68,7 +68,7 @@ void testScene::resize() {
 
 void testScene::create()
 {
-    cameras["base"] = std::make_shared<moon::entities::BaseCamera>(moon::entities::BaseCamera(45.0f, window.aspectRatio(), 0.1f));
+    cameras["base"] = std::make_shared<moon::entities::BaseCamera>(45.0f, window.aspectRatio(), 0.1f);
     cameras["base"]->translate({0.0f, 0.0f, 10.0f});
     moon::deferredGraphics::Parameters deferredGraphicsParameters;
     deferredGraphicsParameters.shadersPath = ExternalPath / "core/deferredGraphics/spv";
@@ -78,7 +78,7 @@ void testScene::create()
 	deferredGraphicsParameters.minAmbientFactor() = 0.01f;
     graphics["base"] = std::make_shared<moon::deferredGraphics::DeferredGraphics>(deferredGraphicsParameters);
     app.setGraphics(graphics["base"].get());
-    graphics["base"]->bind(*cameras["base"].get());
+    graphics["base"]->bind(cameras["base"]->camera());
     graphics["base"]->bind(mouse);
     graphics["base"]->
         setEnable(moon::deferredGraphics::Names::Skybox::param, true).
@@ -283,7 +283,7 @@ void testScene::makeGui() {
             moon::tests::gui::setColors(controledObject);
             ImGui::EndGroup();
 
-            if (auto model = dynamic_cast<moon::models::PlyModel*>(static_cast<moon::interfaces::Object*>(*controledObject.ptr)->model()); model) {
+            if (auto model = dynamic_cast<moon::models::PlyModel*>(controledObject.ptr->object()->model()); model) {
                 ImGui::BeginGroup();
                 ImGui::Text("materials : "); ImGui::SameLine(); ImGui::Separator();
                 if (moon::tests::gui::setPlyMaterial(model)) {
@@ -546,13 +546,13 @@ void testScene::createObjects()
 
     for(auto& [_,graph]: graphics){
         for(auto& [_,object]: objects){
-            graph->bind(*object.get());
+            graph->bind(object->object());
         }
         for(auto& [_,object]: staticObjects){
-            graph->bind(*object.get());
+            graph->bind(object->object());
         }
         for(auto& [_, object]: skyboxObjects){
-            graph->bind(*object.get());
+            graph->bind(object->object());
         }
     }
 }
@@ -591,7 +591,7 @@ void testScene::createLight()
             graph->bind(light);
         }
         for(auto& source: lightSources) {
-            graph->bind(*source.get());
+            graph->bind(source->light());
         }
     }
 }
@@ -618,7 +618,7 @@ void testScene::mouseEvent()
 
     if(mouse.control->released(GLFW_MOUSE_BUTTON_LEFT)){
         for(auto& [key, object]: objects){
-            moon::interfaces::Object* pObject = *object.get();
+            moon::interfaces::Object* pObject = object->object();
             if (!pObject->comparePrimitive(primitiveNumber)) {
                 continue;
             }
@@ -731,8 +731,8 @@ void testScene::keyboardEvent()
         groupSpotLights[groupKey].push_back(light.get());
 
         for(auto& [_,graph]: graphics){
-            graph->bind(*lightSources.back().get());
-            graph->bind(*objects[objectKey].get());
+            graph->bind(light->light());
+            graph->bind(object->object());
         }
 		ufoCounter++;
     }
@@ -742,8 +742,8 @@ void testScene::keyboardEvent()
             ufoCounter--;
             auto objectKey = "new_ufo" + std::to_string(ufoCounter);
             for(auto& [_,graph]: graphics){
-                graph->remove(*objects[objectKey].get());
-                graph->remove(*lightSources.back().get());
+                graph->remove(objects[objectKey]->object());
+                graph->remove(lightSources.back()->light());
             }
             lightSources.pop_back();
             objects.erase(objectKey);

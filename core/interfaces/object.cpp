@@ -20,6 +20,10 @@ ObjectMask& Object::objectMask() {
     return mask;
 }
 
+const ObjectMask& Object::objectMask() const {
+    return mask;
+}
+
 Range& Object::primitiveRange() { return primitive.range;}
 
 bool Object::comparePrimitive(uint32_t primitiveIndex) const {

@@ -21,6 +21,7 @@ public:
 
     BaseCamera();
     Buffer& buffer(bool markDirty);
+    const Buffer& buffer() const;
 
     void setTransformation(const math::mat4& transformation) override;
 

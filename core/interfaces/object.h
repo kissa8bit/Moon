@@ -109,6 +109,7 @@ public:
 	uint32_t getInstanceNumber(uint32_t imageNumber) const;
 
 	ObjectMask& objectMask();
+	const ObjectMask& objectMask() const;
 	Range& primitiveRange();
 	bool comparePrimitive(uint32_t primitiveIndex) const;
 	const VkDescriptorSet& getDescriptorSet(uint32_t i) const;
