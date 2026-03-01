@@ -5,7 +5,7 @@
 #include "scatteringBase.glsl"
 
 layout(location = 0)	in vec4 eyePosition;
-layout(location = 1)	in vec4 glPosition;
+layout(location = 1)	in vec4 fragPosition;
 layout(location = 2)	in mat4 projview;
 
 layout(set = 0, binding = 1) uniform sampler2D inDepthTexture;
@@ -23,6 +23,8 @@ layout (push_constant) uniform PC
 {
     int width;
     int height;
+    float density;
+    int steps;
 }pc;
 
 layout(location = 0) out vec4 outScattering;
@@ -32,18 +34,17 @@ void main()
     float depthMap = texture(inDepthTexture, vec2(gl_FragCoord.x / pc.width, gl_FragCoord.y / pc.height)).r;
 
     outScattering = LightScattering(
-            50,
+            pc.steps,
+            pc.density,
             light.view,
             light.proj,
-            light.proj * light.view,
-            vec4(viewPosition(light.view), 1.0f),
             light.color,
             projview,
             eyePosition,
-            glPosition,
+            fragPosition,
             lightTexture,
             shadowMap,
             depthMap,
             light.prop,
-            0.0);
+            SPOT_LIGHTING_TYPE_CIRCLE);
 }

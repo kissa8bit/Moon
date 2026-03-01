@@ -32,8 +32,7 @@ vec4 calcLight(
         return vec4(0.0f);
     }   
 
-    const vec4 projPosition = light.proj * localPosition;
-    const vec3 ndcCoords = vec3(projPosition.xy / projPosition.w * 0.5 + 0.5, projPosition.z / projPosition.w);
+    const vec3 ndcCoords = normalizedCoords(light.proj, localPosition);
     const float shadowFactor = calcShadowFactor(light.proj, shadowMap, ndcCoords);
 
     const vec4 lightTextureColor = texture(lightTexture, ndcCoords.xy);
@@ -45,10 +44,10 @@ vec4 calcLight(
     const float distribusion = lightDistribusion(position.xyz, light.proj, light.view, light.prop.x, light.prop.y, type);
 
     const float lightDropFactor = light.prop.w;
-    const float lightDrop = lightDropFactor * lightDrop(max(length(lightPosition - position.xyz), 0.01));
+    const float lightDrop = lightDrop(max(lightDropFactor, 0.01) * max(length(lightPosition - position.xyz), 0.01));
 
     const float lightPowerFactor = light.prop.z;
-    const float lightPower = shadowFactor * lightPowerFactor * distribusion / (lightDrop > 0.0 ? lightDrop : 1.0);
+    const float lightPower = shadowFactor * lightPowerFactor * distribusion / lightDrop;
 
     return vec4(lightPower * pbrColor.xyz, pbrColor.a);
 }

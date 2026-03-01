@@ -13,11 +13,14 @@ float lightDrop(const float distance) {
 // type          : SPOT_LIGHTING_TYPE_CIRCLE — length(uv), elliptical iso-contours matching the frustum
 //                 SPOT_LIGHTING_TYPE_SQUARE — max(|u|,|v|), rectangular iso-contours
 float lightDistribusion(const in vec3 position, const in mat4 lightProjMatrix, const in mat4 lightViewMatrix, float innerFraction, float exponent, uint type) {
+    if(exponent <= 0.0) {
+        return 1.0;
+    }
     vec4 projPos = lightProjMatrix * lightViewMatrix * vec4(position, 1.0);
     vec2 uv = projPos.xy / projPos.w;
     float dist = (type == SPOT_LIGHTING_TYPE_CIRCLE) ? length(uv) : max(abs(uv.x), abs(uv.y));
     float t = clamp((dist - innerFraction) / max(1.0 - innerFraction, 1e-5), 0.0, 1.0);
-    return pow(cos(pi * 0.5 * t), max(exponent, 0.01));
+    return pow(cos(pi * 0.5 * t), exponent);
 }
 
 #endif

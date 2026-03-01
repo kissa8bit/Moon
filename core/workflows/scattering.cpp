@@ -6,8 +6,10 @@
 namespace moon::workflows {
 
 struct ScatteringPushConst {
-    alignas(4) uint32_t width { 0 };
-    alignas(4) uint32_t height { 0 };
+    alignas(4) uint32_t width   { 0 };
+    alignas(4) uint32_t height  { 0 };
+    alignas(4) float    density { 0.0f };
+    alignas(4) int32_t  steps   { 50 };
 };
 
 Scattering::Scattering(ScatteringParameters& parameters, const interfaces::Lights* lightSources, const interfaces::DepthMaps* depthMaps) :
@@ -75,11 +77,11 @@ void Scattering::Lighting::createPipeline(interfaces::LightType type, const work
         colorBlendAttachment.blendEnable = VK_TRUE;
         colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
         colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE;
-        colorBlendAttachment.colorBlendOp = VK_BLEND_OP_MAX;
+        colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
         colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
         colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
         colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_MIN;
-    VkPipelineColorBlendStateCreateInfo colorBlending = utils::vkDefault::colorBlendState(1,&colorBlendAttachment);
+    VkPipelineColorBlendStateCreateInfo colorBlending = utils::vkDefault::colorBlendState(1, &colorBlendAttachment);
 
     auto& pipelineDesc = pipelineDescs[type];
 
@@ -131,14 +133,14 @@ void Scattering::create(const utils::vkDefault::CommandPool& commandPool, utils:
 
     {
         const workflows::ShaderNames shaderNames = {
-            {workflows::ShaderType::Vertex, "scattering/scatteringSpotCircleVert.spv"},
+            {workflows::ShaderType::Vertex, "scattering/scatteringSpotVert.spv"},
             {workflows::ShaderType::Fragment, "scattering/scatteringSpotCircleFrag.spv"}
         };
         lighting.createPipeline(interfaces::LightType::spotCircle, shaderNames, device, renderPass);
     }
     {
         const workflows::ShaderNames shaderNames = {
-            {workflows::ShaderType::Vertex, "scattering/scatteringSpotSquareVert.spv"},
+            {workflows::ShaderType::Vertex, "scattering/scatteringSpotVert.spv"},
             {workflows::ShaderType::Fragment, "scattering/scatteringSpotSquareFrag.spv"}
         };
         lighting.createPipeline(interfaces::LightType::spotSquare, shaderNames, device, renderPass);
@@ -195,7 +197,7 @@ void Scattering::updateCommandBuffer(uint32_t frameNumber){
         const auto& pipelineDesc = lighting.pipelineDescs.at(type);
         const auto& depthMap = lighting.depthMaps->at(lightSource);
 
-        ScatteringPushConst pushConst{ parameters.imageInfo.Extent.width, parameters.imageInfo.Extent.height};
+        ScatteringPushConst pushConst{ parameters.imageInfo.Extent.width, parameters.imageInfo.Extent.height, parameters.density, parameters.steps };
         vkCmdPushConstants(commandBuffers[frameNumber], pipelineDesc.pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(ScatteringPushConst), &pushConst);
 
         const utils::vkDefault::DescriptorSets descriptors = { lighting.descriptorSets.at(frameNumber), depthMap.descriptorSets().at(frameNumber) };

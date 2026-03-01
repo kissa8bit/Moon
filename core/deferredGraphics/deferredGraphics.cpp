@@ -463,6 +463,10 @@ Parameters& DeferredGraphics::parameters() {
     return params;
 }
 
+workflows::ScatteringParameters& DeferredGraphics::scatteringWorkflowParams() {
+    return scatteringParams;
+}
+
 void DeferredGraphics::draw(VkCommandBuffer commandBuffer, uint32_t imageNumber) const {
     linkMember.draw(commandBuffer, imageNumber);
 }

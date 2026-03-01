@@ -209,6 +209,7 @@ public:
     DeferredGraphics& requestUpdate(const workflows::WorkflowName& name);
 
     Parameters& parameters();
+    workflows::ScatteringParameters& scatteringWorkflowParams();
 
     void create(interfaces::Model* pModel);
 

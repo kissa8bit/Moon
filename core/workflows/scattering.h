@@ -15,6 +15,8 @@ struct ScatteringParameters : workflows::Parameters{
     struct{
         utils::AttachmentName scattering;
     }out;
+    float   density { 0.0f };
+    int32_t steps   { 50 };
 };
 
 class Scattering : public Workflow

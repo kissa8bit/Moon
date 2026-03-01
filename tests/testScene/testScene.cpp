@@ -91,6 +91,8 @@ void testScene::create()
         setEnable(moon::deferredGraphics::Names::Selector::param, true);
     graphics["base"]->reset();
 
+	graphics["base"]->scatteringWorkflowParams().density = 0.1f;
+
 #ifdef SECOND_VIEW_WINDOW
     cameras["view"] = std::make_shared<moon::transformational::Camera>(45.0f, window.aspectRatio(), 0.1f);
     deferredGraphicsParameters.extent /= 3;
@@ -182,6 +184,12 @@ void testScene::makeGui() {
             window.windowResized() |= moon::tests::gui::switchers(graphics["base"]);
         ImGui::EndGroup();
 
+        ImGui::TreePop();
+    }
+
+    if (ImGui::TreeNodeEx("Scattering", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        moon::tests::gui::scatteringProps(graphics["base"]);
         ImGui::TreePop();
     }
 
@@ -565,7 +573,7 @@ void testScene::createLight()
     std::filesystem::path LIGHT_TEXTURE3  = ExternalPath / "dependences/texture/light3.jpg";
 
     lightPoints["lightBox"] = std::make_shared<moon::entities::IsotropicLight>(
-        moon::entities::IsotropicLight::Props{ moon::math::vec4(1.0f), 100.0f, true, false, 0.05f });
+        moon::entities::IsotropicLight::Props{ moon::math::vec4(1.0f), 100.0f, true, false, 0.2f });
     groups["lightBox"]->add(lightPoints["lightBox"].get());
 
     using namespace moon::entities;
@@ -575,16 +583,16 @@ void testScene::createLight()
         groupSpotLights[groupKey].push_back(static_cast<SpotLight*>(lightSources.back().get()));
     };
 
-    addGroupLight("ufo0",      std::make_shared<SpotLight>(LIGHT_TEXTURE0, SpotLight::Props{ true, true, 0.05f, 10.0f, 0.3f }));
-    addGroupLight("ufo1",      std::make_shared<SpotLight>(LIGHT_TEXTURE1, SpotLight::Props{ true, true, 0.05f, 10.0f, 0.3f }));
-    addGroupLight("ufo2",      std::make_shared<SpotLight>(LIGHT_TEXTURE2, SpotLight::Props{ true, true, 0.05f, 10.0f, 0.3f }));
-    addGroupLight("ufo3",      std::make_shared<SpotLight>(LIGHT_TEXTURE3, SpotLight::Props{ true, true, 0.05f, 10.0f, 0.3f }));
+    addGroupLight("ufo0",      std::make_shared<SpotLight>(LIGHT_TEXTURE0, SpotLight::Props{ true, true, 0.2f, 10.0f, 0.3f }));
+    addGroupLight("ufo1",      std::make_shared<SpotLight>(LIGHT_TEXTURE1, SpotLight::Props{ true, true, 0.2f, 10.0f, 0.3f }));
+    addGroupLight("ufo2",      std::make_shared<SpotLight>(LIGHT_TEXTURE2, SpotLight::Props{ true, true, 0.2f, 10.0f, 0.3f }));
+    addGroupLight("ufo3",      std::make_shared<SpotLight>(LIGHT_TEXTURE3, SpotLight::Props{ true, true, 0.2f, 10.0f, 0.3f }));
 
-    addGroupLight("ufo_light_0", std::make_shared<SpotLight>(moon::math::vec4(1.00f, 0.65f, 0.20f, 1.00f), SpotLight::Props{  true,  true, 0.05f, 10.0f, 0.3f }));
-    addGroupLight("ufo_light_1", std::make_shared<SpotLight>(moon::math::vec4(0.90f, 0.85f, 0.95f, 1.00f), SpotLight::Props{  true, false, 0.05f, 10.0f, 0.3f }));
-    addGroupLight("ufo_light_2", std::make_shared<SpotLight>(moon::math::vec4(0.90f, 0.85f, 0.75f, 1.00f), SpotLight::Props{  true,  true, 0.05f, 10.0f, 0.3f }));
-    addGroupLight("ufo_light_3", std::make_shared<SpotLight>(moon::math::vec4(0.90f, 0.30f, 0.40f, 1.00f), SpotLight::Props{  true,  true, 0.05f, 10.0f, 0.3f }));
-    addGroupLight("ufo_light_4", std::make_shared<SpotLight>(moon::math::vec4(0.20f, 0.50f, 0.95f, 1.00f), SpotLight::Props{  true,  true, 0.05f, 10.0f, 0.3f }));
+    addGroupLight("ufo_light_0", std::make_shared<SpotLight>(moon::math::vec4(1.00f, 0.65f, 0.20f, 1.00f), SpotLight::Props{  true,  true, 0.2f, 10.0f, 0.3f }));
+    addGroupLight("ufo_light_1", std::make_shared<SpotLight>(moon::math::vec4(0.90f, 0.85f, 0.95f, 1.00f), SpotLight::Props{  true, false, 0.2f, 10.0f, 0.3f }));
+    addGroupLight("ufo_light_2", std::make_shared<SpotLight>(moon::math::vec4(0.90f, 0.85f, 0.75f, 1.00f), SpotLight::Props{  true,  true, 0.2f, 10.0f, 0.3f }));
+    addGroupLight("ufo_light_3", std::make_shared<SpotLight>(moon::math::vec4(0.90f, 0.30f, 0.40f, 1.00f), SpotLight::Props{  true,  true, 0.2f, 10.0f, 0.3f }));
+    addGroupLight("ufo_light_4", std::make_shared<SpotLight>(moon::math::vec4(0.20f, 0.50f, 0.95f, 1.00f), SpotLight::Props{  true,  true, 0.2f, 10.0f, 0.3f }));
 
     for (auto& [_, graph] : graphics) {
         for (const auto& light : lightPoints["lightBox"]->getLights()) {

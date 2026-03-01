@@ -186,6 +186,19 @@ inline void spotLightProjectionSliders(moon::entities::SpotLight& light, int ind
     ImGui::PopID();
 }
 
+inline void scatteringProps(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> graphics, float width = 150.0f) {
+    if (!graphics) return;
+    auto& params = graphics->scatteringWorkflowParams();
+    ImGui::SetNextItemWidth(width);
+    if (ImGui::SliderFloat("density", &params.density, 0.0f, 1.0f)){
+		graphics->requestUpdate(moon::deferredGraphics::Names::Scattering::name);
+    }
+    ImGui::SetNextItemWidth(width);
+    if(ImGui::SliderInt("steps", &params.steps, 2, 200)){
+        graphics->requestUpdate(moon::deferredGraphics::Names::Scattering::name);
+	}
+}
+
 inline bool graphicsProps(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> graphics, std::shared_ptr<utils::Cursor> cursor = nullptr) {
     if(!graphics) return false;
 
