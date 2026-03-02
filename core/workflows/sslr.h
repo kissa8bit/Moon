@@ -11,9 +11,6 @@ struct SSLRParameters : workflows::Parameters{
         utils::AttachmentName position;
         utils::AttachmentName normal;
         utils::AttachmentName color;
-        utils::AttachmentName depth;
-        utils::AttachmentName firstTransparency;
-        utils::ImageName defaultDepthTexture;
     }in;
     struct{
         utils::AttachmentName sslr;

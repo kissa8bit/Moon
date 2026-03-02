@@ -57,11 +57,6 @@ void SSLRGraphics::SSLR::create(const workflows::ShaderNames& shadersNames, VkDe
         bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
         bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
         bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
-        bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
-        bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
-        bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
-        bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
-        bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
     descriptorSetLayout = utils::vkDefault::DescriptorSetLayout(device, bindings);
 
     const auto vertShader = utils::vkDefault::VertrxShaderModule(device, parameters.shadersPath / shadersNames.at(workflows::ShaderType::Vertex));
@@ -127,18 +122,11 @@ void SSLRGraphics::updateDescriptors(const utils::BuffersDatabase& bDatabase, co
     for (uint32_t i = 0; i < parameters.imageInfo.Count; i++) {
         auto descriptorSet = sslr.descriptorSets[i];
 
-#define SSLR_getId(id) aDatabase.get(parameters.in.firstTransparency + parameters.in.id) ? parameters.in.firstTransparency + parameters.in.id : parameters.in.id
-
         utils::descriptorSet::Writes writes;
         WRITE_DESCRIPTOR(writes, descriptorSet, bDatabase.descriptorBufferInfo(parameters.in.camera, i));
         WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.position, i));
         WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.normal, i));
         WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.color, i));
-        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.depth, i));
-        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(SSLR_getId(position), i));
-        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(SSLR_getId(normal), i));
-        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(SSLR_getId(color), i));
-        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(SSLR_getId(depth), i, parameters.in.defaultDepthTexture));
         utils::descriptorSet::update(device, writes);
     }
 }

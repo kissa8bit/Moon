@@ -53,5 +53,6 @@ void main() {
     }
     
     outColor += vec4(texture(scatteringMap, fragTexCoord.xy).xyz, 0.0);
+    outColor += vec4(texture(sslrMap, fragTexCoord.xy).xyz, 0.0);
     outBlur = outColor;
 }

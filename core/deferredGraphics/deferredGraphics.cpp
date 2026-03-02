@@ -95,8 +95,6 @@ void DeferredGraphics::createGraphicsPasses()
     SSLRParams.in.position = l0 + Names::MainGraphics::GBuffer::position;
     SSLRParams.in.normal = l0 + Names::MainGraphics::GBuffer::normal;
     SSLRParams.in.color = l0 + Names::MainGraphics::image;
-    SSLRParams.in.depth = l0 + Names::MainGraphics::GBuffer::depth;
-    SSLRParams.in.defaultDepthTexture = Names::whiteTexture;
     SSLRParams.out.sslr = Names::SSLR::output;
     SSLRParams.shadersPath = params.workflowsShadersPath;
     SSLRParams.imageInfo = imageInfo;
