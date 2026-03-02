@@ -46,6 +46,7 @@ SpotLight& SpotLight::setExponent(const float& exponent) {
 #define SpotLightGetter(field, defaultVal)              \
 return m_light.buffer(false).props.field;
 
+math::vec4 SpotLight::getColor()   { return m_light.buffer(false).color; }
 float SpotLight::getDrop()         { SpotLightGetter(dropFactor,    0.0f) }
 float SpotLight::getPower()        { SpotLightGetter(powerFactor,   0.0f) }
 float SpotLight::getInnerFraction(){ SpotLightGetter(innerFraction, 0.0f) }
@@ -129,6 +130,7 @@ IsotropicLight& IsotropicLight::setExponent(const float& val) {
 	GENERATE_SETTER(setExponent)
 }
 
+math::vec4 IsotropicLight::getColor()    { return lights.empty() ? math::vec4(0.0f) : lights.front().getColor(); }
 float IsotropicLight::getDrop()          { return lights.empty() ? 0.0f  : lights.front().getDrop(); }
 float IsotropicLight::getPower()         { return lights.empty() ? 0.0f  : lights.front().getPower(); }
 float IsotropicLight::getInnerFraction() { return lights.empty() ? 0.0f  : lights.front().getInnerFraction(); }

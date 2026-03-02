@@ -66,6 +66,7 @@ public:
     SpotLight& setFar(float far);
     SpotLight& setProjectionMatrix(const math::mat4& projection);
 
+    math::vec4 getColor();
     float getDrop();
     float getPower();
     float getInnerFraction();
@@ -106,6 +107,7 @@ public:
     IsotropicLight& setEnableScattering(bool enable);
     IsotropicLight& setProjectionMatrix(const math::mat4& projection);
 
+    math::vec4 getColor();
     float getDrop();
     float getPower();
     float getInnerFraction();

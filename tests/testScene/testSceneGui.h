@@ -145,6 +145,9 @@ template<typename T>
 bool spotLightSliders(T& light, int index, float width = 150.0f) {
 	bool res = false;
     ImGui::PushID(index);
+    moon::math::vec4 color = light.getColor();
+    ImGui::SetNextItemWidth(width);
+    if (ImGui::ColorEdit4("color", (float*)&color, ImGuiColorEditFlags_NoDragDrop)) light.setColor(color);
     float drop = light.getDrop();
     ImGui::SetNextItemWidth(width);
     if (ImGui::SliderFloat("drop",         &drop,         0.0f,  1.0f))  light.setDrop(drop);
