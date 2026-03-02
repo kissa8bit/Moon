@@ -28,6 +28,7 @@ struct LayersCombinerParameters : workflows::Parameters {
         utils::AttachmentName skyboxBloom;
         utils::AttachmentName scattering;
         utils::AttachmentName sslr;
+        utils::AttachmentName ssao;
         utils::ImageName defaultDepthTexture;
     }in;
     struct{

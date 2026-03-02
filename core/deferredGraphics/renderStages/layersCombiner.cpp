@@ -75,6 +75,7 @@ void LayersCombiner::Combiner::create(const workflows::ShaderNames& shadersNames
         bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
         bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
         bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
+        bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
     descriptorSetLayout = utils::vkDefault::DescriptorSetLayout(device, bindings);
 
     const uint32_t specializationData = layersCount;
@@ -182,6 +183,7 @@ void LayersCombiner::updateDescriptors(
         WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.skyboxBloom, i));
         WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.scattering, i));
         WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.sslr, i));
+        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.ssao, i));
         utils::descriptorSet::update(device, writes);
     }
 }

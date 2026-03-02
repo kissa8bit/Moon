@@ -75,7 +75,6 @@ void testScene::create()
     deferredGraphicsParameters.workflowsShadersPath = ExternalPath / "core/workflows/spv";
     deferredGraphicsParameters.extent = window.sizes();
 	deferredGraphicsParameters.layersCount() = 3;
-	deferredGraphicsParameters.minAmbientFactor() = 0.01f;
     graphics["base"] = std::make_shared<moon::deferredGraphics::DeferredGraphics>(deferredGraphicsParameters);
     app.setGraphics(graphics["base"].get());
     graphics["base"]->bind(cameras["base"]->camera());
@@ -84,7 +83,7 @@ void testScene::create()
         setEnable(moon::deferredGraphics::Names::Skybox::param, true).
         setEnable(moon::deferredGraphics::Names::Blur::param, true).
         setEnable(moon::deferredGraphics::Names::Bloom::param, true).
-        setEnable(moon::deferredGraphics::Names::SSAO::param, false).
+        setEnable(moon::deferredGraphics::Names::SSAO::param, true).
         setEnable(moon::deferredGraphics::Names::SSLR::param, false).
         setEnable(moon::deferredGraphics::Names::Scattering::param, true).
         setEnable(moon::deferredGraphics::Names::Shadow::param, true).
@@ -190,6 +189,12 @@ void testScene::makeGui() {
     if (ImGui::TreeNodeEx("Scattering", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen))
     {
         moon::tests::gui::scatteringProps(graphics["base"]);
+        ImGui::TreePop();
+    }
+
+    if (ImGui::TreeNodeEx("SSAO", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        moon::tests::gui::ssaoProps(graphics["base"]);
         ImGui::TreePop();
     }
 

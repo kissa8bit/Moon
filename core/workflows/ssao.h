@@ -17,6 +17,12 @@ struct SSAOParameters : workflows::Parameters{
     struct{
         utils::AttachmentName ssao;
     }out;
+
+    int32_t kernelSize { 32 };
+    float   radius     { 0.5f };
+    float   aoMin      { 0.0f };
+    float   aoFactor   { 0.02f };
+    float   aoPower    { 4.0f };
 };
 
 class SSAOGraphics : public Workflow

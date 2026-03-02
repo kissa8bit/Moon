@@ -5,12 +5,20 @@
 
 namespace moon::workflows {
 
+struct SSAOPushConst {
+    alignas(4) int32_t kernelSize { 32 };
+    alignas(4) float   radius     { 0.5f };
+    alignas(4) float   aoMin      { 0.0f };
+    alignas(4) float   aoFactor   { 1.0f };
+    alignas(4) float   aoPower    { 2.0f };
+};
+
 SSAOGraphics::SSAOGraphics(SSAOParameters& parameters) :
     parameters(parameters), ssao(parameters)
 {}
 
 void SSAOGraphics::createAttachments(utils::AttachmentsDatabase& aDatabase){
-    const utils::vkDefault::ImageInfo info = { parameters.imageInfo.Count, VK_FORMAT_R8G8B8A8_UNORM, parameters.imageInfo.Extent, parameters.imageInfo.Samples };
+    const utils::vkDefault::ImageInfo info = { parameters.imageInfo.Count, VK_FORMAT_R32G32B32A32_SFLOAT, parameters.imageInfo.Extent, parameters.imageInfo.Samples };
     frame = utils::Attachments(physicalDevice, device, info);
     aDatabase.addAttachmentData(parameters.out.ssao, parameters.enable, &frame);
 }
@@ -76,8 +84,14 @@ void SSAOGraphics::SSAO::create(const workflows::ShaderNames& shadersNames, VkDe
     std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachment = {utils::vkDefault::colorBlendAttachmentState(VK_FALSE)};
     VkPipelineColorBlendStateCreateInfo colorBlending = utils::vkDefault::colorBlendState(static_cast<uint32_t>(colorBlendAttachment.size()),colorBlendAttachment.data());
 
+    std::vector<VkPushConstantRange> pushConstantRange;
+    pushConstantRange.push_back(VkPushConstantRange{});
+        pushConstantRange.back().stageFlags = VK_SHADER_STAGE_ALL;
+        pushConstantRange.back().offset = 0;
+        pushConstantRange.back().size = sizeof(SSAOPushConst);
+
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts = { descriptorSetLayout };
-    pipelineLayout = utils::vkDefault::PipelineLayout(device, descriptorSetLayouts);
+    pipelineLayout = utils::vkDefault::PipelineLayout(device, descriptorSetLayouts, pushConstantRange);
 
     std::vector<VkGraphicsPipelineCreateInfo> pipelineInfo;
     pipelineInfo.push_back(VkGraphicsPipelineCreateInfo{});
@@ -149,6 +163,8 @@ void SSAOGraphics::updateCommandBuffer(uint32_t frameNumber){
 
     vkCmdBeginRenderPass(commandBuffers[frameNumber], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
+        SSAOPushConst pushConst{ parameters.kernelSize, parameters.radius, parameters.aoMin, parameters.aoFactor, parameters.aoPower };
+        vkCmdPushConstants(commandBuffers[frameNumber], ssao.pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(SSAOPushConst), &pushConst);
         vkCmdBindPipeline(commandBuffers[frameNumber], VK_PIPELINE_BIND_POINT_GRAPHICS, ssao.pipeline);
         vkCmdBindDescriptorSets(commandBuffers[frameNumber], VK_PIPELINE_BIND_POINT_GRAPHICS, ssao.pipelineLayout, 0, 1, &ssao.descriptorSets[frameNumber], 0, nullptr);
         vkCmdDraw(commandBuffers[frameNumber], 6, 1, 0, 0);

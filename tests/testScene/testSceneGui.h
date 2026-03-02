@@ -186,6 +186,31 @@ inline void spotLightProjectionSliders(moon::entities::SpotLight& light, int ind
     ImGui::PopID();
 }
 
+inline void ssaoProps(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> graphics, float width = 150.0f) {
+    if (!graphics) return;
+    auto& params = graphics->ssaoWorkflowParams();
+    ImGui::SetNextItemWidth(width);
+    if (ImGui::SliderInt("kernel size", &params.kernelSize, 4, 64)) {
+        graphics->requestUpdate(moon::deferredGraphics::Names::SSAO::name);
+    }
+    ImGui::SetNextItemWidth(width);
+    if (ImGui::SliderFloat("radius", &params.radius, 0.05f, 2.0f)) {
+        graphics->requestUpdate(moon::deferredGraphics::Names::SSAO::name);
+    }
+    ImGui::SetNextItemWidth(width);
+    if (ImGui::SliderFloat("ao min", &params.aoMin, 0.0f, 0.1f)) {
+        graphics->requestUpdate(moon::deferredGraphics::Names::SSAO::name);
+    }
+    ImGui::SetNextItemWidth(width);
+    if (ImGui::SliderFloat("ao factor", &params.aoFactor, 0.0f, 0.1f)) {
+        graphics->requestUpdate(moon::deferredGraphics::Names::SSAO::name);
+    }
+    ImGui::SetNextItemWidth(width);
+    if (ImGui::SliderFloat("ao power", &params.aoPower, 0.5f, 8.0f)) {
+        graphics->requestUpdate(moon::deferredGraphics::Names::SSAO::name);
+    }
+}
+
 inline void scatteringProps(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> graphics, float width = 150.0f) {
     if (!graphics) return;
     auto& params = graphics->scatteringWorkflowParams();
@@ -201,11 +226,6 @@ inline void scatteringProps(std::shared_ptr<moon::deferredGraphics::DeferredGrap
 
 inline bool graphicsProps(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> graphics, std::shared_ptr<utils::Cursor> cursor = nullptr) {
     if(!graphics) return false;
-
-    ImGui::SetNextItemWidth(150.0f);
-    if (float val = graphics->parameters().minAmbientFactor(); ImGui::SliderFloat("ambient", &val, 0.0f, 1.0f)) {
-        graphics->parameters().minAmbientFactor() = val;
-    }
 
     ImGui::SetNextItemWidth(150.0f);
     if (float val = graphics->parameters().blitFactor(); ImGui::SliderFloat("bloom factor", &val, 1.0f, 3.0f)) {

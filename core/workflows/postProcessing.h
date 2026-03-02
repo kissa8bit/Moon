@@ -10,7 +10,6 @@ struct PostProcessingParameters : workflows::Parameters{
         utils::AttachmentName baseColor;
         utils::AttachmentName blur;
         utils::AttachmentName bloom;
-        utils::AttachmentName ssao;
         utils::AttachmentName boundingBox;
     }in;
     struct{

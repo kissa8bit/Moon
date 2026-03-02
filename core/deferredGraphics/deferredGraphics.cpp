@@ -74,7 +74,6 @@ void DeferredGraphics::createGraphicsPasses()
     graphicsParams.out.emission = Names::MainGraphics::GBuffer::emission;
     graphicsParams.out.depth = Names::MainGraphics::GBuffer::depth;
     graphicsParams.shadersPath = params.shadersPath;
-    graphicsParams.minAmbientFactor = params.minAmbientFactor();
     graphicsParams.imageInfo = imageInfo;
 
 	const auto l0 = layerPrefix(LayerIndex(0));
@@ -99,6 +98,16 @@ void DeferredGraphics::createGraphicsPasses()
     SSLRParams.shadersPath = params.workflowsShadersPath;
     SSLRParams.imageInfo = imageInfo;
 
+    SSAOParams.in.camera = Names::camera;
+    SSAOParams.in.position = l0 + Names::MainGraphics::GBuffer::position;
+    SSAOParams.in.normal = l0 + Names::MainGraphics::GBuffer::normal;
+    SSAOParams.in.color = l0 + Names::MainGraphics::GBuffer::color;
+    SSAOParams.in.depth = l0 + Names::MainGraphics::GBuffer::depth;
+    SSAOParams.in.defaultDepthTexture = Names::whiteTexture;
+    SSAOParams.out.ssao = Names::SSAO::output;
+    SSAOParams.shadersPath = params.workflowsShadersPath;
+    SSAOParams.imageInfo = imageInfo;
+
     layersCombinerParams.in.camera = Names::camera;
     layersCombinerParams.in.color = Names::MainGraphics::image;
     layersCombinerParams.in.bloom = Names::MainGraphics::bloom;
@@ -109,6 +118,7 @@ void DeferredGraphics::createGraphicsPasses()
     layersCombinerParams.in.skyboxBloom = Names::Skybox::bloom;
     layersCombinerParams.in.scattering = Names::Scattering::output;
     layersCombinerParams.in.sslr = Names::SSLR::output;
+    layersCombinerParams.in.ssao = Names::SSAO::output;
     layersCombinerParams.in.defaultDepthTexture = Names::whiteTexture;
     layersCombinerParams.out.color = Names::LayersCombiner::color;
     layersCombinerParams.out.bloom = Names::LayersCombiner::bloom;
@@ -137,16 +147,6 @@ void DeferredGraphics::createGraphicsPasses()
     bbParams.shadersPath = params.workflowsShadersPath;
     bbParams.imageInfo = imageInfo;
 
-    SSAOParams.in.camera = Names::camera;
-    SSAOParams.in.position = l0 + Names::MainGraphics::GBuffer::position;
-    SSAOParams.in.normal = l0 + Names::MainGraphics::GBuffer::normal;
-    SSAOParams.in.color = l0 + Names::MainGraphics::image;
-    SSAOParams.in.depth = l0 + Names::MainGraphics::GBuffer::depth;
-    SSAOParams.in.defaultDepthTexture = Names::whiteTexture;
-    SSAOParams.out.ssao = Names::SSAO::output;
-    SSAOParams.shadersPath = params.workflowsShadersPath;
-    SSAOParams.imageInfo = imageInfo;
-
     selectorParams.in.normal = l0 + Names::MainGraphics::GBuffer::normal;
     selectorParams.in.depth = l0 + Names::MainGraphics::GBuffer::depth;
     selectorParams.in.defaultDepthTexture = Names::whiteTexture;
@@ -157,7 +157,6 @@ void DeferredGraphics::createGraphicsPasses()
     postProcessingParams.in.bloom = Names::Bloom::output;
     postProcessingParams.in.blur = Names::Blur::output;
     postProcessingParams.in.boundingBox = Names::BoundingBox::output;
-    postProcessingParams.in.ssao = SSAOParams.out.ssao;
     postProcessingParams.out.postProcessing = Names::PostProcessing::output;
     postProcessingParams.shadersPath = params.workflowsShadersPath;
     postProcessingParams.imageInfo = imageInfo;
@@ -209,7 +208,7 @@ void DeferredGraphics::createStages()
 
     utils::PipelineStages postProcessingStages;
     postProcessingStages.push_back(
-        utils::PipelineStage({*workflows[Names::Selector::name], *workflows[Names::SSAO::name], *workflows[Names::Bloom::name], *workflows[Names::Blur::name], *workflows[Names::BoundingBox::name], *workflows[Names::PostProcessing::name]},
+        utils::PipelineStage({*workflows[Names::Selector::name], *workflows[Names::Bloom::name], *workflows[Names::Blur::name], *workflows[Names::BoundingBox::name], *workflows[Names::PostProcessing::name]},
         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
         device->device()(0,0)));
     nodes.push_back(utils::PipelineNode(device->device(), std::move(postProcessingStages), nullptr));
@@ -221,6 +220,7 @@ void DeferredGraphics::createStages()
     utils::PipelineStages preCombinedStages;
     preCombinedStages.push_back(utils::PipelineStage({*workflows[Names::Scattering::name]}, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, device->device()(0,0)));
     preCombinedStages.push_back(utils::PipelineStage({*workflows[Names::SSLR::name]}, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, device->device()(0,0)));
+    preCombinedStages.push_back(utils::PipelineStage({ *workflows[Names::SSAO::name] }, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, device->device()(0, 0)));
     nodes.push_back(utils::PipelineNode(device->device(), std::move(preCombinedStages), &nodes.back()));
 
     std::vector<const utils::vkDefault::CommandBuffers*> deferredStagesCommandBuffers;
@@ -259,11 +259,6 @@ void DeferredGraphics::updateParameters() {
         blurParams.blurDepth = blurDepth;
         requestUpdate(Names::Blur::name);
         requestUpdate(Names::LayersCombiner::name);
-    }
-    if (params.minAmbientFactor().isDirty()) {
-        const auto minAmbientFactor = params.minAmbientFactor().consume();
-        graphicsParams.minAmbientFactor = minAmbientFactor;
-        requestUpdate(Names::MainGraphics::name);
     }
 }
 
@@ -463,6 +458,10 @@ Parameters& DeferredGraphics::parameters() {
 
 workflows::ScatteringParameters& DeferredGraphics::scatteringWorkflowParams() {
     return scatteringParams;
+}
+
+workflows::SSAOParameters& DeferredGraphics::ssaoWorkflowParams() {
+    return SSAOParams;
 }
 
 void DeferredGraphics::draw(VkCommandBuffer commandBuffer, uint32_t imageNumber) const {

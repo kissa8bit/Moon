@@ -28,7 +28,7 @@ void Graphics::createAttachments(utils::AttachmentsDatabase& aDatabase) {
     deferredAttachments.bloom() = utils::Attachments(physicalDevice, device, f32Info, usage | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     deferredAttachments.position() = utils::Attachments(physicalDevice, device, f32Info, usage | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
     deferredAttachments.normal() = utils::Attachments(physicalDevice, device, f32Info, usage | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
-    deferredAttachments.color() = utils::Attachments(physicalDevice, device, u8Info, usage | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+    deferredAttachments.color() = utils::Attachments(physicalDevice, device, f32Info, usage | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
     deferredAttachments.emission() = utils::Attachments(physicalDevice, device, u8Info, usage | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
 
     const utils::vkDefault::ImageInfo depthImage = { parameters.imageInfo.Count, utils::image::depthStencilFormat(physicalDevice), parameters.imageInfo.Extent, parameters.imageInfo.Samples };
@@ -204,7 +204,7 @@ void Graphics::updateCommandBuffer(uint32_t frameNumber){
     vkCmdNextSubpass(commandBuffers.at(frameNumber), VK_SUBPASS_CONTENTS_INLINE);
 
         lighting.render(frameNumber,commandBuffers.at(frameNumber));
-        ambientLighting.render(frameNumber,commandBuffers.at(frameNumber));
+        // ambientLighting.render(frameNumber,commandBuffers.at(frameNumber));
 
     vkCmdEndRenderPass(commandBuffers.at(frameNumber));
 }

@@ -19,6 +19,7 @@ layout(set = 0, binding = 6) uniform sampler2D skyboxMap;
 layout(set = 0, binding = 7) uniform sampler2D skyboxBloomMap;
 layout(set = 0, binding = 8) uniform sampler2D scatteringMap;
 layout(set = 0, binding = 9) uniform sampler2D sslrMap;
+layout(set = 0, binding = 10) uniform sampler2D ssaoMap;
 
 layout(location = 0) in vec2 fragTexCoord;
 
@@ -47,11 +48,15 @@ void main() {
     outColor = accum(colorMap);
     outBloom = accum(bloomMap);
     
+    const vec4 aoColor = texture(ssaoMap, fragTexCoord);
+    // screen blend: src*(1-dst) + dst (ONE_MINUS_DST_COLOR + ONE)
+    outColor = vec4(aoColor.rgb * (vec3(1.0) - outColor.rgb) + outColor.rgb, outColor.a);
+    
     if(texture(depthMap[0], fragTexCoord).r == 1.0) {
         outColor += texture(skyboxMap, fragTexCoord);
         outBloom += texture(skyboxBloomMap, fragTexCoord);
     }
-    
+
     outColor += vec4(texture(scatteringMap, fragTexCoord.xy).xyz, 0.0);
     outColor += vec4(texture(sslrMap, fragTexCoord.xy).xyz, 0.0);
     outBlur = outColor;

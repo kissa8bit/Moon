@@ -147,14 +147,12 @@ struct Parameters {
         utils::DirtyValue<uint32_t> layersCount{ 3 };
         utils::DirtyValue<float>    blitFactor{ 1.5f };
         utils::DirtyValue<float>    blurDepth{ 0.0f };
-        utils::DirtyValue<float>    minAmbientFactor{ 0.0f };
     } workflowsParameters;
 
     utils::DirtyValue<uint32_t>& blitAttachmentsCount() {return workflowsParameters.blitAttachmentsCount;}
     utils::DirtyValue<uint32_t>& layersCount() { return workflowsParameters.layersCount; }
     utils::DirtyValue<float>&    blitFactor() { return workflowsParameters.blitFactor; }
     utils::DirtyValue<float>&    blurDepth() { return workflowsParameters.blurDepth; }
-    utils::DirtyValue<float>&    minAmbientFactor() { return workflowsParameters.minAmbientFactor; }
 };
 
 class DeferredGraphics: public graphicsManager::GraphicsInterface {
@@ -210,6 +208,7 @@ public:
 
     Parameters& parameters();
     workflows::ScatteringParameters& scatteringWorkflowParams();
+    workflows::SSAOParameters& ssaoWorkflowParams();
 
     void create(interfaces::Model* pModel);
 
