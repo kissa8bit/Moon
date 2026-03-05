@@ -23,6 +23,10 @@ struct Node {
     math::vec3 scale{ 1.0f };
     math::quat rotation{ 1.0f, 0.0f, 0.0f, 0.0f };
 
+    math::vec3 restTranslation{ 0.0f };
+    math::vec3 restScale{ 1.0f };
+    math::quat restRotation{ 1.0f, 0.0f, 0.0f, 0.0f };
+
     Node() = default;
     Node(const tinygltf::Node& gltfNode, Node* parent)
         : parent(parent)
@@ -31,6 +35,9 @@ struct Node {
         convert(rotation, gltfNode.rotation);
         convert(scale, gltfNode.scale);
         convert(global, gltfNode.matrix);
+        restTranslation = translation;
+        restScale = scale;
+        restRotation = rotation;
     }
 
     moon::math::mat4 localMatrix() const {

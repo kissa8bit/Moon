@@ -70,7 +70,7 @@ void BaseObject::AnimationControl::set(int index, float changeTime) {
     for (auto& [_, animations] : animationsMap) {
         if (index < static_cast<int>(animations.size())) {
             animIndex = index;
-            startOffset = changeTime;
+            startOffset = 0;
             time = 0;
             if (animIndex > -1) {
                 animations.at(animIndex)->setChangeTime(changeTime);

@@ -2,6 +2,7 @@
 #define MOON_MODELS_GLTFMODEL_ANIMATION_H
 
 #include <vector>
+#include <unordered_set>
 
 #include <math/linearAlgebra.h>
 
@@ -31,12 +32,22 @@ struct GltfAnimation : interfaces::Animation {
     };
     using Samplers = std::vector<Sampler>;
 
+    struct PoseSnapshot {
+        math::vec3 translation;
+        math::vec3 scale;
+        math::quat rotation;
+    };
+
     Nodes* nodeMap{ nullptr };
     GltfSkeletons* skeletons{ nullptr };
     Channels channels;
     Samplers samplers;
     float totalTime{0};
     float changeTime{0};
+    std::unordered_set<Node*> animatedNodes;
+    std::unordered_map<Node*, PoseSnapshot> blendStartPose;
+    bool initialized{false};
+    bool blendStartCaptured{false};
 
     void setChangeTime(float changeTime) override;
     bool update(float time) override;

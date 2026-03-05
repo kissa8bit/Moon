@@ -119,45 +119,9 @@ public:
     }
 };
 
-class Change {
-    using OutputData = GltfAnimation::Point::OutputData;
-
-    static size_t getValue(GltfAnimation::Sampler::InterpolationType interpolation) {
-        static const std::unordered_map<GltfAnimation::Sampler::InterpolationType, size_t> value = {
-            {GltfAnimation::Sampler::InterpolationType::CUBICSPLINE, Cubic::value},
-            {GltfAnimation::Sampler::InterpolationType::LINEAR, Linear::value},
-            {GltfAnimation::Sampler::InterpolationType::STEP, Step::value}
-        };
-        return value.at(interpolation);
-    }
-
-    static void translate(Node* node, GltfAnimation::Sampler::InterpolationType interpolation, const OutputData& x, float t) {
-        const auto value = getValue(interpolation);
-        node->translation = mix(node->translation, math::vec3(x.at(value).dvec()), t);
-    }
-
-    static void scale(Node* node, GltfAnimation::Sampler::InterpolationType interpolation, const OutputData& x, float t) {
-        const auto value = getValue(interpolation);
-        node->scale = mix(node->scale, math::vec3(x.at(value).dvec()), t);
-    }
-
-    static void rotate(Node* node, GltfAnimation::Sampler::InterpolationType interpolation, const OutputData& x, float t) {
-        const auto value = getValue(interpolation);
-        node->rotation = normalize(slerp(node->rotation, quatFromVec(x.at(value)), t));
-    }
-
-public:
-    using signature = void (*)(Node*, GltfAnimation::Sampler::InterpolationType, const OutputData&, float);
-
-    static signature update(GltfAnimation::Channel::PathType path) {
-        static const std::unordered_map<GltfAnimation::Channel::PathType, signature> update = {
-            {GltfAnimation::Channel::PathType::ROTATION, Change::rotate},
-            {GltfAnimation::Channel::PathType::TRANSLATION, Change::translate},
-            {GltfAnimation::Channel::PathType::SCALE, Change::scale}
-        };
-        return update.at(path);
-    }
-};
+static size_t getKeyframeValueIndex(GltfAnimation::Sampler::InterpolationType interpolation) {
+    return interpolation == GltfAnimation::Sampler::InterpolationType::CUBICSPLINE ? Cubic::value : Linear::value;
+}
 
 template<typename Type>
 GltfAnimation::Sampler makeSampler(
@@ -241,39 +205,103 @@ void GltfModel::loadAnimations(const tinygltf::Model& gltfModel){
 
 GltfAnimation::GltfAnimation(Nodes* nodeMap, GltfSkeletons* skeletons, const GltfAnimation::Channels& channels, const GltfAnimation::Samplers& samplers, float duration)
     : nodeMap(nodeMap), skeletons(skeletons), channels(channels), samplers(samplers), totalTime(duration)
-{}
+{
+    for (const auto& channel : this->channels) {
+        if (channel.node) animatedNodes.insert(channel.node);
+    }
+}
 
 void GltfAnimation::setChangeTime(float time) {
     changeTime = time;
+    initialized = false;
+    blendStartCaptured = false;
 }
 
 bool GltfAnimation::update(float time){
     bool needUpdate = false;
     if (time < changeTime) {
+        // Capture all node poses once at the start of each blend (initial switch or loop seam)
+        if (!blendStartCaptured) {
+            blendStartCaptured = true;
+            blendStartPose.clear();
+            for (auto& [_, node] : *nodeMap) {
+                blendStartPose[&node] = { node.translation, node.scale, node.rotation };
+            }
+        }
+        const float t = time / changeTime;
+        // Blend channel nodes: from captured start pose → keyframe[0] of new animation
         for (const auto& channel : channels) {
             if (channel.samplerIndex < 0 || static_cast<size_t>(channel.samplerIndex) >= samplers.size()) continue;
             const auto& sampler = samplers[channel.samplerIndex];
-            if (sampler.points.size() == 0) continue;
-            float t = time / changeTime;
-            Change::update(channel.path)(channel.node, sampler.interpolation, sampler.points.at(0).outputData, t);
+            if (sampler.points.empty()) continue;
+            const auto snapIt = blendStartPose.find(channel.node);
+            if (snapIt == blendStartPose.end()) continue;
+            const auto& snap = snapIt->second;
+            const auto& target = sampler.points[0].outputData.at(getKeyframeValueIndex(sampler.interpolation));
+            switch (channel.path) {
+                case Channel::PathType::TRANSLATION:
+                    channel.node->translation = mix(snap.translation, math::vec3(target.dvec()), t); break;
+                case Channel::PathType::SCALE:
+                    channel.node->scale = mix(snap.scale, math::vec3(target.dvec()), t); break;
+                case Channel::PathType::ROTATION:
+                    channel.node->rotation = normalize(slerp(snap.rotation, quatFromVec(target), t)); break;
+            }
         }
-        needUpdate |= true;
+        // Blend non-channel nodes: from captured start pose → rest pose
+        for (auto& [_, node] : *nodeMap) {
+            if (animatedNodes.count(&node) == 0) {
+                const auto& snap = blendStartPose.at(&node);
+                node.translation = mix(snap.translation, node.restTranslation, t);
+                node.scale = mix(snap.scale, node.restScale, t);
+                node.rotation = normalize(slerp(snap.rotation, node.restRotation, t));
+            }
+        }
+        needUpdate = true;
     } else {
+        blendStartCaptured = false; // reset so next loop captures fresh start pose
+        // On first frame after the blend, snap non-animated nodes to rest pose
+        if (!initialized) {
+            initialized = true;
+            changeTime = 0; // blend is one-shot: applies only on the initial switch, not on every loop
+            for (auto& [_, node] : *nodeMap) {
+                if (animatedNodes.count(&node) == 0) {
+                    node.translation = node.restTranslation;
+                    node.scale = node.restScale;
+                    node.rotation = node.restRotation;
+                    needUpdate = true;
+                }
+            }
+        }
         for (const auto& channel : channels) {
             if(channel.samplerIndex < 0 || static_cast<size_t>(channel.samplerIndex) >= samplers.size()) continue;
             const auto& sampler = samplers[channel.samplerIndex];
+            if (sampler.points.size() < 2) {
+                if (!sampler.points.empty()) {
+                    Step::update(channel.path)(channel.node, sampler.points[0].outputData);
+                    needUpdate = true;
+                }
+                continue;
+            }
+            bool applied = false;
             for (size_t i = 0; i < sampler.points.size() - 1; i++) {
-                if (const auto& x0 = sampler.points[i], &x1 = sampler.points[i + 1]; time > x0.inputTime && time < x1.inputTime) {
-                    const auto& x0t = x0.inputTime, & x1t = x1.inputTime;
-                    const auto& x0d = x0.outputData, & x1d = x1.outputData;
+                if (const auto& x0 = sampler.points[i], &x1 = sampler.points[i + 1]; time >= x0.inputTime && time < x1.inputTime) {
+                    const auto x0t = x0.inputTime, x1t = x1.inputTime;
+                    const auto& x0d = x0.outputData, &x1d = x1.outputData;
                     const float t = (time - x0t) / (x1t - x0t);
                     switch (sampler.interpolation) {
                         case Sampler::InterpolationType::STEP: Step::update(channel.path)(channel.node, x0d); break;
                         case Sampler::InterpolationType::LINEAR: Linear::update(channel.path)(channel.node, x0d, x1d, t); break;
                         case Sampler::InterpolationType::CUBICSPLINE: Cubic::update(channel.path)(channel.node, x0d, x1d, x0t, x1t, t); break;
                     }
+                    applied = true;
                     needUpdate = true;
+                    break;
                 }
+            }
+            // Hold last frame when time is past the final keyframe
+            if (!applied && time >= sampler.points.back().inputTime) {
+                Step::update(channel.path)(channel.node, sampler.points.back().outputData);
+                needUpdate = true;
             }
         }
     }
