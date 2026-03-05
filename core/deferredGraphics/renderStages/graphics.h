@@ -20,6 +20,7 @@ namespace moon::deferredGraphics {
 struct GraphicsParameters : workflows::Parameters {
     struct{
         utils::BufferName camera;
+		const interfaces::Light* nullDepthMapKey = nullptr;
     }in;
     struct{
         utils::AttachmentName image;

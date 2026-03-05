@@ -17,21 +17,23 @@ DepthMap::Map::Map(const PhysicalDevice& device, const utils::vkDefault::ImageIn
     descriptorSets(descriptorPool.allocateDescriptorSets(descriptorSetLayout, imageInfo.Count))
 {}
 
-DepthMap::DepthMap(const PhysicalDevice& device, VkCommandPool commandPool, const utils::vkDefault::ImageInfo& imageInfo)
-    : map(device, imageInfo), emptyTextureWhite(utils::Texture::createEmpty(device, commandPool, utils::Texture::EmptyType::White)), imageInfo(imageInfo), device(device.device())
+DepthMap::DepthMap(const PhysicalDevice& device, VkCommandPool commandPool, const utils::vkDefault::ImageInfo& imageInfo) : 
+    map(device, imageInfo), 
+    imageInfo(imageInfo), 
+    device(device.device())
 {}
 
 const utils::vkDefault::DescriptorSets& DepthMap::descriptorSets() const{
     return map.descriptorSets;
 }
 
-void DepthMap::update(bool enable){
+void DepthMap::update(){
     CHECK_M(map.descriptorSets.size() == imageInfo.Count, std::string("[ DepthMap::update ] descriptorSets.size() mismatch with imageInfo.Count"));
+    CHECK_M(map.attachments.count() == imageInfo.Count, std::string("[ DepthMap::update ] attachments.count() mismatch with imageInfo.Count"));
 
-    for (size_t i = 0; i < imageInfo.Count; i++) {
-        const VkDescriptorImageInfo info = (enable && map.attachments.count()) ? map.attachments.descriptorImageInfo(static_cast<uint32_t>(i)) : emptyTextureWhite.descriptorImageInfo();
+    for (uint32_t i = 0; i < imageInfo.Count; i++) {
         utils::descriptorSet::Writes writes;
-        utils::descriptorSet::write(writes, map.descriptorSets[i], info);
+        utils::descriptorSet::write(writes, map.descriptorSets[i], map.attachments.descriptorImageInfo(i));
         utils::descriptorSet::update(device, writes);
     }
 }

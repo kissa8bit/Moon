@@ -18,6 +18,7 @@
 
 #include <entities/baseCamera.h>
 #include <entities/spotLight.h>
+#include <entities/pointLight.h>
 #include <entities/baseObject.h>
 #include <entities/skyboxObject.h>
 
@@ -40,7 +41,7 @@ testScene::testScene(moon::graphicsManager::GraphicsManager& app, moon::tests::G
     board(std::make_shared<controller>(window, glfwGetKey))
 {
     mouse.control->sensitivity = 0.01f;
-    board->sensitivity = 0.05f;
+    board->sensitivity = 10.0f;
     create();
 }
 
@@ -74,7 +75,7 @@ void testScene::create()
     deferredGraphicsParameters.shadersPath = ExternalPath / "core/deferredGraphics/spv";
     deferredGraphicsParameters.workflowsShadersPath = ExternalPath / "core/workflows/spv";
     deferredGraphicsParameters.extent = window.sizes();
-	deferredGraphicsParameters.layersCount() = 3;
+	deferredGraphicsParameters.layersCount() = 2;
     graphics["base"] = std::make_shared<moon::deferredGraphics::DeferredGraphics>(deferredGraphicsParameters);
     app.setGraphics(graphics["base"].get());
     graphics["base"]->bind(cameras["base"]->camera());
@@ -148,10 +149,10 @@ void testScene::makeGui() {
         }
 
         ImGui::SetNextItemWidth(150.0f);
-        ImGui::SliderFloat("mouse sensitivity", &mouse.control->sensitivity, 0.0f, 5.0f);
+        ImGui::SliderFloat("mouse sensitivity", &mouse.control->sensitivity, 0.0f, 0.1f);
 
         ImGui::SetNextItemWidth(150.0f);
-        ImGui::SliderFloat("board sensitivity", &board->sensitivity, 0.0f, 5.0f);
+        ImGui::SliderFloat("board sensitivity", &board->sensitivity, 0.0f, 20.0f);
 
         ImGui::TreePop();
     }
@@ -210,6 +211,22 @@ void testScene::makeGui() {
         ImGui::TreePop();
     }
 #endif
+
+    if (ImGui::TreeNodeEx("Point Lights", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::SetNextItemWidth(150.0f);
+        if (ImGui::SliderFloat("radius", &pointLightRadius, 0.0f, 15.0f)) {
+            for (auto* pl : pointLightPtrs) {
+                pl->setRadius(pointLightRadius);
+            }
+        }
+        ImGui::SetNextItemWidth(150.0f);
+        if (ImGui::SliderFloat("drop", &pointLightDrop, 0.01f, 10.0f)) {
+            for (auto* pl : pointLightPtrs) {
+                pl->setDrop(pointLightDrop);
+            }
+        }
+        ImGui::TreePop();
+    }
 
     if (ImGui::TreeNodeEx("Animation", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::SetNextItemWidth(150.0f);
@@ -334,9 +351,8 @@ void testScene::makeGui() {
                     if (moon::tests::gui::spotLightSliders(*lit->second, 0)) requestLightUpdate();
                 ImGui::EndGroup();
             }
+            ImGui::TreePop();
         }
-
-        ImGui::TreePop();
     }
 }
 
@@ -412,6 +428,7 @@ void testScene::createModels()
     models["AlphaBlendModeTest"] = MAKE_GLTF(glTFSamples / "AlphaBlendModeTest/glTF-Binary/AlphaBlendModeTest.glb");
 
     models["teapot"] = MAKE_PLY(modelPath / "ply/teapot.ply");
+    models["cube"] = MAKE_PLY(modelPath / "ply/cube.ply");
 
     for(auto& [_,model]: models){
         graphics["base"]->create(model.get());
@@ -607,6 +624,55 @@ void testScene::createLight()
             graph->bind(source->light());
         }
     }
+
+    {
+        std::mt19937 rng(42);
+        std::uniform_real_distribution<float> hueDist(0.0f, 1.0f);
+
+        auto hsvToRgb = [](float h, float s, float v) -> moon::math::vec4 {
+            int i = static_cast<int>(h * 6.0f) % 6;
+            float f = h * 6.0f - static_cast<int>(h * 6.0f);
+            float p = v * (1.0f - s);
+            float q = v * (1.0f - f * s);
+            float t = v * (1.0f - (1.0f - f) * s);
+            switch (i) {
+                case 0: return {v, t, p, 1.0f};
+                case 1: return {q, v, p, 1.0f};
+                case 2: return {p, v, t, 1.0f};
+                case 3: return {p, q, v, 1.0f};
+                case 4: return {t, p, v, 1.0f};
+                default: return {v, p, q, 1.0f};
+            }
+        };
+
+        std::uniform_real_distribution<float> xDist(-32.0f, -22.0f);
+        std::uniform_real_distribution<float> yDist(-12.0f, -5.0f);
+        std::uniform_real_distribution<float> zDist(10.0f, 20.0f);
+
+        constexpr int kCount = 30;
+        for (int i = 0; i < kCount; ++i) {
+            const float x = xDist(rng);
+            const float y = yDist(rng);
+            const float z = zDist(rng);
+            const moon::math::vec4 color = hsvToRgb(hueDist(rng), 1.0f, 1.0f);
+
+            auto light = std::make_shared<moon::entities::PointLight>(
+                moon::entities::PointLight::Props{ color, pointLightRadius, 15.0f, 1.0f });
+            light->translate({ x, y, z });
+            pointLightPtrs.push_back(light.get());
+            lightSources.push_back(light);
+
+            const auto cubeKey = "plight_cube_" + std::to_string(i);
+            objects[cubeKey] = std::make_shared<moon::entities::BaseObject>(models["cube"].get());
+            objects[cubeKey]->translate({ x, y, z }).scale({ 0.05f, 0.05f, 0.05f });
+            static_cast<moon::entities::BaseObject*>(objects[cubeKey].get())->setBloom(color);
+
+            for (auto& [_, graph] : graphics) {
+                graph->bind(light->light());
+                graph->bind(objects[cubeKey]->object());
+            }
+        }
+    }
 }
 
 void testScene::mouseEvent()
@@ -667,7 +733,7 @@ void testScene::mouseEvent()
 
 void testScene::keyboardEvent()
 {
-    const float sensitivity = board->sensitivity;
+    const float sensitivity = board->sensitivity * frameTime;
 
     if (auto pBaseCamera = dynamic_cast<moon::entities::BaseCamera*>(cameras["base"].get()); pBaseCamera) {
         if (!board->pressed(GLFW_KEY_LEFT_CONTROL) && board->pressed(GLFW_KEY_A)) cameras["base"]->translate(-sensitivity * pBaseCamera->getViewMatrix()[0].dvec());

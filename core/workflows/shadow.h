@@ -41,7 +41,7 @@ private:
         void create(interfaces::ObjectType type, const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass);
     }shadow;
 
-    void render(uint32_t frameNumber, VkCommandBuffer commandBuffer, interfaces::Light* lightSource, const utils::DepthMap& depthMap, const utils::vkDefault::Framebuffer& framebuffer);
+    void render(uint32_t frameNumber, VkCommandBuffer commandBuffer, const interfaces::Light* lightSource, const utils::DepthMap& depthMap, const utils::vkDefault::Framebuffer& framebuffer);
     void createRenderPass();
     void updateCommandBuffer(uint32_t frameNumber) override;
     void updateFramebuffersMap();

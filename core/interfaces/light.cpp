@@ -16,6 +16,10 @@ LightMask& Light::lightMask() {
     return mask;
 }
 
+const LightMask& Light::lightMask() const {
+    return mask;
+}
+
 utils::vkDefault::DescriptorSetLayout Light::createDescriptorSetLayout(VkDevice device){
     utils::vkDefault::DescriptorSetLayout descriptorSetLayout;
 

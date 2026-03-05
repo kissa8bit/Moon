@@ -112,7 +112,7 @@ void ShadowGraphics::create(const utils::vkDefault::CommandPool& commandPool, ut
     for (auto& [light, depthMap] : *shadow.depthMaps) {
         if(!light) continue;
         const auto lightProps = light->lightMask().property();
-        depthMap.update(lightProps.has(interfaces::LightProperty::enableShadow) && parameters.enable);
+        depthMap.update();
     }
 }
 
@@ -153,7 +153,7 @@ void ShadowGraphics::updateCommandBuffer(uint32_t frameNumber) {
     }
 }
 
-void ShadowGraphics::render(uint32_t frameNumber, VkCommandBuffer commandBuffer, interfaces::Light* lightSource, const utils::DepthMap& depthMap, const utils::vkDefault::Framebuffer& framebuffer)
+void ShadowGraphics::render(uint32_t frameNumber, VkCommandBuffer commandBuffer, const interfaces::Light* lightSource, const utils::DepthMap& depthMap, const utils::vkDefault::Framebuffer& framebuffer)
 {
     if(!shadow.objects) return;
 

@@ -37,6 +37,7 @@ struct Names {
     static inline const utils::BufferName camera{ "camera" };
     static inline const utils::ImageName whiteTexture{ "white" };
     static inline const utils::ImageName blackTexture{ "black" };
+	static inline const interfaces::Light* nullDepthMapKey = nullptr;
 
     struct MainGraphics {
         static inline const workflows::WorkflowName name{ "MainGraphics" };
@@ -172,6 +173,7 @@ private:
     interfaces::Objects objects;
     interfaces::Lights lights;
     interfaces::DepthMaps depthMaps;
+    utils::DepthMap nullDepthMap;
     utils::TextureMap emptyTextures;
 
     GraphicsParameters graphicsParams;

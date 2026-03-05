@@ -38,9 +38,13 @@ void DeferredGraphics::reset()
 
     aDatabase.destroy();
     emptyTextures[Names::blackTexture] = utils::Texture::createEmpty(*device, commandPool, utils::Texture::EmptyType::Black);
-    emptyTextures[Names::whiteTexture] = utils::Texture::createEmpty(*device, commandPool, utils::Texture::EmptyType::White);
     aDatabase.addEmptyTexture(Names::blackTexture, &emptyTextures[Names::blackTexture]);
+    emptyTextures[Names::whiteTexture] = utils::Texture::createEmpty(*device, commandPool, utils::Texture::EmptyType::White);
     aDatabase.addEmptyTexture(Names::whiteTexture, &emptyTextures[Names::whiteTexture]);
+    if (depthMaps.find(Names::nullDepthMapKey) == depthMaps.end()) {
+        const utils::vkDefault::ImageInfo shadowsInfo{ resourceCount, VK_FORMAT_D32_SFLOAT, {1,1}, VK_SAMPLE_COUNT_1_BIT };
+        depthMaps[Names::nullDepthMapKey] = utils::DepthMap(*device, commandPool, shadowsInfo);
+    }
 
     createGraphicsPasses();
     createStages();
@@ -66,6 +70,7 @@ void DeferredGraphics::createGraphicsPasses()
         shadowsInfo.Samples = VK_SAMPLE_COUNT_1_BIT;
 
     graphicsParams.in.camera = Names::camera;
+    graphicsParams.in.nullDepthMapKey = Names::nullDepthMapKey;
     graphicsParams.out.image = Names::MainGraphics::image;
     graphicsParams.out.bloom = Names::MainGraphics::bloom;
     graphicsParams.out.position = Names::MainGraphics::GBuffer::position;
@@ -327,11 +332,13 @@ void DeferredGraphics::bind(interfaces::Light* lightSource){
     lights.push_back(lightSource);
 
     if (depthMaps.find(lightSource) == depthMaps.end()) {
-        const VkExtent2D shadowsExtent{ params.shadowsExtent[0], params.shadowsExtent[1] };
-        const utils::vkDefault::ImageInfo shadowsInfo{ resourceCount, VK_FORMAT_D32_SFLOAT, shadowsExtent, VK_SAMPLE_COUNT_1_BIT };
         const auto lightProps = lightSource->lightMask().property();
-        depthMaps[lightSource] = utils::DepthMap(*device, commandPool, shadowsInfo);
-        depthMaps[lightSource].update(lightProps.has(interfaces::LightProperty::enableShadow) && shadowGraphicsParameters.enable);
+        if (lightProps.has(interfaces::LightProperty::enableShadow)) {
+            const VkExtent2D shadowsExtent{ params.shadowsExtent[0], params.shadowsExtent[1] };
+            const utils::vkDefault::ImageInfo shadowsInfo{ resourceCount, VK_FORMAT_D32_SFLOAT, shadowsExtent, VK_SAMPLE_COUNT_1_BIT };
+            depthMaps[lightSource] = utils::DepthMap(*device, commandPool, shadowsInfo);
+            depthMaps[lightSource].update();
+        }
     }
 
     requestUpdate(Names::Shadow::name);

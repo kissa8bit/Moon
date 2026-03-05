@@ -112,6 +112,33 @@ vec3 viewPosition(const in mat4 view) {
 
 #define PYRAMID_INDICES int pyramid_indices[18] = int[](0,4,1,0,1,2,0,2,3,0,3,4,4,2,1,2,4,3);
 
+#define SPHERE_LON 8
+#define SPHERE_LAT 8
+#define SPHERE_VERTEX_COUNT (SPHERE_LON * SPHERE_LAT * 6)
+
+vec3 getSphereVertex(vec3 center, float radius, int index) {
+    int vi = index % 6;
+    int qi = index / 6;
+    int i = qi % SPHERE_LON;
+    int j = qi / SPHERE_LON;
+
+    int di, dj;
+    switch(vi) {
+        case 0: di = 0; dj = 0; break;
+        case 1: di = 1; dj = 0; break;
+        case 2: di = 0; dj = 1; break;
+        case 3: di = 1; dj = 0; break;
+        case 4: di = 1; dj = 1; break;
+        default: di = 0; dj = 1; break;
+    }
+
+    float theta = pi * float(j + dj) / float(SPHERE_LAT);
+    float phi = 2.0 * pi * float(i + di) / float(SPHERE_LON);
+
+    vec3 localPos = vec3(sin(theta) * cos(phi), cos(theta), sin(theta) * sin(phi));
+    return center + radius * localPos;
+}
+
 vec3 getPyramidVertex(const in mat4 proj, const in mat4 view, int index){
     vec3 u = getUDirection(view);
     vec3 v = getVDirection(view);

@@ -19,14 +19,13 @@ private:
         Map(const PhysicalDevice& device, const utils::vkDefault::ImageInfo& imageInfo);
     } map;
 
-    Texture emptyTextureWhite;
     utils::vkDefault::ImageInfo imageInfo;
     VkDevice device{VK_NULL_HANDLE};
 
 public:
     DepthMap() = default;
     DepthMap(const PhysicalDevice& device, VkCommandPool commandPool, const utils::vkDefault::ImageInfo& imageInfo);
-    void update(bool enable);
+    void update();
 
     const utils::vkDefault::DescriptorSets& descriptorSets() const;
     const utils::Attachments& attachments() const;

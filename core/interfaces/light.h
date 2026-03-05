@@ -20,6 +20,7 @@ namespace moon::interfaces {
 	enum Value : uint32_t {		        \
         spotCircle = 1ul << 0,          \
         spotSquare = 1ul << 1,          \
+        pointLight = 1ul << 2,          \
 	};
 FLAG_GENERATOR(LightType, LightType_Value)
 #undef LightType_Value
@@ -50,6 +51,7 @@ public:
     virtual ~Light() = default;
 
     LightMask& lightMask();
+    const LightMask& lightMask() const;
     const VkDescriptorSet& getDescriptorSet(uint32_t i) const;
 
     virtual utils::Buffers& buffers() = 0;
@@ -63,7 +65,7 @@ public:
 };
 
 using Lights = std::vector<interfaces::Light*>;
-using DepthMaps = std::unordered_map<interfaces::Light*, utils::DepthMap>;
+using DepthMaps = std::unordered_map<const interfaces::Light*, utils::DepthMap>;
 
 } // moon::interfaces
 
