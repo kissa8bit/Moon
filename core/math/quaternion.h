@@ -68,7 +68,7 @@ public:
     Quaternion normalized() const { return Quaternion(*this).normalize(); }
     Quaternion& conjugate() { x = -x; y = -y; z = -z; return *this; }
     Quaternion conjugated() const { return Quaternion(*this).conjugate(); }
-    Quaternion& invert() { return (type(1) / dot(data, data)) * conjugate(); }
+    Quaternion& invert() { conjugate(); data *= type(1) / dot(data, data); return *this; }
     Quaternion inverted() const { return Quaternion(*this).invert(); }
 };
 
@@ -94,7 +94,7 @@ QUAT_TEMP std::ostream& operator<< (std::ostream& out, const QUAT& q) {
 
 QUAT_TEMP QUAT convert(const MAT_3& O3) {
     const type s = std::sqrt(type(1) + O3[0][0] + O3[1][1] + O3[2][2]) / type(2), s4 = type(4) * s;
-    auto diff = [&O3, &s4](uint32 i, uint32 j){return (O3[i][j] - O3[j][i]) / s4;};
+    auto diff = [&O3, &s4](uint32_t i, uint32_t j){return (O3[i][j] - O3[j][i]) / s4;};
     return QUAT(s, diff(2, 1), diff(0, 2), diff(1, 0));
 }
 
@@ -115,11 +115,9 @@ QUAT_TEMP MAT_4 convert4x4(const QUAT& q) {
 
 QUAT_TEMP QUAT convert(const type& yaw, const type& pitch, const type& roll)
 {
-#define QUAT_CONVERT_DEF_COS_SIN(cos, sin, ang) type cos = std::cos(ang * type(0.5)), sin = std::sin(ang * type(0.5));
-    QUAT_CONVERT_DEF_COS_SIN(cosy, siny, yaw)
-    QUAT_CONVERT_DEF_COS_SIN(cosp, sinp, pitch)
-    QUAT_CONVERT_DEF_COS_SIN(cosr, sinr, roll)
-#undef QUAT_CONVERT_DEF_COS_SIN
+    type cosy = std::cos(yaw   * type(0.5)), siny = std::sin(yaw   * type(0.5));
+    type cosp = std::cos(pitch * type(0.5)), sinp = std::sin(pitch * type(0.5));
+    type cosr = std::cos(roll  * type(0.5)), sinr = std::sin(roll  * type(0.5));
 
     return QUAT(cosy * cosp * cosr + siny * sinp * sinr, sinr * cosp * cosy - cosr * sinp * siny,
         cosr * sinp * cosy + sinr * cosp * siny, cosr * cosp * siny - sinr * sinp * cosy);

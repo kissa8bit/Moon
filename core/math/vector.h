@@ -140,10 +140,10 @@ template<typename type, uint32_t n> class Vector;
     Vector() = default;                                                                                 \
     Vector(const Reduced& v, const type& s) : BaseVector<type, n>(v, s) {}                              \
     Vector(const type& x) : BaseVector<type, n>(Reduced(x), x) {}                                       \
-    Vector(const Vector& v) : BaseVector<type, n>(v.x0, v.x1) {}                                        \
-    Vector& operator=(const Vector& v) { x0 = v.dvec(); x1 = v.last(); return *this; }                  \
+    Vector(const Vector& v) : BaseVector<type, n>(v.dvec(), v.last()) {}                                 \
+    Vector& operator=(const Vector& v) { this->x0 = v.dvec(); this->x1 = v.last(); return *this; }      \
     Vector(const BaseVector<type, n>& v) : BaseVector<type, n>(v) {}                                    \
-    Vector& operator=(const BaseVector<type, n>& v) { x0 = v.dvec(); x1 = v.last(); return *this; }
+    Vector& operator=(const BaseVector<type, n>& v) { this->x0 = v.dvec(); this->x1 = v.last(); return *this; }
 
 template<typename type>
 class Vector<type, 2> : public BaseVector<type, 2>

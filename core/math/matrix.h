@@ -107,9 +107,9 @@ public:
     using RowVector = BaseVector<type, n>;
 
     Matrix() = default;
-    Matrix(const type& mii) { for_i_n mat[i][i] = mii; }
+    Matrix(const type& mii) { for_i_n this->mat[i][i] = mii; }
     Matrix(const RowVector vi, ...) {
-        std::va_list args; va_start(args, vi); for_i_n mat[i] = (i == 0 ? vi : va_arg(args, RowVector)); va_end(args);
+        std::va_list args; va_start(args, vi); for_i_n this->mat[i] = (i == 0 ? vi : va_arg(args, RowVector)); va_end(args);
     }
     Matrix(const MAT_N_N& a) : MAT_N_N(a) {}
     Matrix& operator=(const MAT_N_N& a) { this->copy(a); return *this; }

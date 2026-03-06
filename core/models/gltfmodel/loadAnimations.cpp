@@ -160,6 +160,7 @@ void GltfModel::loadAnimations(const tinygltf::Model& gltfModel){
     };
 
     for (const tinygltf::Animation &anim : gltfModel.animations) {
+        m_animationNames.push_back(anim.name);
         GltfAnimation::Samplers samplers;
         float duration{ 0 };
 

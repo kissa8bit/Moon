@@ -1,7 +1,11 @@
 #ifndef MOON_ENTITIES_BASE_OBJECT_H
 #define MOON_ENTITIES_BASE_OBJECT_H
 
+#include <map>
 #include <optional>
+#include <string>
+#include <string_view>
+#include <vector>
 
 #include <transformationals/objects.h>
 #include <implementations/baseObject.h>
@@ -15,7 +19,14 @@ private:
 public:
     interfaces::Object* object() override { return dynamic_cast<interfaces::Object*>(&m_object); }
 
-    BaseObject(interfaces::Model* model, uint32_t firstInstance = 0, uint32_t instanceCount = 1);
+    struct AnimationConfig {
+        int index{ -1 };
+        float blendTime{ 0.0f };
+        float speed{ 1.0f };
+        enum class Transition { Smooth, Instant } transition{ Transition::Smooth };
+    };
+
+    BaseObject(interfaces::Model* model, uint32_t firstInstance = 0, uint32_t instanceCount = 1, AnimationConfig animConfig = {});
 
     BaseObject(const BaseObject&) = delete;
     BaseObject& operator=(const BaseObject&) = delete;
@@ -30,22 +41,42 @@ public:
     BaseObject& setColor(std::optional<math::vec4> constant = std::nullopt, std::optional<math::vec4> factor = std::nullopt);
     BaseObject& setBloom(std::optional<math::vec4> constant = std::nullopt, std::optional<math::vec4> factor = std::nullopt);
 
-    class AnimationControl {
+    // Called by the rendering system each frame, not part of the user-facing animation API
+    bool updateAnimation(size_t frameNumber, float dtime);
+
+    struct Animation {
+        // Query
+        size_t count() const;
+        int current() const;
+        std::string_view name(size_t index) const;
+
+        // Control — all return Animation& for fluent chaining
+        // blendTime: overrides config.blendTime if provided
+        Animation& play(int index, std::optional<float> blendTime = std::nullopt);
+        Animation& play(std::string_view animName, std::optional<float> blendTime = std::nullopt);
+        Animation& stop();
+        Animation& pause();
+        Animation& resume();
+        Animation& setSpeed(float speed);
+
+        AnimationConfig config;
+
     private:
-        size_t total{ 0 };
-        std::map<size_t, std::vector<interfaces::Animation*>> animationsMap;
-        float time{ 0 };
-        float startOffset{ 0 };
-        int animIndex{ -1 };
+        explicit Animation(BaseObject& owner) : m_owner(owner) {}
+        Animation(const Animation&) = delete;
+        Animation& operator=(const Animation&) = delete;
+
+        BaseObject& m_owner;
+        std::map<size_t, std::vector<interfaces::Animation*>> m_animationsMap;
+        std::vector<std::string> m_names;
+        float m_time{ 0.0f };
+        int m_animIndex{ -1 };
+        bool m_paused{ false };
+
+        bool update(size_t frameNumber, float dtime);
 
         friend class BaseObject;
-
-    public:
-        size_t size() const;
-        int current() const;
-        void set(int animIndex, float changeTime = 0);
-        bool update(size_t frameNumber, float dtime);
-    } animationControl;
+    } animation;
 };
 
 } // moon::entities

@@ -233,17 +233,18 @@ void testScene::makeGui() {
         ImGui::SliderFloat("animation speed", &animationSpeed, 0.0f, 5.0f);
 
         ImGui::SetNextItemWidth(150.0f);
-        static float changeTime = 0.5f;
+        static float changeTime = 0.2f;
         ImGui::SliderFloat("change animation time", &changeTime, 0.0f, 1.0f);
 
         auto pBaseObject = dynamic_cast<moon::entities::BaseObject*>(controledObject.ptr);
 
-        if (pBaseObject && pBaseObject->animationControl.size() > 0) {
-            static const char* animationsList[] = { "-1", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
-            int selected = pBaseObject->animationControl.current() + 1;
+        if (pBaseObject && pBaseObject->animation.count() > 0) {
+            static const char* animationsList[] = { "none", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+            int selected = pBaseObject->animation.current() + 1;
             ImGui::SetNextItemWidth(150.0f);
-            if (ImGui::Combo("animations list", &selected, animationsList, std::min(IM_ARRAYSIZE(animationsList), (int)pBaseObject->animationControl.size() + 1))) {
-                pBaseObject->animationControl.set(selected - 1, changeTime);
+            if (ImGui::Combo("animations list", &selected, animationsList, std::min(IM_ARRAYSIZE(animationsList), (int)pBaseObject->animation.count() + 1))) {
+                if (selected == 0) pBaseObject->animation.stop();
+                else pBaseObject->animation.play(selected - 1, changeTime);
             }
         }
 
@@ -394,7 +395,7 @@ void testScene::updateFrame(uint32_t frameNumber, float inFrameTime)
     std::for_each(std::execution::par_unseq, objects.begin(), objects.end(), [frameNumber, animationTime](auto& object) {
         auto pBaseObject = dynamic_cast<moon::entities::BaseObject*>(object.second.get());
         if(!pBaseObject) return;
-        pBaseObject->animationControl.update(frameNumber, animationTime);
+        pBaseObject->updateAnimation(frameNumber, animationTime);
     });
 }
 
@@ -449,15 +450,16 @@ void testScene::createObjects()
 
     objects["bee0"] = std::make_shared<moon::entities::BaseObject>(models["bee"].get(), 0, resourceCount);
     objects["bee0"]->translate({5.0f,0.0f,0.0f}).rotate(moon::math::radians(90.0f),{1.0f,0.0f,0.0f}).scale({0.2f,0.2f,0.2f});
-    static_cast<moon::entities::BaseObject*>(objects["bee0"].get())->animationControl.set(0);
+    static_cast<moon::entities::BaseObject*>(objects["bee0"].get())->animation.play(0);
 
     objects["bee1"] = std::make_shared<moon::entities::BaseObject>(models["bee"].get(), resourceCount, resourceCount);
     objects["bee1"]->translate({-5.0f,0.0f,0.0f}).rotate(moon::math::radians(90.0f),{1.0f,0.0f,0.0f}).scale({0.2f,0.2f,0.2f});
-    static_cast<moon::entities::BaseObject*>(objects["bee1"].get())->setColor(moon::math::vec4(0.0f, 0.0f, 0.0f, -0.7f)).animationControl.set(1);
+    static_cast<moon::entities::BaseObject*>(objects["bee1"].get())->setColor(moon::math::vec4(0.0f, 0.0f, 0.0f, -0.7f));
+    static_cast<moon::entities::BaseObject*>(objects["bee1"].get())->animation.play(1);
 
     objects["butterfly"] = std::make_shared<moon::entities::BaseObject>(models["butterfly"].get(), 0, resourceCount);
     objects["butterfly"]->rotate(moon::math::radians(90.0f), { 1.0f,0.0f,0.0f }).scale({ 20.2f,20.2f,20.2f });
-    static_cast<moon::entities::BaseObject*>(objects["butterfly"].get())->animationControl.set(0);
+    static_cast<moon::entities::BaseObject*>(objects["butterfly"].get())->animation.play(0);
 
     objects["duck"] = std::make_shared<moon::entities::BaseObject>(models["duck"].get());
     objects["duck"]->translate({0.0f,6.3f,12.1f}).rotate(moon::math::radians(90.0f),{1.0f,0.0f,0.0f}).rotate(moon::math::radians(-45.0f), { 0.0f,0.0f,1.0f });
@@ -476,31 +478,31 @@ void testScene::createObjects()
 
     objects["octopus"] = std::make_shared<moon::entities::BaseObject>(models["octopus"].get(), 0, resourceCount);
     objects["octopus"]->rotate(moon::math::radians(90.0f), { 1.0f,0.0f,0.0f }).scale({ 3.0f,3.0f,3.0f }).translate({27.0f, -2.0f, 10.0f});
-    static_cast<moon::entities::BaseObject*>(objects["octopus"].get())->animationControl.set(0);
+    static_cast<moon::entities::BaseObject*>(objects["octopus"].get())->animation.play(0);
 
     objects["robot"] = std::make_shared<moon::entities::BaseObject>(models["robot"].get(), 0, resourceCount);
     objects["robot"]->scale(25.0f).rotate(moon::math::quat(0.5f, 0.5f, -0.5f, -0.5f)).rotate(moon::math::radians(180.0f), {0.0f, 0.0f, 1.0f}).translate(moon::math::vec3(-30.0f, 11.0f, 10.0f));
-    static_cast<moon::entities::BaseObject*>(objects["robot"].get())->animationControl.set(1);
+    static_cast<moon::entities::BaseObject*>(objects["robot"].get())->animation.play(1);
 
     objects["skeleton"] = std::make_shared<moon::entities::BaseObject>(models["skeleton"].get(), 0, resourceCount);
     objects["skeleton"]->scale(3.0f).rotate(moon::math::quat(0.5f, 0.5f, -0.5f, -0.5f)).rotate(moon::math::radians(180.0f), { 0.0f, 0.0f, 1.0f }).translate(moon::math::vec3(-30.0f, 6.0f, 10.0f));
-    static_cast<moon::entities::BaseObject*>(objects["skeleton"].get())->animationControl.set(0);
+    static_cast<moon::entities::BaseObject*>(objects["skeleton"].get())->animation.play(0);
 
-    objects["RecursiveSkeletons"] = std::make_shared<moon::entities::BaseObject>(models["RecursiveSkeletons"].get());
+    objects["RecursiveSkeletons"] = std::make_shared<moon::entities::BaseObject>(models["RecursiveSkeletons"].get(), 0, resourceCount);
     objects["RecursiveSkeletons"]->scale(0.02f).rotate(moon::math::radians(90.0f), { 1.0f,0.0f,0.0f }).translate(moon::math::vec3(-30.0f, -10.0f, 10.0f));
-    static_cast<moon::entities::BaseObject*>(objects["RecursiveSkeletons"].get())->animationControl.set(0);
+    static_cast<moon::entities::BaseObject*>(objects["RecursiveSkeletons"].get())->animation.play(0);
 
-    objects["SimpleSkin"] = std::make_shared<moon::entities::BaseObject>(models["SimpleSkin"].get());
+    objects["SimpleSkin"] = std::make_shared<moon::entities::BaseObject>(models["SimpleSkin"].get(), 0, resourceCount);
     objects["SimpleSkin"]->scale(2.0f).rotate(moon::math::radians(90.0f), { 1.0f,0.0f,0.0f }).rotate(moon::math::radians(90.0f), { 0.0f,0.0f,1.0f }).translate(moon::math::vec3(-34.0f, -7.0f, 10.0f));
-    static_cast<moon::entities::BaseObject*>(objects["SimpleSkin"].get())->animationControl.set(0);
+    static_cast<moon::entities::BaseObject*>(objects["SimpleSkin"].get())->animation.play(0);
 
-    objects["RiggedFigure"] = std::make_shared<moon::entities::BaseObject>(models["RiggedFigure"].get());
+    objects["RiggedFigure"] = std::make_shared<moon::entities::BaseObject>(models["RiggedFigure"].get(), 0, resourceCount);
     objects["RiggedFigure"]->scale(1.0f).rotate(moon::math::radians(-90.0f), { 1.0f,0.0f,0.0f }).rotate(moon::math::radians(90.0f), { 0.0f,0.0f,1.0f }).translate(moon::math::vec3(-32.0f, -5.0f, 10.0f));
-    static_cast<moon::entities::BaseObject*>(objects["RiggedFigure"].get())->animationControl.set(0);
+    static_cast<moon::entities::BaseObject*>(objects["RiggedFigure"].get())->animation.play(0);
 
-    objects["InterpolationTest"] = std::make_shared<moon::entities::BaseObject>(models["InterpolationTest"].get());
+    objects["InterpolationTest"] = std::make_shared<moon::entities::BaseObject>(models["InterpolationTest"].get(), 0, resourceCount, moon::entities::BaseObject::AnimationConfig{ .transition = moon::entities::BaseObject::AnimationConfig::Transition::Instant });
     objects["InterpolationTest"]->scale(0.5f).rotate(moon::math::radians(90.0f), { 1.0f,0.0f,0.0f }).rotate(moon::math::radians(90.0f), { 0.0f,0.0f,1.0f }).translate(moon::math::vec3(-32.0f, 0.0f, 13.0f));
-    static_cast<moon::entities::BaseObject*>(objects["InterpolationTest"].get())->animationControl.set(0);
+    static_cast<moon::entities::BaseObject*>(objects["InterpolationTest"].get())->animation.play(0);
 
     objects["AlphaBlendModeTest"] = std::make_shared<moon::entities::BaseObject>(models["AlphaBlendModeTest"].get());
     objects["AlphaBlendModeTest"]->rotate(moon::math::radians(90.0f), { 1.0f,0.0f,0.0f }).rotate(moon::math::radians(-90.0f), { 0.0f,0.0f,1.0f }).translate({-24.0f, 3.25f, 12.2f}).scale({0.3f,0.3f, 0.3f});

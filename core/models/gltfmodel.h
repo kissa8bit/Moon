@@ -2,6 +2,7 @@
 #define MOON_MODELS_GLTFMODEL_H
 
 #include <filesystem>
+#include <string>
 #include <vector>
 
 #include <vulkan.h>
@@ -25,6 +26,7 @@ private:
     Instances instances;
     GltfMeshes meshes;
     Skins skins;
+    std::vector<std::string> m_animationNames;
 
     struct Cache {
         utils::Buffer vertices;
@@ -42,6 +44,7 @@ public:
     GltfModel(std::filesystem::path filename, uint32_t instanceCount = 1);
 
     std::vector<interfaces::Animation*> animations(uint32_t instanceNumber) override;
+    std::vector<std::string> animationNames() const override;
 
     void create(const utils::PhysicalDevice& device, VkCommandPool commandPool) override;
     void render(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t& primitiveCount) const override;

@@ -155,6 +155,10 @@ void GltfModel::renderBB(uint32_t instanceNumber, VkCommandBuffer commandBuffer,
     }
 }
 
+std::vector<std::string> GltfModel::animationNames() const {
+    return m_animationNames;
+}
+
 std::vector<interfaces::Animation*> GltfModel::animations(uint32_t instanceNumber) {
     auto& animations = instances[instanceNumber].animations;
     std::vector<interfaces::Animation*> animationsPtrs;

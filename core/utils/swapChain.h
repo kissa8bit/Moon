@@ -37,7 +37,7 @@ public:
     VkResult present(VkSemaphore waitSemaphore, ImageIndex imageIndex) const;
 
     operator const VkSwapchainKHR&() const;
-    const VkImageView& SwapChain::imageView(ImageIndex imageIndex) const;
+    const VkImageView& imageView(ImageIndex imageIndex) const;
 
     utils::vkDefault::ImageInfo info() const;
     VkSurfaceKHR getSurface() const;

@@ -1,6 +1,7 @@
 #ifndef MOON_INTERFACES_MODEL_H
 #define MOON_INTERFACES_MODEL_H
 
+#include <string>
 #include <vector>
 #include <limits>
 
@@ -180,6 +181,7 @@ public:
     virtual ~Model() = default;
 
     virtual std::vector<Animation*> animations(uint32_t instanceNumber) = 0;
+    virtual std::vector<std::string> animationNames() const { return {}; }
 
     virtual void create(const utils::PhysicalDevice& device, VkCommandPool commandPool) = 0;
     virtual void render(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t& primitiveCount) const = 0;
