@@ -59,8 +59,9 @@ size_t BaseObject::Animation::count() const {
     return m_animationsMap.empty() ? 0 : m_animationsMap.begin()->second.size();
 }
 
-int BaseObject::Animation::current() const {
-    return m_animIndex;
+int BaseObject::Animation::current(int layer) const {
+    auto it = m_layers.find(layer);
+    return it != m_layers.end() ? it->second.animIndex : -1;
 }
 
 std::string_view BaseObject::Animation::name(size_t index) const {
@@ -68,29 +69,43 @@ std::string_view BaseObject::Animation::name(size_t index) const {
 }
 
 BaseObject::Animation& BaseObject::Animation::play(int index, std::optional<float> blendTime) {
+    return playLayer(0, index, blendTime);
+}
+
+BaseObject::Animation& BaseObject::Animation::play(std::string_view animName, std::optional<float> blendTime) {
+    return playLayer(0, animName, blendTime);
+}
+
+BaseObject::Animation& BaseObject::Animation::playLayer(int layer, int index, std::optional<float> blendTime) {
     if (index < 0 || index >= static_cast<int>(count())) return *this;
-    m_animIndex = index;
-    m_time = 0.0f;
+    auto& l = m_layers[layer];
+    l.animIndex = index;
+    l.time = 0.0f;
+    l.paused = false;
     m_paused = false;
     const bool instant = (config.transition == AnimationConfig::Transition::Instant);
     const float resolvedBlend = instant ? 0.0f : blendTime.value_or(config.blendTime);
     for (auto& [_, animations] : m_animationsMap) {
-        animations.at(m_animIndex)->setChangeTime(resolvedBlend);
+        animations.at(index)->setChangeTime(resolvedBlend);
     }
     return *this;
 }
 
-BaseObject::Animation& BaseObject::Animation::play(std::string_view animName, std::optional<float> blendTime) {
+BaseObject::Animation& BaseObject::Animation::playLayer(int layer, std::string_view animName, std::optional<float> blendTime) {
     for (size_t i = 0; i < m_names.size(); ++i) {
-        if (m_names[i] == animName) return play(static_cast<int>(i), blendTime);
+        if (m_names[i] == animName) return playLayer(layer, static_cast<int>(i), blendTime);
     }
     return *this;
 }
 
 BaseObject::Animation& BaseObject::Animation::stop() {
-    m_animIndex = -1;
-    m_time = 0.0f;
+    m_layers.clear();
     m_paused = false;
+    return *this;
+}
+
+BaseObject::Animation& BaseObject::Animation::stopLayer(int layer) {
+    m_layers.erase(layer);
     return *this;
 }
 
@@ -110,21 +125,36 @@ BaseObject::Animation& BaseObject::Animation::setSpeed(float speed) {
 }
 
 bool BaseObject::Animation::update(size_t frameNumber, float dtime) {
-    if (m_paused || m_animIndex < 0) return false;
+    if (m_paused || m_layers.empty()) return false;
 
     auto it = m_animationsMap.find(frameNumber);
     if (it == m_animationsMap.end()) return false;
 
-    auto& [_, animations] = *it;
-    if (m_animIndex >= static_cast<int>(animations.size())) return false;
+    auto& animations = it->second;
+    bool needUpdate = false;
+    interfaces::Animation* lastApplied = nullptr;
 
-    auto* anim = animations.at(m_animIndex);
-    if (!anim) return false;
+    for (auto& [_, layer] : m_layers) {
+        if (layer.paused || layer.animIndex < 0) continue;
+        if (layer.animIndex >= static_cast<int>(animations.size())) continue;
 
-    m_time += dtime * config.speed;
-    if (m_time > anim->duration()) m_time = 0.0f;
+        auto* anim = animations.at(layer.animIndex);
+        if (!anim) continue;
 
-    return anim->update(m_time);
+        layer.time += dtime * config.speed;
+        if (layer.time > anim->duration()) layer.time = 0.0f;
+
+        if (anim->applyChannels(layer.time)) {
+            needUpdate = true;
+            lastApplied = anim;
+        }
+    }
+
+    if (needUpdate && lastApplied) {
+        lastApplied->updateNodes();
+    }
+
+    return needUpdate;
 }
 
 } // moon::entities

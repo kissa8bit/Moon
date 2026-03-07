@@ -47,14 +47,17 @@ public:
     struct Animation {
         // Query
         size_t count() const;
-        int current() const;
+        int current(int layer = 0) const;
         std::string_view name(size_t index) const;
 
         // Control — all return Animation& for fluent chaining
-        // blendTime: overrides config.blendTime if provided
+        // play() operates on layer 0, playLayer() on explicit layer
         Animation& play(int index, std::optional<float> blendTime = std::nullopt);
         Animation& play(std::string_view animName, std::optional<float> blendTime = std::nullopt);
+        Animation& playLayer(int layer, int index, std::optional<float> blendTime = std::nullopt);
+        Animation& playLayer(int layer, std::string_view animName, std::optional<float> blendTime = std::nullopt);
         Animation& stop();
+        Animation& stopLayer(int layer);
         Animation& pause();
         Animation& resume();
         Animation& setSpeed(float speed);
@@ -66,11 +69,16 @@ public:
         Animation(const Animation&) = delete;
         Animation& operator=(const Animation&) = delete;
 
+        struct Layer {
+            int animIndex{-1};
+            float time{0.0f};
+            bool paused{false};
+        };
+
         BaseObject& m_owner;
         std::map<size_t, std::vector<interfaces::Animation*>> m_animationsMap;
         std::vector<std::string> m_names;
-        float m_time{ 0.0f };
-        int m_animIndex{ -1 };
+        std::map<int, Layer> m_layers;
         bool m_paused{ false };
 
         bool update(size_t frameNumber, float dtime);

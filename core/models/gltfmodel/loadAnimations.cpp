@@ -252,7 +252,7 @@ void GltfAnimation::setChangeTime(float time) {
     blendStartCaptured = false;
 }
 
-bool GltfAnimation::update(float time){
+bool GltfAnimation::applyChannels(float time){
     bool needUpdate = false;
     if (time < changeTime) {
         // Capture all node poses once at the start of each blend (initial switch or loop seam)
@@ -367,8 +367,17 @@ bool GltfAnimation::update(float time){
             }
         }
     }
-    if (needUpdate){
-        updateNodes(*nodeMap, *skeletons, morphWeights);
+    return needUpdate;
+}
+
+void GltfAnimation::updateNodes() {
+    moon::models::updateNodes(*nodeMap, *skeletons, morphWeights);
+}
+
+bool GltfAnimation::update(float time){
+    const bool needUpdate = applyChannels(time);
+    if (needUpdate) {
+        updateNodes();
     }
     return needUpdate;
 }

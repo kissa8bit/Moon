@@ -53,6 +53,8 @@ struct GltfAnimation : interfaces::Animation {
     bool blendStartCaptured{false};
 
     void setChangeTime(float changeTime) override;
+    bool applyChannels(float time) override;
+    void updateNodes() override;
     bool update(float time) override;
     float duration() const override;
 
