@@ -64,7 +64,9 @@ void Graphics::OutliningExtension::create(interfaces::ObjectType type, const wor
         parent.descriptorSetLayout,
         parent.objectDescriptorSetLayout,
         parent.skeletonDescriptorSetLayout,
-        parent.materialDescriptorSetLayout
+        parent.morphWeightsDescriptorSetLayout,
+        parent.materialDescriptorSetLayout,
+        parent.morphDeltasDescriptorSetLayout
     };
     pipelineDesc.pipelineLayout = utils::vkDefault::PipelineLayout(device, descriptorSetLayout, pushConstantRange);
 

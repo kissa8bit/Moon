@@ -15,11 +15,11 @@ layout (push_constant) uniform PC{
     Material material;
 } pc;
 
-layout(set = 3, binding = 0) uniform sampler2D baseColorTexture;
-layout(set = 3, binding = 1) uniform sampler2D metallicRoughnessTexture;
-layout(set = 3, binding = 2) uniform sampler2D normalTexture;
-layout(set = 3, binding = 3) uniform sampler2D occlusionTexture;
-layout(set = 3, binding = 4) uniform sampler2D emissiveTexture;
+layout(set = 4, binding = 0) uniform sampler2D baseColorTexture;
+layout(set = 4, binding = 1) uniform sampler2D metallicRoughnessTexture;
+layout(set = 4, binding = 2) uniform sampler2D normalTexture;
+layout(set = 4, binding = 3) uniform sampler2D occlusionTexture;
+layout(set = 4, binding = 4) uniform sampler2D emissiveTexture;
 
 layout(location = 0)	in vec4 position;
 layout(location = 1)	in vec3 normal;
@@ -63,7 +63,8 @@ float convertMetallic(vec3 diffuse, vec3 specular, float maxSpecular) {
 
 void metallicRoughnessWorkflow(inout float perceptualRoughness, inout float metallic, inout vec4 baseColor) {
     if (pc.material.physicalDescriptorTextureSet > -1) {
-        vec4 mrSample = texture(metallicRoughnessTexture, UV0); // r - (optional) occlusion map, g - roughness, b - metallic
+        vec2 mrUV = pc.material.physicalDescriptorTextureSet == 1 ? UV1 : UV0;
+        vec4 mrSample = texture(metallicRoughnessTexture, mrUV); // r - (optional) occlusion map, g - roughness, b - metallic
         perceptualRoughness = clamp(mrSample.g * pc.material.roughnessFactor, 0.0, 1.0);
         metallic = clamp(mrSample.b * pc.material.metallicFactor, 0.0, 1.0);
     } else {
@@ -76,7 +77,8 @@ void metallicRoughnessWorkflow(inout float perceptualRoughness, inout float meta
 
 void specularGlosinessWorkflow(inout float perceptualRoughness, inout float metallic, inout vec4 baseColor) {
     vec4 diffuse = baseColor;
-    vec4 sgSample = texture(metallicRoughnessTexture, UV0);
+    vec2 sgUV = pc.material.physicalDescriptorTextureSet == 1 ? UV1 : UV0;
+    vec4 sgSample = texture(metallicRoughnessTexture, sgUV);
     vec3 specular = sgSample.rgb;
     float maxSpecular = max(max(specular.r, specular.g), specular.b);
 
@@ -92,8 +94,10 @@ void specularGlosinessWorkflow(inout float perceptualRoughness, inout float meta
 
 void main()
 {
-    vec4 baseColor = vec4(local.colorFactor.xyz, 1.0f) * texture(baseColorTexture, UV0) + local.constColor;
-    vec4 bloomColor = vec4(local.bloomFactor.xyz, 1.0f) * texture(emissiveTexture, UV0) + local.bloomColor;
+    vec2 baseColorUV = pc.material.baseColorTextureSet == 1 ? UV1 : UV0;
+    vec2 emissiveUV = pc.material.emissiveTextureSet == 1 ? UV1 : UV0;
+    vec4 baseColor = vec4(local.colorFactor.xyz, 1.0f) * texture(baseColorTexture, baseColorUV) + local.constColor;
+    vec4 bloomColor = vec4(local.bloomFactor.xyz, 1.0f) * texture(emissiveTexture, emissiveUV) + local.bloomColor;
 
     const float depth = gl_FragCoord.z;
     const vec2 uv = gl_FragCoord.xy / textureSize(prevLayerDepthMap, 0);
@@ -134,7 +138,8 @@ void main()
         }
     }
     
-    float ao = pc.material.occlusionTextureSet > -1 ? texture(occlusionTexture, UV0).r : 1.0f;
+    vec2 occlusionUV = pc.material.occlusionTextureSet == 1 ? UV1 : UV0;
+    float ao = pc.material.occlusionTextureSet > -1 ? texture(occlusionTexture, occlusionUV).r : 1.0f;
 
     uint perceptualRoughness_u8 = uint(255.0f * perceptualRoughness);
     uint metallic_u8 = uint(255.0f * metallic);

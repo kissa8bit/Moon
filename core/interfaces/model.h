@@ -86,18 +86,6 @@ struct Range {
     void setLast(uint32_t last) { count = last - first; }
 };
 
-struct Primitive {
-    struct { Range range{}; } index;
-    struct { Range range{}; } vertex;
-    const interfaces::Material* material{ nullptr };
-    math::box bb;
-
-    Primitive() = default;
-    Primitive(const Range& indexRange, const Range vertexRange, const interfaces::Material* material, math::box bb)
-        : index({indexRange}), vertex({vertexRange}), material(material), bb(bb)
-    {}
-};
-
 struct Skeleton {
     utils::Buffer deviceBuffer;
     struct Buffer {
@@ -110,6 +98,41 @@ struct Skeleton {
     void createDescriptorSet(VkDevice device, utils::vkDefault::DescriptorPool& descriptorPool, const utils::vkDefault::DescriptorSetLayout& descriptorSetLayout);
 
     static utils::vkDefault::DescriptorSetLayout descriptorSetLayout(VkDevice device);
+};
+
+struct MorphWeights {
+    static constexpr uint32_t maxTargets = 256u;
+    utils::Buffer deviceBuffer;
+    struct Buffer {
+        float weights[maxTargets]{};
+        uint32_t count{0};
+        uint32_t _pad[3]{};
+    } hostBuffer;
+    VkDescriptorSet descriptorSet{VK_NULL_HANDLE};
+
+    void createDescriptorSet(VkDevice device, utils::vkDefault::DescriptorPool& descriptorPool, const utils::vkDefault::DescriptorSetLayout& descriptorSetLayout);
+    static utils::vkDefault::DescriptorSetLayout descriptorSetLayout(VkDevice device);
+};
+
+struct MorphDeltas {
+    utils::Buffer deviceBuffer;
+    VkDescriptorSet descriptorSet{VK_NULL_HANDLE};
+
+    void createDescriptorSet(VkDevice device, utils::vkDefault::DescriptorPool& descriptorPool, const utils::vkDefault::DescriptorSetLayout& descriptorSetLayout);
+    static utils::vkDefault::DescriptorSetLayout descriptorSetLayout(VkDevice device);
+};
+
+struct Primitive {
+    struct { Range range{}; } index;
+    struct { Range range{}; } vertex;
+    const interfaces::Material* material{ nullptr };
+    MorphDeltas morphDeltas;
+    math::box bb;
+
+    Primitive() = default;
+    Primitive(const Range& indexRange, const Range vertexRange, const interfaces::Material* material, math::box bb)
+        : index({indexRange}), vertex({vertexRange}), material(material), bb(bb)
+    {}
 };
 
 struct Mesh {
@@ -194,6 +217,8 @@ protected:
 
     utils::vkDefault::DescriptorSetLayout skeletonDescriptorSetLayout;
     utils::vkDefault::DescriptorSetLayout materialDescriptorSetLayout;
+    utils::vkDefault::DescriptorSetLayout morphWeightsDescriptorSetLayout;
+    utils::vkDefault::DescriptorSetLayout morphDeltasDescriptorSetLayout;
     utils::vkDefault::DescriptorPool descriptorPool;
 
     utils::Buffer vertices, indices;

@@ -418,6 +418,7 @@ void testScene::createModels()
     models["RiggedFigure"] = MAKE_GLTF(glTFSamples / "RiggedFigure/glTF-Binary/RiggedFigure.glb", resourceCount);
     models["InterpolationTest"] = MAKE_GLTF(glTFSamples / "InterpolationTest/glTF-Binary/InterpolationTest.glb", resourceCount);
     models["RecursiveSkeletons"] = MAKE_GLTF(glTFSamples / "RecursiveSkeletons/glTF-Binary/RecursiveSkeletons.glb", resourceCount);
+    models["MorphStressTest"] = MAKE_GLTF(glTFSamples / "MorphStressTest/glTF-Binary/MorphStressTest.glb", resourceCount);
 
     models["box"] = MAKE_GLTF(glTFSamples / "Box/glTF-Binary/Box.glb");
     models["sponza"] = MAKE_GLTF(glTFSamples / "Sponza/glTF/Sponza.gltf");
@@ -491,6 +492,10 @@ void testScene::createObjects()
     objects["RecursiveSkeletons"] = std::make_shared<moon::entities::BaseObject>(models["RecursiveSkeletons"].get(), 0, resourceCount);
     objects["RecursiveSkeletons"]->scale(0.02f).rotate(moon::math::radians(90.0f), { 1.0f,0.0f,0.0f }).translate(moon::math::vec3(-30.0f, -10.0f, 10.0f));
     static_cast<moon::entities::BaseObject*>(objects["RecursiveSkeletons"].get())->animation.play(0);
+
+    objects["MorphStressTest"] = std::make_shared<moon::entities::BaseObject>(models["MorphStressTest"].get(), 0, resourceCount, moon::entities::BaseObject::AnimationConfig{ .transition = moon::entities::BaseObject::AnimationConfig::Transition::Instant });
+    objects["MorphStressTest"]->scale(0.02f).rotate(moon::math::radians(90.0f), { 1.0f,0.0f,0.0f }).translate(moon::math::vec3(-3.5f, 6.5f, 12.5f)).scale(moon::math::vec3(0.7));
+    static_cast<moon::entities::BaseObject*>(objects["MorphStressTest"].get())->animation.play(0);
 
     objects["SimpleSkin"] = std::make_shared<moon::entities::BaseObject>(models["SimpleSkin"].get(), 0, resourceCount);
     objects["SimpleSkin"]->scale(2.0f).rotate(moon::math::radians(90.0f), { 1.0f,0.0f,0.0f }).rotate(moon::math::radians(90.0f), { 0.0f,0.0f,1.0f }).translate(moon::math::vec3(-34.0f, -7.0f, 10.0f));

@@ -33,7 +33,9 @@ private:
         utils::vkDefault::DescriptorSetLayout   lightDescriptorSetLayout;
         utils::vkDefault::DescriptorSetLayout   objectDescriptorSetLayout;
         utils::vkDefault::DescriptorSetLayout   skeletonDescriptorSetLayout;
+        utils::vkDefault::DescriptorSetLayout   morphWeightsDescriptorSetLayout;
         utils::vkDefault::DescriptorSetLayout   materialDescriptorSetLayout;
+        utils::vkDefault::DescriptorSetLayout   morphDeltasDescriptorSetLayout;
 
         Shadow(const ShadowGraphicsParameters& parameters, const interfaces::Objects* objects, interfaces::DepthMaps* depthMaps)
             : parameters(parameters), objects(objects), depthMaps(depthMaps) {};

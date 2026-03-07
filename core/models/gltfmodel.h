@@ -31,6 +31,7 @@ private:
     struct Cache {
         utils::Buffer vertices;
         utils::Buffer indices;
+        std::vector<utils::Buffer> morphDelta;
     } cache;
 
     bool loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffer commandBuffer);

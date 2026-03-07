@@ -27,7 +27,9 @@ void ShadowGraphics::Shadow::create(interfaces::ObjectType type, const workflows
     lightDescriptorSetLayout = interfaces::Light::createDescriptorSetLayout(device);
     objectDescriptorSetLayout = implementations::BaseObject::createDescriptorSetLayout(device);
     skeletonDescriptorSetLayout = interfaces::Skeleton::descriptorSetLayout(device);
+    morphWeightsDescriptorSetLayout = interfaces::MorphWeights::descriptorSetLayout(device);
     materialDescriptorSetLayout = interfaces::Material::descriptorSetLayout(device);
+    morphDeltasDescriptorSetLayout = interfaces::MorphDeltas::descriptorSetLayout(device);
 
     const auto vertShader = utils::vkDefault::VertrxShaderModule(device, parameters.shadersPath / shadersNames.at(workflows::ShaderType::Vertex));
     const std::vector<VkPipelineShaderStageCreateInfo> shaderStages = { vertShader };
@@ -66,7 +68,9 @@ void ShadowGraphics::Shadow::create(interfaces::ObjectType type, const workflows
         lightDescriptorSetLayout,
         objectDescriptorSetLayout,
         skeletonDescriptorSetLayout,
-        materialDescriptorSetLayout
+        morphWeightsDescriptorSetLayout,
+        materialDescriptorSetLayout,
+        morphDeltasDescriptorSetLayout
     };
     pipelineDesc.pipelineLayout = utils::vkDefault::PipelineLayout(device, descriptorSetLayouts, pushConstantRange);
 

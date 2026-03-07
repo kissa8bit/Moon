@@ -123,6 +123,21 @@ static size_t getKeyframeValueIndex(GltfAnimation::Sampler::InterpolationType in
     return interpolation == GltfAnimation::Sampler::InterpolationType::CUBICSPLINE ? Cubic::value : Linear::value;
 }
 
+static void applyWeights(Node* node, const GltfAnimation::Point::OutputData& data) {
+    node->weights.resize(data.size());
+    for (size_t i = 0; i < data.size(); i++) {
+        node->weights[i] = data[i][0];
+    }
+}
+
+static void lerpWeights(Node* node, const GltfAnimation::Point::OutputData& x0, const GltfAnimation::Point::OutputData& x1, float t) {
+    const size_t count = std::min(x0.size(), x1.size());
+    node->weights.resize(count);
+    for (size_t i = 0; i < count; i++) {
+        node->weights[i] = x0[i][0] + t * (x1[i][0] - x0[i][0]);
+    }
+}
+
 template<typename Type>
 GltfAnimation::Sampler makeSampler(
     GltfAnimation::Sampler::InterpolationType interpolation,
@@ -156,7 +171,8 @@ void GltfModel::loadAnimations(const tinygltf::Model& gltfModel){
     static const std::unordered_map<std::string, GltfAnimation::Channel::PathType> channelsPathMap = {
         {"rotation", GltfAnimation::Channel::PathType::ROTATION},
         {"translation", GltfAnimation::Channel::PathType::TRANSLATION},
-        {"scale", GltfAnimation::Channel::PathType::SCALE}
+        {"scale", GltfAnimation::Channel::PathType::SCALE},
+        {"weights", GltfAnimation::Channel::PathType::WEIGHTS}
     };
 
     for (const tinygltf::Animation &anim : gltfModel.animations) {
@@ -188,24 +204,42 @@ void GltfModel::loadAnimations(const tinygltf::Model& gltfModel){
             switch (output.type) {
                 GLTFMODEL_LOADANIMATIONS_SAMPLER_CASE(TINYGLTF_TYPE_VEC3, 3)
                 GLTFMODEL_LOADANIMATIONS_SAMPLER_CASE(TINYGLTF_TYPE_VEC4, 4)
+                case TINYGLTF_TYPE_SCALAR: {
+                    // Weight animation: outputSize scalars per keyframe, each stored as vec4.x
+                    const float* scalarData = (const float*)output.data;
+                    GltfAnimation::Sampler sampler{};
+                    sampler.interpolation = interpolationMap.at(gltfsampler.interpolation);
+                    for (size_t i = 0; i < input.count; ++i) {
+                        auto& point = sampler.points.emplace_back(GltfAnimation::Point{input.data[i], {}});
+                        point.outputData.resize(outputSize);
+                        for (size_t j = 0; j < outputSize; ++j) {
+                            point.outputData[j] = math::vec4(scalarData[i * outputSize + j], 0.0f, 0.0f, 0.0f);
+                        }
+                        duration = std::max(point.inputTime, duration);
+                    }
+                    samplers.push_back(std::move(sampler));
+                    break;
+                }
             }
         }
 
         for (auto& instance : instances) {
             GltfAnimation::Channels channels;
             for (const auto &source: anim.channels) {
+                const auto pathIt = channelsPathMap.find(source.target_path);
+                if (pathIt == channelsPathMap.end()) continue;
                 if (auto it = instance.nodes.find(source.target_node); it != instance.nodes.end()) {
                     auto& [_, node] = *it;
-                    channels.push_back(GltfAnimation::Channel{ channelsPathMap.at(source.target_path), source.sampler, &node });
+                    channels.push_back(GltfAnimation::Channel{ pathIt->second, source.sampler, &node });
                 }
             }
-            instance.animations.push_back(GltfAnimation(&instance.nodes, &instance.skeletons, channels, samplers, duration));
+            instance.animations.push_back(GltfAnimation(&instance.nodes, &instance.skeletons, &instance.morphWeights, channels, samplers, duration));
         }
     }
 }
 
-GltfAnimation::GltfAnimation(Nodes* nodeMap, GltfSkeletons* skeletons, const GltfAnimation::Channels& channels, const GltfAnimation::Samplers& samplers, float duration)
-    : nodeMap(nodeMap), skeletons(skeletons), channels(channels), samplers(samplers), totalTime(duration)
+GltfAnimation::GltfAnimation(Nodes* nodeMap, GltfSkeletons* skeletons, GltfMorphWeightsMap* morphWeights, const GltfAnimation::Channels& channels, const GltfAnimation::Samplers& samplers, float duration)
+    : nodeMap(nodeMap), skeletons(skeletons), morphWeights(morphWeights), channels(channels), samplers(samplers), totalTime(duration)
 {
     for (const auto& channel : this->channels) {
         if (channel.node) animatedNodes.insert(channel.node);
@@ -226,7 +260,7 @@ bool GltfAnimation::update(float time){
             blendStartCaptured = true;
             blendStartPose.clear();
             for (auto& [_, node] : *nodeMap) {
-                blendStartPose[&node] = { node.translation, node.scale, node.rotation };
+                blendStartPose[&node] = { node.translation, node.scale, node.rotation, node.weights };
             }
         }
         const float t = time / changeTime;
@@ -246,6 +280,16 @@ bool GltfAnimation::update(float time){
                     channel.node->scale = mix(snap.scale, math::vec3(target.dvec()), t); break;
                 case Channel::PathType::ROTATION:
                     channel.node->rotation = normalize(slerp(snap.rotation, quatFromVec(target), t)); break;
+                case Channel::PathType::WEIGHTS: {
+                    const auto& targetData = sampler.points[0].outputData;
+                    const size_t count = targetData.size();
+                    channel.node->weights.resize(count);
+                    for (size_t i = 0; i < count; i++) {
+                        const float startW = i < snap.weights.size() ? snap.weights[i] : 0.0f;
+                        channel.node->weights[i] = startW + t * (targetData[i][0] - startW);
+                    }
+                    break;
+                }
             }
         }
         // Blend non-channel nodes: from captured start pose → rest pose
@@ -278,7 +322,11 @@ bool GltfAnimation::update(float time){
             const auto& sampler = samplers[channel.samplerIndex];
             if (sampler.points.size() < 2) {
                 if (!sampler.points.empty()) {
-                    Step::update(channel.path)(channel.node, sampler.points[0].outputData);
+                    if (channel.path == Channel::PathType::WEIGHTS) {
+                        applyWeights(channel.node, sampler.points[0].outputData);
+                    } else {
+                        Step::update(channel.path)(channel.node, sampler.points[0].outputData);
+                    }
                     needUpdate = true;
                 }
                 continue;
@@ -289,10 +337,19 @@ bool GltfAnimation::update(float time){
                     const auto x0t = x0.inputTime, x1t = x1.inputTime;
                     const auto& x0d = x0.outputData, &x1d = x1.outputData;
                     const float t = (time - x0t) / (x1t - x0t);
-                    switch (sampler.interpolation) {
-                        case Sampler::InterpolationType::STEP: Step::update(channel.path)(channel.node, x0d); break;
-                        case Sampler::InterpolationType::LINEAR: Linear::update(channel.path)(channel.node, x0d, x1d, t); break;
-                        case Sampler::InterpolationType::CUBICSPLINE: Cubic::update(channel.path)(channel.node, x0d, x1d, x0t, x1t, t); break;
+                    if (channel.path == Channel::PathType::WEIGHTS) {
+                        switch (sampler.interpolation) {
+                            case Sampler::InterpolationType::STEP: applyWeights(channel.node, x0d); break;
+                            case Sampler::InterpolationType::LINEAR:
+                            case Sampler::InterpolationType::CUBICSPLINE:
+                                lerpWeights(channel.node, x0d, x1d, t); break;
+                        }
+                    } else {
+                        switch (sampler.interpolation) {
+                            case Sampler::InterpolationType::STEP: Step::update(channel.path)(channel.node, x0d); break;
+                            case Sampler::InterpolationType::LINEAR: Linear::update(channel.path)(channel.node, x0d, x1d, t); break;
+                            case Sampler::InterpolationType::CUBICSPLINE: Cubic::update(channel.path)(channel.node, x0d, x1d, x0t, x1t, t); break;
+                        }
                     }
                     applied = true;
                     needUpdate = true;
@@ -301,13 +358,17 @@ bool GltfAnimation::update(float time){
             }
             // Hold last frame when time is past the final keyframe
             if (!applied && time >= sampler.points.back().inputTime) {
-                Step::update(channel.path)(channel.node, sampler.points.back().outputData);
+                if (channel.path == Channel::PathType::WEIGHTS) {
+                    applyWeights(channel.node, sampler.points.back().outputData);
+                } else {
+                    Step::update(channel.path)(channel.node, sampler.points.back().outputData);
+                }
                 needUpdate = true;
             }
         }
     }
     if (needUpdate){
-        updateNodes(*nodeMap, *skeletons);
+        updateNodes(*nodeMap, *skeletons, morphWeights);
     }
     return needUpdate;
 }

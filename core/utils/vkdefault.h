@@ -57,6 +57,7 @@ VkDescriptorSetLayoutBinding imageFragmentLayoutBinding(const uint32_t& binding,
 VkDescriptorSetLayoutBinding inAttachmentFragmentLayoutBinding(const uint32_t& binding, const uint32_t& count);
 VkDescriptorSetLayoutBinding imageComputeLayoutBinding(const uint32_t& binding, const uint32_t& count);
 VkDescriptorSetLayoutBinding bufferComputeLayoutBinding(const uint32_t& binding, const uint32_t& count);
+VkDescriptorSetLayoutBinding storageBufferVertexLayoutBinding(const uint32_t& binding, const uint32_t& count);
 
 #define VKDEFAULT_INIT_DESCRIPTOR(Name, BaseDescriptor)	\
 private:												\

@@ -17,7 +17,10 @@ class PlyModel : public interfaces::Model {
 private:
     std::filesystem::path filename;
     interfaces::Mesh mesh;
-    interfaces::Skeleton skeleton;
+    struct {
+        interfaces::Skeleton skeleton;
+        interfaces::MorphWeights morphWeights;
+    } dummy;
 
     struct Cache {
         utils::Buffer vertices;

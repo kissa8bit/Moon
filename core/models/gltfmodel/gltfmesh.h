@@ -3,6 +3,8 @@
 
 #include <math/linearAlgebra.h>
 
+#include <interfaces/model.h>
+
 #include "tinyGLTF.h"
 #include "node.h"
 #include "skin.h"

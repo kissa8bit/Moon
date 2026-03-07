@@ -10,6 +10,7 @@
 #include "gltfmodel.h"
 #include "gltfutils.h"
 #include "gltfskeleton.h"
+#include "gltfmorph.h"
 #include "node.h"
 #include "loadVertices.h"
 
@@ -49,28 +50,50 @@ bool GltfModel::loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffe
     for (Node::Id nodeId = 0; nodeId < gltfModel.nodes.size(); nodeId++) {
         const auto& node = gltfModel.nodes[nodeId];
 
-        const auto meshIndex = node.mesh;
-        const bool isMeshValid = isValid(meshIndex);
-        if (isMeshValid) {
-            meshes[nodeId] = GltfMesh(gltfModel, gltfModel.meshes[meshIndex], materials, indexStart);
-            loadVertices(gltfModel, gltfModel.meshes[meshIndex], host.indices, host.vertices);
-        }
-
-        const auto skinIndex = node.skin;
-        const bool isSkinValid = isValid(skinIndex);
-        if (isSkinValid) {
-            skins[nodeId] = Skin(gltfModel, gltfModel.skins[skinIndex]);
-            if (isMeshValid) {
-                meshes.at(nodeId).calculateNodeBoxes(host.vertices, host.indices, skins.at(nodeId));
-            }
-        }
-
         for (auto& instance : instances) {
             if (instance.nodes.find(nodeId) == instance.nodes.end()) {
                 instance.loadNode(gltfModel, nodeId, nullptr);
             }
-            if (isMeshValid) {
-                instance.skeletons[nodeId] = GltfSkeleton(device, isSkinValid ? &skins.at(nodeId) : nullptr);
+        }
+
+        if (!isValid(node.mesh)) continue;
+
+        const auto& gltfMesh = gltfModel.meshes[node.mesh];
+        const uint32_t meshVertexStart = static_cast<uint32_t>(host.vertices.size());
+        const uint32_t morphTargetCount = gltfMesh.primitives.empty() ? 0 : static_cast<uint32_t>(gltfMesh.primitives[0].targets.size());
+        const bool isSkinValid = isValid(node.skin);
+
+        meshes[nodeId] = GltfMesh(gltfModel, gltfMesh, materials, indexStart);
+        loadVertices(gltfModel, gltfMesh, host.indices, host.vertices);
+
+        auto morphDeltaBuffers = loadMorphDeltasForMesh(gltfModel, gltfMesh, meshVertexStart);
+        auto& mesh = meshes.at(nodeId);
+        for (size_t pi = 0; pi < std::min(morphDeltaBuffers.size(), mesh.primitives.size()); pi++) {
+            const auto& data = morphDeltaBuffers[pi];
+            utils::Buffer stagingBuffer;
+            utils::createDeviceBuffer(device, device.device(), commandBuffer, data.size(), data.data(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, stagingBuffer, mesh.primitives[pi].morphDeltas.deviceBuffer);
+            cache.morphDelta.push_back(std::move(stagingBuffer));
+        }
+
+        if (isSkinValid) {
+            skins[nodeId] = Skin(gltfModel, gltfModel.skins[node.skin]);
+            mesh.calculateNodeBoxes(host.vertices, host.indices, skins.at(nodeId));
+        }
+
+        for (auto& instance : instances) {
+            instance.skeletons[nodeId] = GltfSkeleton(device, isSkinValid ? &skins.at(nodeId) : nullptr);
+            instance.morphWeights[nodeId] = GltfMorphWeight(device, morphTargetCount);
+
+            if (morphTargetCount > 0) {
+                auto& nodeInst = instance.nodes.at(nodeId);
+                if (nodeInst.weights.empty()) {
+                    nodeInst.weights.assign(morphTargetCount, 0.0f);
+                    nodeInst.restWeights.assign(morphTargetCount, 0.0f);
+                    for (size_t wi = 0; wi < std::min(static_cast<size_t>(morphTargetCount), gltfMesh.weights.size()); wi++) {
+                        nodeInst.weights[wi] = static_cast<float>(gltfMesh.weights[wi]);
+                        nodeInst.restWeights[wi] = nodeInst.weights[wi];
+                    }
+                }
             }
         }
     }
@@ -83,7 +106,7 @@ bool GltfModel::loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffe
     loadAnimations(gltfModel);
 
     for (auto& instance : instances) {
-        updateNodes(instance.nodes, instance.skeletons);
+        updateNodes(instance.nodes, instance.skeletons, &instance.morphWeights);
     }
 
     return true;
@@ -92,11 +115,23 @@ bool GltfModel::loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffe
 void GltfModel::createDescriptors(const utils::PhysicalDevice& device) {
     skeletonDescriptorSetLayout = interfaces::Skeleton::descriptorSetLayout(device.device());
     materialDescriptorSetLayout = interfaces::Material::descriptorSetLayout(device.device());
+    morphWeightsDescriptorSetLayout = interfaces::MorphWeights::descriptorSetLayout(device.device());
+    morphDeltasDescriptorSetLayout = interfaces::MorphDeltas::descriptorSetLayout(device.device());
 
     std::vector<const utils::vkDefault::DescriptorSetLayout*> layouts(materials.size(), &materialDescriptorSetLayout);
     for (const auto& instance : instances) {
-        for (const auto& _ : instance.nodes) {
+        for (const auto& [nodeId, skeleton] : instance.skeletons) {
             layouts.push_back(&skeletonDescriptorSetLayout);
+            if (instance.morphWeights.count(nodeId)) {
+                layouts.push_back(&morphWeightsDescriptorSetLayout);
+            }
+        }
+    }
+    for (const auto& [_, mesh] : meshes) {
+        for (const auto& primitive : mesh.primitives) {
+            if (VkBuffer(primitive.morphDeltas.deviceBuffer)) {
+                layouts.push_back(&morphDeltasDescriptorSetLayout);
+            }
         }
     }
 
@@ -106,10 +141,21 @@ void GltfModel::createDescriptors(const utils::PhysicalDevice& device) {
         for (auto& [nodeId, skeleton] : instance.skeletons) {
             skeleton.createDescriptorSet(device.device(), descriptorPool, skeletonDescriptorSetLayout);
         }
+        for (auto& [nodeId, morphWeight] : instance.morphWeights) {
+            morphWeight.createDescriptorSet(device.device(), descriptorPool, morphWeightsDescriptorSetLayout);
+        }
     }
 
     for (auto& material : materials) {
         material.createDescriptorSet(device.device(), descriptorPool, materialDescriptorSetLayout);
+    }
+
+    for (auto& [_, mesh] : meshes) {
+        for (auto& primitive : mesh.primitives) {
+            if (VkBuffer(primitive.morphDeltas.deviceBuffer)) {
+                primitive.morphDeltas.createDescriptorSet(device.device(), descriptorPool, morphDeltasDescriptorSetLayout);
+            }
+        }
     }
 }
 
@@ -139,6 +185,9 @@ void GltfModel::render(uint32_t instanceNumber, VkCommandBuffer commandBuffer, V
         const auto& skeleton = instance.skeletons.at(nodeId);
         auto descriptors = descriptorSets;
         descriptors.push_back(skeleton.descriptorSet);
+        if (const auto it = instance.morphWeights.find(nodeId); it != instance.morphWeights.end()) {
+            descriptors.push_back(it->second.descriptorSet);
+        }
         mesh.render(commandBuffer, pipelineLayout, descriptors, primitiveCount);
     }
 }

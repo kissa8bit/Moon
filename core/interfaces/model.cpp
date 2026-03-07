@@ -4,6 +4,32 @@
 
 namespace moon::interfaces {
 
+void MorphWeights::createDescriptorSet(VkDevice device, utils::vkDefault::DescriptorPool& descriptorPool, const utils::vkDefault::DescriptorSetLayout& descriptorSetLayout) {
+    descriptorSet = descriptorPool.allocateDescriptorSet(descriptorSetLayout);
+    utils::descriptorSet::Writes writes;
+    utils::descriptorSet::write(writes, descriptorSet, deviceBuffer.descriptorBufferInfo());
+    utils::descriptorSet::update(device, writes);
+}
+
+utils::vkDefault::DescriptorSetLayout MorphWeights::descriptorSetLayout(VkDevice device) {
+    std::vector<VkDescriptorSetLayoutBinding> binding;
+    binding.push_back(utils::vkDefault::bufferVertexLayoutBinding(static_cast<uint32_t>(binding.size()), 1));
+    return utils::vkDefault::DescriptorSetLayout(device, binding);
+}
+
+void MorphDeltas::createDescriptorSet(VkDevice device, utils::vkDefault::DescriptorPool& descriptorPool, const utils::vkDefault::DescriptorSetLayout& descriptorSetLayout) {
+    descriptorSet = descriptorPool.allocateDescriptorSet(descriptorSetLayout);
+    utils::descriptorSet::Writes writes;
+    WRITE_DESCRIPTOR_T(writes, descriptorSet, deviceBuffer.descriptorBufferInfo(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    utils::descriptorSet::update(device, writes);
+}
+
+utils::vkDefault::DescriptorSetLayout MorphDeltas::descriptorSetLayout(VkDevice device) {
+    std::vector<VkDescriptorSetLayoutBinding> binding;
+    binding.push_back(utils::vkDefault::storageBufferVertexLayoutBinding(static_cast<uint32_t>(binding.size()), 1));
+    return utils::vkDefault::DescriptorSetLayout(device, binding);
+}
+
 void Skeleton::createDescriptorSet(VkDevice device, utils::vkDefault::DescriptorPool& descriptorPool, const utils::vkDefault::DescriptorSetLayout& descriptorSetLayout) {
     if (!CHECK_M(VkBuffer(deviceBuffer) != VK_NULL_HANDLE, "[ Skeleton::createDescriptorSet ] deviceBuffer is VK_NULL_HANDLE")) return;
 
@@ -35,6 +61,7 @@ void Mesh::render(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout
 
         auto descriptors = descriptorSets;
         descriptors.push_back(material.descriptorSet);
+        if (primitive.morphDeltas.descriptorSet) descriptors.push_back(primitive.morphDeltas.descriptorSet);
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, descriptors.size(), descriptors.data(), 0, nullptr);
 
         const auto buffer = material.buffer(primitiveCount++);

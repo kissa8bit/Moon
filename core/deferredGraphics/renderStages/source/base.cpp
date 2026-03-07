@@ -72,8 +72,10 @@ void Graphics::Base::create(interfaces::ObjectType type, const workflows::Shader
     const std::vector<VkDescriptorSetLayout> descriptorSetLayouts = {
         descriptorSetLayout = utils::vkDefault::DescriptorSetLayout(device, bindings),
         objectDescriptorSetLayout = implementations::BaseObject::createDescriptorSetLayout(device),
-        skeletonDescriptorSetLayout = interfaces::Skeleton::descriptorSetLayout(device),
-        materialDescriptorSetLayout = interfaces::Material::descriptorSetLayout(device)
+        skeletonDescriptorSetLayout = interfaces::Skeleton::descriptorSetLayout(device),         // set=2
+        morphWeightsDescriptorSetLayout = interfaces::MorphWeights::descriptorSetLayout(device), // set=3
+        materialDescriptorSetLayout = interfaces::Material::descriptorSetLayout(device),         // set=4
+        morphDeltasDescriptorSetLayout = interfaces::MorphDeltas::descriptorSetLayout(device)    // set=5
     };
     pipelineDesc.pipelineLayout = utils::vkDefault::PipelineLayout(device, descriptorSetLayouts, pushConstantRange);
 

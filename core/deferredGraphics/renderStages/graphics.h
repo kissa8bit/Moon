@@ -58,7 +58,9 @@ private:
         utils::vkDefault::DescriptorSetLayout   descriptorSetLayout;
         utils::vkDefault::DescriptorSetLayout   objectDescriptorSetLayout;
         utils::vkDefault::DescriptorSetLayout   skeletonDescriptorSetLayout;
+        utils::vkDefault::DescriptorSetLayout   morphWeightsDescriptorSetLayout;
         utils::vkDefault::DescriptorSetLayout   materialDescriptorSetLayout;
+        utils::vkDefault::DescriptorSetLayout   morphDeltasDescriptorSetLayout;
         utils::vkDefault::DescriptorPool        descriptorPool;
         utils::vkDefault::DescriptorSets        descriptorSets;
 

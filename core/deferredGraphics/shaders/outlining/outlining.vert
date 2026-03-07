@@ -26,6 +26,19 @@ layout(set = 2, binding = 0) uniform UBONode {
     mat4 jointMatrix[MAX_NUM_JOINTS];
 } node;
 
+layout(set = 3, binding = 0) uniform MorphWeightsBuffer {
+    vec4 weights[64];
+    uint count;
+} morphWeights;
+
+layout(set = 5, binding = 0) readonly buffer MorphDeltasBuffer {
+    uint morphTargetCount;
+    uint vertexCount;
+    uint vertexStart;
+    uint pad;
+    vec4 data[];
+} morphDeltas;
+
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inNormal;
 layout(location = 2) in vec2 inUV0;
@@ -49,8 +62,24 @@ void main() {
 
     mat4x4 model = object.matrix * node.matrix * skinMat;
 
-    vec4 position = model * vec4(inPosition, 1.0);
-    vec3 normal = normalize(vec3(model * vec4(inNormal, 0.0)));
+    vec3 morphedPosition = inPosition;
+    vec3 morphedNormal = inNormal;
+    if (morphDeltas.morphTargetCount > 0) {
+        uint localIdx = gl_VertexIndex - morphDeltas.vertexStart;
+        for (uint i = 0; i < morphDeltas.morphTargetCount; i++) {
+            float w = morphWeights.weights[i / 4u][i % 4u];
+            if (w != 0.0) {
+                uint posIdx = i * morphDeltas.vertexCount + localIdx;
+                uint normIdx = morphDeltas.morphTargetCount * morphDeltas.vertexCount + i * morphDeltas.vertexCount + localIdx;
+                morphedPosition += w * morphDeltas.data[posIdx].xyz;
+                morphedNormal += w * morphDeltas.data[normIdx].xyz;
+            }
+        }
+        morphedNormal = normalize(morphedNormal);
+    }
+
+    vec4 position = model * vec4(morphedPosition, 1.0);
+    vec3 normal = normalize(vec3(model * vec4(morphedNormal, 0.0)));
     position.xyz += normal * object.outlining.width;
 
     gl_Position = global.proj * global.view * position;

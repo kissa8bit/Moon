@@ -8,12 +8,13 @@
 
 #include "node.h"
 #include "gltfskeleton.h"
+#include "gltfmorph.h"
 
 namespace moon::models {
 
 struct GltfAnimation : interfaces::Animation {
     struct Channel {
-        enum PathType { TRANSLATION, ROTATION, SCALE } path;
+        enum PathType { TRANSLATION, ROTATION, SCALE, WEIGHTS } path;
         int samplerIndex{ tinygltf::invalidIndex };
         Node* node{nullptr};
     };
@@ -36,10 +37,12 @@ struct GltfAnimation : interfaces::Animation {
         math::vec3 translation;
         math::vec3 scale;
         math::quat rotation;
+        std::vector<float> weights;
     };
 
     Nodes* nodeMap{ nullptr };
     GltfSkeletons* skeletons{ nullptr };
+    GltfMorphWeightsMap* morphWeights{ nullptr };
     Channels channels;
     Samplers samplers;
     float totalTime{0};
@@ -53,7 +56,7 @@ struct GltfAnimation : interfaces::Animation {
     bool update(float time) override;
     float duration() const override;
 
-    GltfAnimation(Nodes* nodeMap, GltfSkeletons* skeletons, const Channels& channels, const Samplers& samplers, float duration);
+    GltfAnimation(Nodes* nodeMap, GltfSkeletons* skeletons, GltfMorphWeightsMap* morphWeights, const Channels& channels, const Samplers& samplers, float duration);
 };
 
 using GltfAnimations = std::vector<GltfAnimation>;

@@ -21,6 +21,21 @@ layout (set = 2, binding = 0) uniform UBONode
     mat4 jointMatrix[MAX_NUM_JOINTS];
 } node;
 
+layout (set = 3, binding = 0) uniform MorphWeightsBuffer
+{
+    vec4 weights[64];
+    uint count;
+} morphWeights;
+
+layout (set = 5, binding = 0) readonly buffer MorphDeltasBuffer
+{
+    uint morphTargetCount;
+    uint vertexCount;
+    uint vertexStart;
+    uint pad;
+    vec4 data[];
+} morphDeltas;
+
 layout(location = 0)	in  vec3 inPosition;
 layout(location = 1)	in  vec3 inNormal;
 layout(location = 2)	in  vec2 inUV0;
@@ -39,5 +54,17 @@ void main()
         inWeight0.z * node.jointMatrix[int(inJoint0.z)] +
         inWeight0.w * node.jointMatrix[int(inJoint0.w)] : mat4(1.0f);
 
-    gl_Position = light.proj * light.view * model * skinMat* vec4(inPosition, 1.0);
+    vec3 morphedPosition = inPosition;
+    if (morphDeltas.morphTargetCount > 0) {
+        uint localIdx = gl_VertexIndex - morphDeltas.vertexStart;
+        for (uint i = 0; i < morphDeltas.morphTargetCount; i++) {
+            float w = morphWeights.weights[i / 4u][i % 4u];
+            if (w != 0.0) {
+                uint posIdx = i * morphDeltas.vertexCount + localIdx;
+                morphedPosition += w * morphDeltas.data[posIdx].xyz;
+            }
+        }
+    }
+
+    gl_Position = light.proj * light.view * model * skinMat * vec4(morphedPosition, 1.0);
 }

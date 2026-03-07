@@ -124,9 +124,12 @@ bool PlyModel::loadFromFile(const utils::PhysicalDevice& physicalDevice, VkComma
         utils::createDeviceBuffer(physicalDevice, device, commandBuffer, host.indices.size() * sizeof(decltype(host.indices)::value_type), host.indices.data(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, cache.indices, indices);
     }
 
-    skeleton.deviceBuffer = utils::vkDefault::Buffer(physicalDevice, device, sizeof(math::mat4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    utils::Memory::instance().nameMemory(skeleton.deviceBuffer, std::string(__FILE__) + " in line " + std::to_string(__LINE__) + ", plyModel::loadFromFile, uniformBuffer");
-    skeleton.deviceBuffer.copy(&skeleton.hostBuffer);
+    dummy.skeleton.deviceBuffer = utils::vkDefault::Buffer(physicalDevice, device, sizeof(math::mat4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    utils::Memory::instance().nameMemory(dummy.skeleton.deviceBuffer, std::string(__FILE__) + " in line " + std::to_string(__LINE__) + ", plyModel::loadFromFile, uniformBuffer");
+    dummy.skeleton.deviceBuffer.copy(&dummy.skeleton.hostBuffer);
+
+    dummy.morphWeights.deviceBuffer = utils::vkDefault::Buffer(physicalDevice, device, sizeof(interfaces::MorphWeights::Buffer), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    dummy.morphWeights.deviceBuffer.copy(&dummy.morphWeights.hostBuffer);
 
     return true;
 }
@@ -134,9 +137,11 @@ bool PlyModel::loadFromFile(const utils::PhysicalDevice& physicalDevice, VkComma
 void PlyModel::createDescriptors(VkDevice device) {
     skeletonDescriptorSetLayout = interfaces::Skeleton::descriptorSetLayout(device);
     materialDescriptorSetLayout = interfaces::Material::descriptorSetLayout(device);
-    descriptorPool = utils::vkDefault::DescriptorPool(device, { &materialDescriptorSetLayout, &skeletonDescriptorSetLayout }, 1);
+    morphWeightsDescriptorSetLayout = interfaces::MorphWeights::descriptorSetLayout(device);
+    descriptorPool = utils::vkDefault::DescriptorPool(device, { &materialDescriptorSetLayout, &skeletonDescriptorSetLayout, &morphWeightsDescriptorSetLayout }, 1);
 
-    skeleton.createDescriptorSet(device, descriptorPool, skeletonDescriptorSetLayout);
+    dummy.skeleton.createDescriptorSet(device, descriptorPool, skeletonDescriptorSetLayout);
+    dummy.morphWeights.createDescriptorSet(device, descriptorPool, morphWeightsDescriptorSetLayout);
     material().createDescriptorSet(device, descriptorPool, materialDescriptorSetLayout);
 }
 
@@ -162,13 +167,14 @@ void PlyModel::render(uint32_t, VkCommandBuffer commandBuffer, VkPipelineLayout 
         vkCmdBindIndexBuffer(commandBuffer, indices, 0, VK_INDEX_TYPE_UINT32);
     }
     auto descriptors = descriptorSets;
-    descriptors.push_back(skeleton.descriptorSet);
+    descriptors.push_back(dummy.skeleton.descriptorSet);
+    descriptors.push_back(dummy.morphWeights.descriptorSet);
     mesh.render(commandBuffer, pipelineLayout, descriptors, primitiveCount);
 }
 
 void PlyModel::renderBB(uint32_t, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets) const {
     auto descriptors = descriptorSets;
-    descriptors.push_back(skeleton.descriptorSet);
+    descriptors.push_back(dummy.skeleton.descriptorSet);
     mesh.renderBB(commandBuffer, pipelineLayout, descriptors);
 }
 

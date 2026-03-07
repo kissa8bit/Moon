@@ -3,11 +3,11 @@
 #include "../../../workflows/shaders/__methods__/defines.glsl"
 #include "../../../workflows/shaders/__methods__/colorFunctions.glsl"
 
-layout(set = 3, binding = 0) uniform sampler2D baseColorTexture;
-layout(set = 3, binding = 1) uniform sampler2D metallicRoughnessTexture;
-layout(set = 3, binding = 2) uniform sampler2D normalTexture;
-layout(set = 3, binding = 3) uniform sampler2D occlusionTexture;
-layout(set = 3, binding = 4) uniform sampler2D emissiveTexture;
+layout(set = 4, binding = 0) uniform sampler2D baseColorTexture;
+layout(set = 4, binding = 1) uniform sampler2D metallicRoughnessTexture;
+layout(set = 4, binding = 2) uniform sampler2D normalTexture;
+layout(set = 4, binding = 3) uniform sampler2D occlusionTexture;
+layout(set = 4, binding = 4) uniform sampler2D emissiveTexture;
 
 layout(location = 0) in vec4 color;
 

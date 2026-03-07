@@ -5,6 +5,8 @@
 
 #include <math/linearAlgebra.h>
 
+#include <interfaces/model.h>
+
 namespace moon::models {
 
 namespace {
@@ -19,6 +21,18 @@ struct LoadBuffer {
         if (const auto attributeIt = primitive.attributes.find(attribute); attributeIt != primitive.attributes.end()) {
             const auto& [_, attribute] = *attributeIt;
             accessor = &gltfModel.accessors.at(attribute);
+            const auto& view = gltfModel.bufferViews.at(accessor->bufferView);
+            const auto byteStride = accessor->ByteStride(view);
+            const auto size = tinygltf::GetComponentSizeInBytes(accessor->componentType);
+            buffer = (const type*)&gltfModel.buffers[view.buffer].data[accessor->byteOffset + view.byteOffset];
+            stride = byteStride ? byteStride / size : tinygltf::GetNumComponentsInType(TINYGLTF_TYPE);
+        }
+    }
+
+    LoadBuffer(const std::map<std::string, int>& attributeMap, const tinygltf::Model& gltfModel, const std::string& attribute, int TINYGLTF_TYPE) {
+        if (const auto attributeIt = attributeMap.find(attribute); attributeIt != attributeMap.end()) {
+            const auto& [_, accessorIndex] = *attributeIt;
+            accessor = &gltfModel.accessors.at(accessorIndex);
             const auto& view = gltfModel.bufferViews.at(accessor->bufferView);
             const auto byteStride = accessor->ByteStride(view);
             const auto size = tinygltf::GetComponentSizeInBytes(accessor->componentType);
@@ -86,6 +100,110 @@ void calculateTangent(uint32_t indexOffset, interfaces::Vertices& vertices, inte
     }
 }
 
+// Loads a dense vec3 array for a morph target attribute, handling sparse accessors.
+// If the accessor has bufferView == -1, base data is implicitly all zeros.
+// Sparse overrides are applied on top.
+std::vector<math::vec3> loadSparseMorphDeltaVec3(
+    const tinygltf::Model& gltfModel,
+    const std::map<std::string, int>& target,
+    const std::string& attr,
+    uint32_t vertexCount)
+{
+    std::vector<math::vec3> deltas(vertexCount, math::vec3(0.0f));
+
+    const auto it = target.find(attr);
+    if (it == target.end()) return deltas;
+
+    const auto& accessor = gltfModel.accessors.at(it->second);
+
+    if (accessor.bufferView >= 0) {
+        const auto& view = gltfModel.bufferViews.at(accessor.bufferView);
+        const auto* data = gltfModel.buffers[view.buffer].data.data() + view.byteOffset + accessor.byteOffset;
+        const int byteStride = accessor.ByteStride(view);
+        const int stride = byteStride ? byteStride / static_cast<int>(sizeof(float)) : 3;
+        for (uint32_t v = 0; v < vertexCount; v++) {
+            const float* ptr = reinterpret_cast<const float*>(data) + v * stride;
+            deltas[v] = math::vec3(ptr[0], ptr[1], ptr[2]);
+        }
+    }
+
+    if (accessor.sparse.isSparse) {
+        const auto& si = accessor.sparse.indices;
+        const auto& sv = accessor.sparse.values;
+        const auto& idxView = gltfModel.bufferViews.at(si.bufferView);
+        const auto& valView = gltfModel.bufferViews.at(sv.bufferView);
+        const auto* idxData = gltfModel.buffers[idxView.buffer].data.data() + idxView.byteOffset + si.byteOffset;
+        const auto* valData = reinterpret_cast<const float*>(gltfModel.buffers[valView.buffer].data.data() + valView.byteOffset + sv.byteOffset);
+        for (int s = 0; s < accessor.sparse.count; s++) {
+            uint32_t idx = 0;
+            if (si.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE)       idx = reinterpret_cast<const uint8_t*>(idxData)[s];
+            else if (si.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT)  idx = reinterpret_cast<const uint16_t*>(idxData)[s];
+            else                                                                   idx = reinterpret_cast<const uint32_t*>(idxData)[s];
+            deltas[idx] = math::vec3(valData[s * 3], valData[s * 3 + 1], valData[s * 3 + 2]);
+        }
+    }
+
+    return deltas;
+}
+
+// Returns per-primitive SSBO data: {morphTargetCount, vertexCount, vertexStart, pad, posDeltas[], normDeltas[]}
+std::vector<std::vector<uint8_t>> loadMorphDeltasForMesh(
+    const tinygltf::Model& gltfModel,
+    const tinygltf::Mesh& mesh,
+    uint32_t meshVertexStart)
+{
+    std::vector<std::vector<uint8_t>> result;
+    uint32_t primitiveVertexStart = meshVertexStart;
+
+    for (const tinygltf::Primitive& primitive : mesh.primitives) {
+        uint32_t vertexCount = 0;
+        if (const auto it = primitive.attributes.find("POSITION"); it != primitive.attributes.end()) {
+            vertexCount = static_cast<uint32_t>(gltfModel.accessors.at(it->second).count);
+        }
+
+        const uint32_t morphTargetCount = static_cast<uint32_t>(primitive.targets.size());
+
+        struct Header { uint32_t morphTargetCount, vertexCount, vertexStart, pad; };
+
+        if (morphTargetCount == 0 || vertexCount == 0) {
+            std::vector<uint8_t> buf(sizeof(Header), 0);
+            result.push_back(std::move(buf));
+            primitiveVertexStart += vertexCount;
+            continue;
+        }
+
+        const size_t deltaCount = morphTargetCount * vertexCount;
+        const size_t bufSize = sizeof(Header) + deltaCount * 2 * sizeof(math::vec4);
+        std::vector<uint8_t> buf(bufSize, 0);
+
+        Header& header = *reinterpret_cast<Header*>(buf.data());
+        header.morphTargetCount = morphTargetCount;
+        header.vertexCount = vertexCount;
+        header.vertexStart = primitiveVertexStart;
+        header.pad = 0;
+
+        math::vec4* posDeltas  = reinterpret_cast<math::vec4*>(buf.data() + sizeof(Header));
+        math::vec4* normDeltas = posDeltas + deltaCount;
+
+        for (uint32_t t = 0; t < morphTargetCount; t++) {
+            const auto& target = primitive.targets[t];
+
+            const auto pd = loadSparseMorphDeltaVec3(gltfModel, target, "POSITION", vertexCount);
+            for (uint32_t v = 0; v < vertexCount; v++) {
+                posDeltas[t * vertexCount + v] = math::vec4(pd[v], 0.0f);
+            }
+
+            const auto nd = loadSparseMorphDeltaVec3(gltfModel, target, "NORMAL", vertexCount);
+            for (uint32_t v = 0; v < vertexCount; v++) {
+                normDeltas[t * vertexCount + v] = math::vec4(nd[v], 0.0f);
+            }
+        }
+
+        result.push_back(std::move(buf));
+        primitiveVertexStart += vertexCount;
+    }
+
+    return result;
 }
 
 void loadVertices(const tinygltf::Model& gltfModel, const tinygltf::Mesh& mesh, interfaces::Indices& indices, interfaces::Vertices& vertices) {
@@ -137,5 +255,7 @@ void loadVertices(const tinygltf::Model& gltfModel, const tinygltf::Mesh& mesh, 
         calculateTangent(indexOffset, vertices, indices);
     }
 }
+
+} // anonymous namespace
 
 } // moon::models

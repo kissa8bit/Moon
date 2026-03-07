@@ -251,6 +251,16 @@ VkDescriptorSetLayoutBinding vkDefault::bufferComputeLayoutBinding(const uint32_
     return layoutBinding;
 }
 
+VkDescriptorSetLayoutBinding vkDefault::storageBufferVertexLayoutBinding(const uint32_t& binding, const uint32_t& count){
+    VkDescriptorSetLayoutBinding layoutBinding{};
+        layoutBinding.binding = binding;
+        layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        layoutBinding.descriptorCount = count;
+        layoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        layoutBinding.pImmutableSamplers = VK_NULL_HANDLE;
+    return layoutBinding;
+}
+
 #define VKDEFAULT_MAKE_DESCRIPTOR(Name, BaseDescriptor)                                 \
 	vkDefault::Name::Name(vkDefault::Name&& other) noexcept {                           \
         swap(other);                                                                    \
