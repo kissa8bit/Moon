@@ -142,18 +142,15 @@ struct Parameters {
     math::vec2u                 shadowsExtent{ 1024, 1024 };
     utils::Cursor*              cursor{ nullptr };
     interfaces::Camera*         cameraObject{ nullptr };
+    uint32_t                    layersCount{ 1 };
 
     struct {
-        utils::DirtyValue<uint32_t> blitAttachmentsCount{ 8 };
-        utils::DirtyValue<uint32_t> layersCount{ 3 };
-        utils::DirtyValue<float>    blitFactor{ 1.5f };
+        utils::DirtyValue<float>    bloomThreshold{ 1.0f };
         utils::DirtyValue<float>    blurDepth{ 0.0f };
     } workflowsParameters;
 
-    utils::DirtyValue<uint32_t>& blitAttachmentsCount() {return workflowsParameters.blitAttachmentsCount;}
-    utils::DirtyValue<uint32_t>& layersCount() { return workflowsParameters.layersCount; }
-    utils::DirtyValue<float>&    blitFactor() { return workflowsParameters.blitFactor; }
-    utils::DirtyValue<float>&    blurDepth() { return workflowsParameters.blurDepth; }
+    utils::DirtyValue<float>&   bloomThreshold() { return workflowsParameters.bloomThreshold; }
+    utils::DirtyValue<float>&   blurDepth() { return workflowsParameters.blurDepth; }
 };
 
 class DeferredGraphics: public graphicsManager::GraphicsInterface {
@@ -209,6 +206,7 @@ public:
     DeferredGraphics& requestUpdate(const workflows::WorkflowName& name);
 
     Parameters& parameters();
+    workflows::BloomParameters& bloomWorkflowParams();
     workflows::ScatteringParameters& scatteringWorkflowParams();
     workflows::SSAOParameters& ssaoWorkflowParams();
 

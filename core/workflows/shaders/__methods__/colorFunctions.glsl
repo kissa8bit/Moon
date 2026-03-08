@@ -1,8 +1,13 @@
 #ifndef COLOR_FUNCTIONS
 #define COLOR_FUNCTIONS
 
+bool checkBrightness(vec4 color, float threshold) {
+    float brightness = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
+    return brightness > threshold;
+}
+
 bool checkBrightness(vec4 color) {
-    return color.x > 0.95 && color.y > 0.95 && color.z > 0.95;
+    return checkBrightness(color, 1.0);
 }
 
 float decodeParameter(uint mask, uint shift, float code){

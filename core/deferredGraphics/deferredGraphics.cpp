@@ -128,17 +128,13 @@ void DeferredGraphics::createGraphicsPasses()
     layersCombinerParams.out.color = Names::LayersCombiner::color;
     layersCombinerParams.out.bloom = Names::LayersCombiner::bloom;
     layersCombinerParams.out.blur = Names::LayersCombiner::blur;
-    layersCombinerParams.layersCount = LayerIndex(params.layersCount().get());
+    layersCombinerParams.layersCount = LayerIndex(params.layersCount);
     layersCombinerParams.shadersPath = params.shadersPath;
     layersCombinerParams.imageInfo = imageInfo;
 
     bloomParams.in.bloom = Names::LayersCombiner::bloom;
     bloomParams.out.bloom = Names::Bloom::output;
     bloomParams.shadersPath = params.workflowsShadersPath;
-    bloomParams.blitAttachmentsCount = params.blitAttachmentsCount();
-    bloomParams.blitFactor = params.blitFactor();
-    bloomParams.xSamplerStep = params.blitFactor();
-    bloomParams.ySamplerStep = params.blitFactor();
     bloomParams.imageInfo = imageInfo;
 
     blurParams.in.color = Names::LayersCombiner::color;
@@ -171,7 +167,7 @@ void DeferredGraphics::createGraphicsPasses()
 
     workflows.clear();
 
-    for (LayerIndex i{ 0 }; i < LayerIndex(params.layersCount().get()); i++) {
+    for (LayerIndex i{ 0 }; i < LayerIndex(params.layersCount); i++) {
         const auto key = layerPrefix<workflows::WorkflowName>(i) + Names::MainGraphics::name;
         workflows[key] = std::make_unique<Graphics>(graphicsParams, i, &objects, &lights, &depthMaps);
     };
@@ -229,7 +225,7 @@ void DeferredGraphics::createStages()
     nodes.push_back(utils::PipelineNode(device->device(), std::move(preCombinedStages), &nodes.back()));
 
     std::vector<const utils::vkDefault::CommandBuffers*> deferredStagesCommandBuffers;
-    for (LayerIndex i{ 0 }; i < LayerIndex(params.layersCount().get()); i++) {
+    for (LayerIndex i{ 0 }; i < LayerIndex(params.layersCount); i++) {
         const auto key = layerPrefix<workflows::WorkflowName>(i) + Names::MainGraphics::name;
         deferredStagesCommandBuffers.push_back(*workflows[key]);
     };
@@ -252,17 +248,14 @@ utils::vkDefault::VkSemaphores DeferredGraphics::submit(const uint32_t frameInde
 }
 
 void DeferredGraphics::updateParameters() {
-    if (params.blitFactor().isDirty()) {
-        const auto blitFactor = params.blitFactor().consume();
-        bloomParams.blitFactor = blitFactor;
-        bloomParams.xSamplerStep = blitFactor;
-        bloomParams.ySamplerStep = blitFactor;
-        requestUpdate(Names::Bloom::name);
-    }
     if (params.blurDepth().isDirty()) {
         const auto blurDepth = params.blurDepth().consume();
         blurParams.blurDepth = blurDepth;
         requestUpdate(Names::Blur::name);
+    }
+    if (params.bloomThreshold().isDirty()) {
+        const auto bloomThreshold = params.bloomThreshold().consume();
+        layersCombinerParams.bloomThreshold = bloomThreshold;
         requestUpdate(Names::LayersCombiner::name);
     }
 }
@@ -428,7 +421,7 @@ DeferredGraphics& DeferredGraphics::requestUpdate(const workflows::WorkflowName&
     };
 
     if (name == Names::MainGraphics::name) {
-        for (LayerIndex i{ 0 }; i < LayerIndex(params.layersCount().get()); i++) {
+        for (LayerIndex i{ 0 }; i < LayerIndex(params.layersCount); i++) {
             const auto key = layerPrefix<workflows::WorkflowName>(i) + Names::MainGraphics::name;
             raiseUpdateFlags(key);
         };
@@ -461,6 +454,10 @@ bool DeferredGraphics::getEnable(const workflows::ParameterName& name){
 
 Parameters& DeferredGraphics::parameters() {
     return params;
+}
+
+workflows::BloomParameters& DeferredGraphics::bloomWorkflowParams() {
+    return bloomParams;
 }
 
 workflows::ScatteringParameters& DeferredGraphics::scatteringWorkflowParams() {

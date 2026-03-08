@@ -34,5 +34,5 @@ void main() {
     }
 
     outColor = calcPointLight(position, normal, color, eyePosition);
-    outBloom = emissive + (checkBrightness(outColor) ? outColor : vec4(0.0));
+    outBloom = emissive;
 }

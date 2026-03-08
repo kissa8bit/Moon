@@ -34,5 +34,5 @@ void main() {
     }
 
     outColor = calcLight(position, normal, color, eyePosition, shadowMap, lightTexture, SPOT_LIGHTING_TYPE_CIRCLE);
-    outBloom = emissive + (checkBrightness(outColor) ? outColor : vec4(0.0));
+    outBloom = emissive;
 }

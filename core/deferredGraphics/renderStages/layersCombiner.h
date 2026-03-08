@@ -38,6 +38,7 @@ struct LayersCombinerParameters : workflows::Parameters {
     }out;
 
     LayerIndex layersCount{ 1 };
+    float bloomThreshold{ 1.0f };
 };
 
 class LayersCombiner : public workflows::Workflow

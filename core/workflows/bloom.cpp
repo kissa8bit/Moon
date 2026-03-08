@@ -6,199 +6,126 @@
 namespace moon::workflows {
 
 struct BloomPushConst{
-    alignas (4) float deltax;
-    alignas (4) float deltay;
-    alignas (4) float blitFactor;
+    alignas(4) float srcWidth;
+    alignas(4) float srcHeight;
+    alignas(4) float filterRadius;
+    alignas(4) float strength;
 };
 
-BloomGraphics::BloomGraphics(BloomParameters& parameters) 
-    : parameters(parameters), filter(parameters), bloom(parameters)
+BloomGraphics::BloomGraphics(BloomParameters& parameters)
+    : parameters(parameters), downsample(parameters), upsample(parameters)
 {}
 
-void BloomGraphics::createRenderPass(){
-    utils::vkDefault::RenderPass::AttachmentDescriptions attachments = {
-        utils::Attachments::imageDescription(bufferAttachment.format(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
-    };
-
-    utils::vkDefault::SubpassInfos subpassInfos = utils::vkDefault::subpassInfos(attachments.size());
-
-    utils::vkDefault::RenderPass::SubpassDependencies dependencies;
-    dependencies.push_back(VkSubpassDependency{});
-        dependencies.back().srcSubpass = VK_SUBPASS_EXTERNAL;
-        dependencies.back().dstSubpass = 0;
-        dependencies.back().srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        dependencies.back().srcAccessMask = 0;
-        dependencies.back().dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependencies.back().dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-    renderPass = utils::vkDefault::RenderPass(device, attachments, subpassInfos, dependencies);
-}
-
-void BloomGraphics::createFramebuffers(){
-    framebuffers.resize(parameters.imageInfo.Count * (frames.size() + 1));
-    for(size_t i = 0; i < frames.size(); i++){
-        for (size_t j = 0; j < parameters.imageInfo.Count; j++){
-            VkFramebufferCreateInfo framebufferInfo{};
-                framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-                framebufferInfo.renderPass = renderPass;
-                framebufferInfo.attachmentCount = 1;
-                framebufferInfo.pAttachments = &frames[i].imageView(j);
-                framebufferInfo.width = parameters.imageInfo.Extent.width;
-                framebufferInfo.height = parameters.imageInfo.Extent.height;
-                framebufferInfo.layers = 1;
-            framebuffers[parameters.imageInfo.Count * i + j] = utils::vkDefault::Framebuffer(device, framebufferInfo);
-        }
-    }
-    for(size_t i = 0; i < parameters.imageInfo.Count; i++){
-        VkFramebufferCreateInfo framebufferInfo{};
-            framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-            framebufferInfo.renderPass = renderPass;
-            framebufferInfo.attachmentCount = 1;
-            framebufferInfo.pAttachments = &bufferAttachment.imageView(i);
-            framebufferInfo.width = parameters.imageInfo.Extent.width;
-            framebufferInfo.height = parameters.imageInfo.Extent.height;
-            framebufferInfo.layers = 1;
-        framebuffers[parameters.imageInfo.Count * frames.size() + i] = utils::vkDefault::Framebuffer(device, framebufferInfo);
-    }
-}
-
-void BloomGraphics::Filter::create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass) {
+void BloomGraphics::Downsample::create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass) {
     std::vector<VkDescriptorSetLayoutBinding> bindings;
-    bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
+    bindings.push_back(utils::vkDefault::imageComputeLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
+
+    VkDescriptorSetLayoutBinding storageBinding{};
+        storageBinding.binding = static_cast<uint32_t>(bindings.size());
+        storageBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+        storageBinding.descriptorCount = 1;
+        storageBinding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+        storageBinding.pImmutableSamplers = VK_NULL_HANDLE;
+    bindings.push_back(storageBinding);
+
     descriptorSetLayout = utils::vkDefault::DescriptorSetLayout(device, bindings);
 
-    const auto vertShader = utils::vkDefault::VertrxShaderModule(device, parameters.shadersPath / shadersNames.at(workflows::ShaderType::Vertex));
-    const auto fragShader = utils::vkDefault::FragmentShaderModule(device, parameters.shadersPath / shadersNames.at(workflows::ShaderType::Fragment));
-    const std::vector<VkPipelineShaderStageCreateInfo> shaderStages = { vertShader, fragShader };
-
-    VkViewport viewport = utils::vkDefault::viewport({0,0}, parameters.imageInfo.Extent);
-    VkRect2D scissor = utils::vkDefault::scissor({0,0}, parameters.imageInfo.Extent);
-    VkPipelineViewportStateCreateInfo viewportState = utils::vkDefault::viewportState(&viewport, &scissor);
-    VkPipelineVertexInputStateCreateInfo vertexInputInfo = utils::vkDefault::vertexInputState();
-    VkPipelineInputAssemblyStateCreateInfo inputAssembly = utils::vkDefault::inputAssembly();
-    VkPipelineRasterizationStateCreateInfo rasterizer = utils::vkDefault::rasterizationState();
-    VkPipelineMultisampleStateCreateInfo multisampling = utils::vkDefault::multisampleState();
-    VkPipelineDepthStencilStateCreateInfo depthStencil = utils::vkDefault::depthStencilDisable();
-
-    std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachment = {utils::vkDefault::colorBlendAttachmentState(VK_FALSE)};
-    VkPipelineColorBlendStateCreateInfo colorBlending = utils::vkDefault::colorBlendState(static_cast<uint32_t>(colorBlendAttachment.size()),colorBlendAttachment.data());
+    const auto compShader = utils::vkDefault::ComputeShaderModule(device, parameters.shadersPath / shadersNames.at(workflows::ShaderType::Compute));
 
     std::vector<VkPushConstantRange> pushConstantRange;
     pushConstantRange.push_back(VkPushConstantRange{});
-        pushConstantRange.back().stageFlags = VK_SHADER_STAGE_ALL;
+        pushConstantRange.back().stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
         pushConstantRange.back().offset = 0;
         pushConstantRange.back().size = sizeof(BloomPushConst);
+
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts = { descriptorSetLayout };
     pipelineLayout = utils::vkDefault::PipelineLayout(device, descriptorSetLayouts, pushConstantRange);
 
-    std::vector<VkGraphicsPipelineCreateInfo> pipelineInfo;
-    pipelineInfo.push_back(VkGraphicsPipelineCreateInfo{});
-        pipelineInfo.back().sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-        pipelineInfo.back().pNext = nullptr;
-        pipelineInfo.back().stageCount = static_cast<uint32_t>(shaderStages.size());
-        pipelineInfo.back().pStages = shaderStages.data();
-        pipelineInfo.back().pVertexInputState = &vertexInputInfo;
-        pipelineInfo.back().pInputAssemblyState = &inputAssembly;
-        pipelineInfo.back().pViewportState = &viewportState;
-        pipelineInfo.back().pRasterizationState = &rasterizer;
-        pipelineInfo.back().pMultisampleState = &multisampling;
-        pipelineInfo.back().pColorBlendState = &colorBlending;
-        pipelineInfo.back().layout = pipelineLayout;
-        pipelineInfo.back().renderPass = renderPass;
-        pipelineInfo.back().subpass = 0;
-        pipelineInfo.back().basePipelineHandle = VK_NULL_HANDLE;
-        pipelineInfo.back().pDepthStencilState = &depthStencil;
+    VkComputePipelineCreateInfo pipelineInfo{};
+        pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+        pipelineInfo.stage = compShader;
+        pipelineInfo.layout = pipelineLayout;
     pipeline = utils::vkDefault::Pipeline(device, pipelineInfo);
 
-    descriptorPool = utils::vkDefault::DescriptorPool(device, {&descriptorSetLayout }, parameters.imageInfo.Count);
-    descriptorSets = descriptorPool.allocateDescriptorSets(descriptorSetLayout, parameters.imageInfo.Count);
+    uint32_t setCount = (parameters.attachmentsCount - 1) * parameters.imageInfo.Count;
+    descriptorPool = utils::vkDefault::DescriptorPool(device, { &descriptorSetLayout }, setCount);
+    descriptorSets = descriptorPool.allocateDescriptorSets(descriptorSetLayout, setCount);
 }
 
-void BloomGraphics::Bloom::create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass) {
+void BloomGraphics::Upsample::create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass) {
     std::vector<VkDescriptorSetLayoutBinding> bindings;
-        bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), parameters.blitAttachmentsCount));
+    bindings.push_back(utils::vkDefault::imageComputeLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
+
+    VkDescriptorSetLayoutBinding storageBinding{};
+        storageBinding.binding = static_cast<uint32_t>(bindings.size());
+        storageBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+        storageBinding.descriptorCount = 1;
+        storageBinding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+        storageBinding.pImmutableSamplers = VK_NULL_HANDLE;
+    bindings.push_back(storageBinding);
+
     descriptorSetLayout = utils::vkDefault::DescriptorSetLayout(device, bindings);
 
-    uint32_t specializationData = parameters.blitAttachmentsCount;
-    VkSpecializationMapEntry specializationMapEntry{};
-    specializationMapEntry.constantID = 0;
-    specializationMapEntry.offset = 0;
-    specializationMapEntry.size = sizeof(uint32_t);
-    VkSpecializationInfo specializationInfo;
-    specializationInfo.mapEntryCount = 1;
-    specializationInfo.pMapEntries = &specializationMapEntry;
-    specializationInfo.dataSize = sizeof(specializationData);
-    specializationInfo.pData = &specializationData;
-
-    const auto vertShader = utils::vkDefault::VertrxShaderModule(device, parameters.shadersPath / shadersNames.at(workflows::ShaderType::Vertex));
-    const auto fragShader = utils::vkDefault::FragmentShaderModule(device, parameters.shadersPath / shadersNames.at(workflows::ShaderType::Fragment), specializationInfo);
-    const std::vector<VkPipelineShaderStageCreateInfo> shaderStages = { vertShader, fragShader };
-
-    VkViewport viewport = utils::vkDefault::viewport({0,0}, parameters.imageInfo.Extent);
-    VkRect2D scissor = utils::vkDefault::scissor({0,0}, parameters.imageInfo.Extent);
-    VkPipelineViewportStateCreateInfo viewportState = utils::vkDefault::viewportState(&viewport, &scissor);
-    VkPipelineVertexInputStateCreateInfo vertexInputInfo = utils::vkDefault::vertexInputState();
-    VkPipelineInputAssemblyStateCreateInfo inputAssembly = utils::vkDefault::inputAssembly();
-    VkPipelineRasterizationStateCreateInfo rasterizer = utils::vkDefault::rasterizationState();
-    VkPipelineMultisampleStateCreateInfo multisampling = utils::vkDefault::multisampleState();
-    VkPipelineDepthStencilStateCreateInfo depthStencil = utils::vkDefault::depthStencilDisable();
-
-    std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachment = {utils::vkDefault::colorBlendAttachmentState(VK_FALSE)};
-    VkPipelineColorBlendStateCreateInfo colorBlending = utils::vkDefault::colorBlendState(static_cast<uint32_t>(colorBlendAttachment.size()),colorBlendAttachment.data());
+    const auto compShader = utils::vkDefault::ComputeShaderModule(device, parameters.shadersPath / shadersNames.at(workflows::ShaderType::Compute));
 
     std::vector<VkPushConstantRange> pushConstantRange;
-        pushConstantRange.push_back(VkPushConstantRange{});
-        pushConstantRange.back().stageFlags = VK_SHADER_STAGE_ALL;
+    pushConstantRange.push_back(VkPushConstantRange{});
+        pushConstantRange.back().stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
         pushConstantRange.back().offset = 0;
         pushConstantRange.back().size = sizeof(BloomPushConst);
+
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts = { descriptorSetLayout };
     pipelineLayout = utils::vkDefault::PipelineLayout(device, descriptorSetLayouts, pushConstantRange);
 
-    std::vector<VkGraphicsPipelineCreateInfo> pipelineInfo;
-    pipelineInfo.push_back(VkGraphicsPipelineCreateInfo{});
-        pipelineInfo.back().sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-        pipelineInfo.back().pNext = nullptr;
-        pipelineInfo.back().stageCount = static_cast<uint32_t>(shaderStages.size());
-        pipelineInfo.back().pStages = shaderStages.data();
-        pipelineInfo.back().pVertexInputState = &vertexInputInfo;
-        pipelineInfo.back().pInputAssemblyState = &inputAssembly;
-        pipelineInfo.back().pViewportState = &viewportState;
-        pipelineInfo.back().pRasterizationState = &rasterizer;
-        pipelineInfo.back().pMultisampleState = &multisampling;
-        pipelineInfo.back().pColorBlendState = &colorBlending;
-        pipelineInfo.back().layout = pipelineLayout;
-        pipelineInfo.back().renderPass = renderPass;
-        pipelineInfo.back().subpass = 0;
-        pipelineInfo.back().basePipelineHandle = VK_NULL_HANDLE;
-        pipelineInfo.back().pDepthStencilState = &depthStencil;
+    VkComputePipelineCreateInfo pipelineInfo{};
+        pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+        pipelineInfo.stage = compShader;
+        pipelineInfo.layout = pipelineLayout;
     pipeline = utils::vkDefault::Pipeline(device, pipelineInfo);
 
-    descriptorPool = utils::vkDefault::DescriptorPool(device, { &descriptorSetLayout }, parameters.imageInfo.Count);
-    descriptorSets = descriptorPool.allocateDescriptorSets(descriptorSetLayout, parameters.imageInfo.Count);
+    uint32_t setCount = (parameters.attachmentsCount - 1) * parameters.imageInfo.Count;
+    descriptorPool = utils::vkDefault::DescriptorPool(device, { &descriptorSetLayout }, setCount);
+    descriptorSets = descriptorPool.allocateDescriptorSets(descriptorSetLayout, setCount);
 }
 
 void BloomGraphics::create(const utils::vkDefault::CommandPool& commandPool, utils::AttachmentsDatabase& aDatabase) {
     commandBuffers = commandPool.allocateCommandBuffers(parameters.imageInfo.Count);
     if(parameters.enable && !created){
-        frames.resize(parameters.blitAttachmentsCount);
-        const utils::vkDefault::ImageInfo u8Info = { parameters.imageInfo.Count, VK_FORMAT_R8G8B8A8_UNORM, parameters.imageInfo.Extent, parameters.imageInfo.Samples };
-        utils::createAttachments(physicalDevice, device, u8Info, parameters.blitAttachmentsCount, frames.data(), VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-        bufferAttachment = utils::Attachments(physicalDevice, device, u8Info, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+        frames.resize(parameters.attachmentsCount);
 
-        aDatabase.addAttachmentData(parameters.out.bloom, parameters.enable, &bufferAttachment);
+        VkSamplerCreateInfo bloomSampler = utils::vkDefault::sampler();
+        bloomSampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        bloomSampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        bloomSampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 
-        createRenderPass();
-        createFramebuffers();
-        const workflows::ShaderNames filterShaderNames = {
-            {workflows::ShaderType::Vertex, "customFilter/customFilterVert.spv"},
-            {workflows::ShaderType::Fragment, "customFilter/customFilterFrag.spv"}
+        uint32_t w = parameters.imageInfo.Extent.width;
+        uint32_t h = parameters.imageInfo.Extent.height;
+        for (uint32_t i = 0; i < parameters.attachmentsCount; i++) {
+            const utils::vkDefault::ImageInfo mipInfo = {
+                parameters.imageInfo.Count,
+                VK_FORMAT_R32G32B32A32_SFLOAT,
+                { std::max(w, 1u), std::max(h, 1u) },
+                parameters.imageInfo.Samples
+            };
+            frames[i] = utils::Attachments(physicalDevice, device, mipInfo,
+                VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+                {{0.0f, 0.0f, 0.0f, 0.0f}}, bloomSampler);
+            w /= 2;
+            h /= 2;
+        }
+
+        aDatabase.addAttachmentData(parameters.out.bloom, parameters.enable, &frames[0]);
+
+        const workflows::ShaderNames downsampleShaderNames = {
+            {workflows::ShaderType::Compute, "bloom/bloomDownsampleComp.spv"}
         };
-        filter.create(filterShaderNames, device, renderPass);
-        const workflows::ShaderNames bloomShaderNames = {
-            {workflows::ShaderType::Vertex, "bloom/bloomVert.spv"},
-            {workflows::ShaderType::Fragment, "bloom/bloomFrag.spv"}
+        downsample.create(downsampleShaderNames, device, VK_NULL_HANDLE);
+
+        const workflows::ShaderNames upsampleShaderNames = {
+            {workflows::ShaderType::Compute, "bloom/bloomUpsampleComp.spv"}
         };
-        bloom.create(bloomShaderNames, device, renderPass);
+        upsample.create(upsampleShaderNames, device, VK_NULL_HANDLE);
+
         created = true;
     }
 }
@@ -210,90 +137,121 @@ void BloomGraphics::updateDescriptors(const utils::BuffersDatabase&, const utils
     srcAttachment = aDatabase.get(parameters.in.bloom);
 
     for (uint32_t i = 0; i < parameters.imageInfo.Count; i++) {
-        const auto imageInfo = bufferAttachment.descriptorImageInfo(i);
+        for (uint32_t level = 0; level < parameters.attachmentsCount - 1; level++) {
+            uint32_t setIndex = level * parameters.imageInfo.Count + i;
 
-        utils::descriptorSet::Writes writes;
-        utils::descriptorSet::write(writes, filter.descriptorSets[i], imageInfo);
-        utils::descriptorSet::update(device, writes);
-    }
+            // Downsample: read frames[level], write frames[level+1]
+            {
+                auto srcInfo = frames[level].descriptorImageInfo(i);
+                srcInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+                VkDescriptorImageInfo dstInfo{};
+                    dstInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+                    dstInfo.imageView = frames[level + 1].imageView(i);
+                    dstInfo.sampler = VK_NULL_HANDLE;
 
-    for (size_t i = 0; i < parameters.imageInfo.Count; i++) {
-        std::vector<VkDescriptorImageInfo> imageInfos(parameters.blitAttachmentsCount);
-        for(uint32_t j = 0; j < imageInfos.size(); j++){
-            imageInfos[j] = frames[j].descriptorImageInfo(i);
+                utils::descriptorSet::Writes writes;
+                utils::descriptorSet::write(writes, downsample.descriptorSets[setIndex], srcInfo);
+                utils::descriptorSet::write(writes, downsample.descriptorSets[setIndex], dstInfo, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+                utils::descriptorSet::update(device, writes);
+            }
+
+            // Upsample: read frames[level+1], write frames[level]
+            {
+                auto srcInfo = frames[level + 1].descriptorImageInfo(i);
+                srcInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+                VkDescriptorImageInfo dstInfo{};
+                    dstInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+                    dstInfo.imageView = frames[level].imageView(i);
+                    dstInfo.sampler = VK_NULL_HANDLE;
+
+                utils::descriptorSet::Writes writes;
+                utils::descriptorSet::write(writes, upsample.descriptorSets[setIndex], srcInfo);
+                utils::descriptorSet::write(writes, upsample.descriptorSets[setIndex], dstInfo, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+                utils::descriptorSet::update(device, writes);
+            }
         }
-
-        utils::descriptorSet::Writes writes;
-        utils::descriptorSet::write(writes, bloom.descriptorSets[i], imageInfos);
-        utils::descriptorSet::update(device, writes);
     }
 }
 
 void BloomGraphics::updateCommandBuffer(uint32_t frameNumber){
     if(!parameters.enable || !created) return;
 
-    VkImageSubresourceRange ImageSubresourceRange{};
-        ImageSubresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        ImageSubresourceRange.baseMipLevel = 0;
-        ImageSubresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-        ImageSubresourceRange.baseArrayLayer = 0;
-        ImageSubresourceRange.layerCount = 1;
-    VkClearColorValue clearColorValue{};
-        clearColorValue.uint32[0] = 0;
-        clearColorValue.uint32[1] = 0;
-        clearColorValue.uint32[2] = 0;
-        clearColorValue.uint32[3] = 0;
+    const uint32_t mipCount = parameters.attachmentsCount;
 
-    std::vector<VkImage> blitImages(frames.size());
-    blitImages[0] = srcAttachment->image(frameNumber);
-    utils::texture::transitionLayout(commandBuffers[frameNumber], blitImages[0], parameters.inputImageLayout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_REMAINING_MIP_LEVELS, 0, 1);
+    // Copy src into frames[0]
+    utils::texture::transitionLayout(commandBuffers[frameNumber], srcAttachment->image(frameNumber),
+        parameters.inputImageLayout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_REMAINING_MIP_LEVELS, 0, 1);
+    utils::texture::transitionLayout(commandBuffers[frameNumber], frames[0].image(frameNumber),
+        VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_REMAINING_MIP_LEVELS, 0, 1);
 
-    for(size_t i = 1; i < frames.size(); i++){
-        blitImages[i] = frames[i - 1].image(frameNumber);
+    utils::texture::copy(commandBuffers[frameNumber], srcAttachment->image(frameNumber), frames[0].image(frameNumber),
+        { parameters.imageInfo.Extent.width, parameters.imageInfo.Extent.height, 1 }, 1);
+
+    utils::texture::transitionLayout(commandBuffers[frameNumber], srcAttachment->image(frameNumber),
+        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, parameters.inputImageLayout, VK_REMAINING_MIP_LEVELS, 0, 1);
+
+    // Transition frames[0] to GENERAL for compute, rest to GENERAL
+    utils::texture::transitionLayout(commandBuffers[frameNumber], frames[0].image(frameNumber),
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL, VK_REMAINING_MIP_LEVELS, 0, 1);
+    for (uint32_t i = 1; i < mipCount; i++) {
+        utils::texture::transitionLayout(commandBuffers[frameNumber], frames[i].image(frameNumber),
+            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, VK_REMAINING_MIP_LEVELS, 0, 1);
     }
 
-    VkImage blitBufferImage = bufferAttachment.image(frameNumber);
-    uint32_t width = parameters.imageInfo.Extent.width;
-    uint32_t height = parameters.imageInfo.Extent.height;
+    // Downsample pass: frames[0] -> frames[1] -> ... -> frames[N-1]
+    uint32_t w = parameters.imageInfo.Extent.width;
+    uint32_t h = parameters.imageInfo.Extent.height;
 
-    for(uint32_t k = 0; k < frames.size(); k++){
-        utils::texture::transitionLayout(commandBuffers[frameNumber], blitBufferImage, (k == 0 ? VK_IMAGE_LAYOUT_UNDEFINED : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_REMAINING_MIP_LEVELS, 0, 1);
-        vkCmdClearColorImage(commandBuffers[frameNumber], blitBufferImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clearColorValue, 1, &ImageSubresourceRange);
-        utils::texture::blitDown(commandBuffers[frameNumber], blitImages[k], 0, blitBufferImage, 0, width, height, 0, 1, parameters.blitFactor);
-        utils::texture::transitionLayout(commandBuffers[frameNumber], blitBufferImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_REMAINING_MIP_LEVELS, 0, 1);
+    vkCmdBindPipeline(commandBuffers[frameNumber], VK_PIPELINE_BIND_POINT_COMPUTE, downsample.pipeline);
+    for (uint32_t level = 0; level < mipCount - 1; level++) {
+        uint32_t setIndex = level * parameters.imageInfo.Count + frameNumber;
 
-        render(commandBuffers[frameNumber], frames[k], frameNumber, k * parameters.imageInfo.Count + frameNumber, &filter);
+        BloomPushConst pushConst{ static_cast<float>(w), static_cast<float>(h), parameters.filterRadius, parameters.strength };
+        vkCmdPushConstants(commandBuffers[frameNumber], downsample.pipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(BloomPushConst), &pushConst);
+        vkCmdBindDescriptorSets(commandBuffers[frameNumber], VK_PIPELINE_BIND_POINT_COMPUTE, downsample.pipelineLayout, 0, 1, &downsample.descriptorSets[setIndex], 0, nullptr);
+
+        uint32_t dstW = std::max(w / 2, 1u);
+        uint32_t dstH = std::max(h / 2, 1u);
+        vkCmdDispatch(commandBuffers[frameNumber], (dstW + 7) / 8, (dstH + 7) / 8, 1);
+
+        VkMemoryBarrier barrier{};
+            barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+            barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        vkCmdPipelineBarrier(commandBuffers[frameNumber],
+            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+            0, 1, &barrier, 0, nullptr, 0, nullptr);
+
+        w = dstW;
+        h = dstH;
     }
-    for(uint32_t k = 0; k < frames.size(); k++){
-        utils::texture::transitionLayout(commandBuffers[frameNumber],frames[k].image(frameNumber), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_REMAINING_MIP_LEVELS, 0, 1);
+
+    // Upsample pass: frames[N-1] -> frames[N-2] -> ... -> frames[0] (additive)
+    vkCmdBindPipeline(commandBuffers[frameNumber], VK_PIPELINE_BIND_POINT_COMPUTE, upsample.pipeline);
+    for (int32_t level = static_cast<int32_t>(mipCount) - 2; level >= 0; level--) {
+        uint32_t setIndex = static_cast<uint32_t>(level) * parameters.imageInfo.Count + frameNumber;
+
+        uint32_t dstW = std::max(parameters.imageInfo.Extent.width >> level, 1u);
+        uint32_t dstH = std::max(parameters.imageInfo.Extent.height >> level, 1u);
+
+        BloomPushConst pushConst{ 0.0f, 0.0f, parameters.filterRadius, parameters.strength };
+        vkCmdPushConstants(commandBuffers[frameNumber], upsample.pipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(BloomPushConst), &pushConst);
+        vkCmdBindDescriptorSets(commandBuffers[frameNumber], VK_PIPELINE_BIND_POINT_COMPUTE, upsample.pipelineLayout, 0, 1, &upsample.descriptorSets[setIndex], 0, nullptr);
+
+        vkCmdDispatch(commandBuffers[frameNumber], (dstW + 7) / 8, (dstH + 7) / 8, 1);
+
+        VkMemoryBarrier barrier{};
+            barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+            barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+        vkCmdPipelineBarrier(commandBuffers[frameNumber],
+            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+            0, 1, &barrier, 0, nullptr, 0, nullptr);
     }
-    render(commandBuffers[frameNumber], bufferAttachment, frameNumber, static_cast<uint32_t>(frames.size()) * parameters.imageInfo.Count + frameNumber, &bloom);
-    utils::texture::transitionLayout(commandBuffers[frameNumber], blitBufferImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_REMAINING_MIP_LEVELS, 0, 1);
-}
 
-void BloomGraphics::render(VkCommandBuffer commandBuffer, const utils::Attachments& image, uint32_t frameNumber, uint32_t framebufferIndex, Workbody* worker)
-{
-    std::vector<VkClearValue> clearValues = { image.clearValue() };
-
-    VkRenderPassBeginInfo renderPassInfo{};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = renderPass;
-        renderPassInfo.framebuffer = framebuffers[framebufferIndex];
-        renderPassInfo.renderArea.offset = {0,0};
-        renderPassInfo.renderArea.extent = parameters.imageInfo.Extent;
-        renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-        renderPassInfo.pClearValues = clearValues.data();
-
-    vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-        BloomPushConst pushConst{ parameters.xSamplerStep, parameters.ySamplerStep, parameters.blitFactor};
-        vkCmdPushConstants(commandBuffer, worker->pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(BloomPushConst), &pushConst);
-
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, worker->pipeline);
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, worker->pipelineLayout, 0, 1, &worker->descriptorSets[frameNumber], 0, nullptr);
-        vkCmdDraw(commandBuffer, 6, 1, 0, 0);
-
-    vkCmdEndRenderPass(commandBuffer);
+    // Transition frames[0] to SHADER_READ_ONLY for downstream consumers
+    utils::texture::transitionLayout(commandBuffers[frameNumber], frames[0].image(frameNumber),
+        VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_REMAINING_MIP_LEVELS, 0, 1);
 }
 
 } // moon::workflows

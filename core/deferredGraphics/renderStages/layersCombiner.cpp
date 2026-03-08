@@ -106,8 +106,14 @@ void LayersCombiner::Combiner::create(const workflows::ShaderNames& shadersNames
     std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachment(LayersCombinerAttachments::size(), utils::vkDefault::colorBlendAttachmentState(VK_FALSE));
     VkPipelineColorBlendStateCreateInfo colorBlending = utils::vkDefault::colorBlendState(static_cast<uint32_t>(colorBlendAttachment.size()),colorBlendAttachment.data());
 
+    std::vector<VkPushConstantRange> pushConstantRange;
+    pushConstantRange.push_back(VkPushConstantRange{});
+        pushConstantRange.back().stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        pushConstantRange.back().offset = 0;
+        pushConstantRange.back().size = sizeof(float);
+
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts = { descriptorSetLayout };
-    pipelineLayout = utils::vkDefault::PipelineLayout(device, descriptorSetLayouts);
+    pipelineLayout = utils::vkDefault::PipelineLayout(device, descriptorSetLayouts, pushConstantRange);
 
     std::vector<VkGraphicsPipelineCreateInfo> pipelineInfo;
     pipelineInfo.push_back(VkGraphicsPipelineCreateInfo{});
@@ -206,6 +212,7 @@ void LayersCombiner::updateCommandBuffer(uint32_t frameNumber){
 
         vkCmdBindPipeline(commandBuffers.at(frameNumber), VK_PIPELINE_BIND_POINT_GRAPHICS, combiner.pipeline);
         vkCmdBindDescriptorSets(commandBuffers.at(frameNumber), VK_PIPELINE_BIND_POINT_GRAPHICS, combiner.pipelineLayout, 0, 1, &combiner.descriptorSets.at(frameNumber), 0, nullptr);
+        vkCmdPushConstants(commandBuffers.at(frameNumber), combiner.pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(float), &parameters.bloomThreshold);
         vkCmdDraw(commandBuffers.at(frameNumber), 6, 1, 0, 0);
 
     vkCmdEndRenderPass(commandBuffers.at(frameNumber));

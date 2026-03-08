@@ -75,7 +75,7 @@ void testScene::create()
     deferredGraphicsParameters.shadersPath = ExternalPath / "core/deferredGraphics/spv";
     deferredGraphicsParameters.workflowsShadersPath = ExternalPath / "core/workflows/spv";
     deferredGraphicsParameters.extent = window.sizes();
-	deferredGraphicsParameters.layersCount() = 2;
+	deferredGraphicsParameters.layersCount = 2;
     graphics["base"] = std::make_shared<moon::deferredGraphics::DeferredGraphics>(deferredGraphicsParameters);
     app.setGraphics(graphics["base"].get());
     graphics["base"]->bind(cameras["base"]->camera());
@@ -170,11 +170,6 @@ void testScene::makeGui() {
     if (ImGui::TreeNodeEx("Base Graphics Settings", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen))
     {
         ImGui::BeginGroup();
-            ImGui::Text("props : "); ImGui::SameLine(); ImGui::Separator();
-            moon::tests::gui::graphicsProps(graphics["base"], mouse.cursor);
-        ImGui::EndGroup();
-
-        ImGui::BeginGroup();
             ImGui::Text("pose in window : "); ImGui::SameLine(); ImGui::Separator();
             moon::tests::gui::setPoseInWindow(graphics["base"]);
         ImGui::EndGroup();
@@ -196,6 +191,18 @@ void testScene::makeGui() {
     if (ImGui::TreeNodeEx("SSAO", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen))
     {
         moon::tests::gui::ssaoProps(graphics["base"]);
+        ImGui::TreePop();
+    }
+
+    if (ImGui::TreeNodeEx("Bloom", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        moon::tests::gui::bloomProps(graphics["base"]);
+        ImGui::TreePop();
+    }
+
+    if (ImGui::TreeNodeEx("Blur", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        moon::tests::gui::blurProps(graphics["base"]);
         ImGui::TreePop();
     }
 

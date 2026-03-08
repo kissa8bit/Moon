@@ -36,12 +36,12 @@ vec4 pbr(
     vec3 H              = normalize(Direction + LightDirection);
     vec4 BaseColor      = baseColorTexture;
 
-    float perceptualRoughness = decodeParameter(0x000000ff, 0, position.a) / 255.0f;
+    float perceptualRoughness = max(decodeParameter(0x000000ff, 0, position.a) / 255.0f, MIN_ROUGHNESS);
     float metallic = decodeParameter(0x0000ff00, 8, position.a) / 255.0f;
     float ao = decodeParameter(0x00ff0000, 16, position.a) / 255.0f;
 
     float alphaRoughness = perceptualRoughness * perceptualRoughness;
-    vec3 f0 = vec3(0.04f);
+    vec3 f0 = vec3(MIN_ROUGHNESS);
     vec3 specularColor = mix(f0, BaseColor.rgb, metallic);
 
 	float reflectance = max(max(specularColor.r, specularColor.g), specularColor.b);
@@ -54,7 +54,9 @@ vec4 pbr(
     float D = microfacetDistribution(clamp(dot(Normal, H), 0.0f, 1.0f), alphaRoughness);
 
     vec3 diffuseContrib = (1.0f - F) * diffuse(BaseColor, metallic);
-    vec3 specContrib = F * G * D / (4.0f * clamp(dot(Normal, LightDirection), 0.001f, 1.0f) * clamp(abs(dot(Normal, Direction)), 0.001f, 1.0f));
+    float NdotL = clamp(dot(Normal, LightDirection), 0.001f, 1.0f);
+    float NdotV = clamp(abs(dot(Normal, Direction)), 0.001f, 1.0f);
+    vec3 specContrib = min(F * G * D / (4.0f * NdotL * NdotV), vec3(1.0f));
 
     vec4 outColor = vec4(ao * clamp(dot(Normal, LightDirection), 0.0f, 1.0f) * lightColor.xyz * (diffuseContrib + specContrib), BaseColor.a);
 

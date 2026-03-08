@@ -148,8 +148,7 @@ void RayTracingGraphics::setEnableBloom(bool enable){
 }
 
 void RayTracingGraphics::setBlitFactor(const float& blitFactor){
-    bloomParams.blitFactor = blitFactor;
-    bloomGraph->raiseUpdateFlags();
+    (void)blitFactor;
 }
 
 void RayTracingGraphics::setExtent(VkExtent2D extent){

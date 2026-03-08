@@ -2,6 +2,7 @@
 
 #include "../../../workflows/shaders/__methods__/defines.glsl"
 #include "../../../workflows/shaders/__methods__/geometricFunctions.glsl"
+#include "../../../workflows/shaders/__methods__/colorFunctions.glsl"
 
 layout(constant_id = 0) const int layersCount = 1;
 
@@ -20,6 +21,10 @@ layout(set = 0, binding = 7) uniform sampler2D skyboxBloomMap;
 layout(set = 0, binding = 8) uniform sampler2D scatteringMap;
 layout(set = 0, binding = 9) uniform sampler2D sslrMap;
 layout(set = 0, binding = 10) uniform sampler2D ssaoMap;
+
+layout(push_constant) uniform PC {
+    float bloomThreshold;
+} pc;
 
 layout(location = 0) in vec2 fragTexCoord;
 
@@ -56,8 +61,11 @@ void main() {
         outColor += texture(skyboxMap, fragTexCoord);
         outBloom += texture(skyboxBloomMap, fragTexCoord);
     }
+    outColor += vec4(texture(sslrMap, fragTexCoord.xy).xyz, 0.0);
+    if(checkBrightness(outColor, pc.bloomThreshold)){
+        outBloom += outColor;
+    }
 
     outColor += vec4(texture(scatteringMap, fragTexCoord.xy).xyz, 0.0);
-    outColor += vec4(texture(sslrMap, fragTexCoord.xy).xyz, 0.0);
     outBlur = outColor;
 }

@@ -22,6 +22,8 @@ void main() {
     const vec4 baseColorTexture = subpassLoad(inBaseColorTexture);
     const float ao = pc.minAmbientFactor * decodeParameter(0x00ff0000, 16, position.a) / 255.0f;
 
+    const vec4 emissive = subpassLoad(inEmissiveTexture);
+
     outColor = vec4(ao * baseColorTexture.rgb, baseColorTexture.a);
-    outBloom = vec4(0.0, 0.0, 0.0, 0.0);
+    outBloom = emissive;
 }

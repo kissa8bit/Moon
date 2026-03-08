@@ -227,13 +227,28 @@ inline void scatteringProps(std::shared_ptr<moon::deferredGraphics::DeferredGrap
 	}
 }
 
-inline bool graphicsProps(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> graphics, std::shared_ptr<utils::Cursor> cursor = nullptr) {
-    if(!graphics) return false;
-
+inline void bloomProps(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> graphics, float width = 150.0f) {
+    if (!graphics) return;
+    auto& bloomParams = graphics->bloomWorkflowParams();
     ImGui::SetNextItemWidth(150.0f);
-    if (float val = graphics->parameters().blitFactor(); ImGui::SliderFloat("bloom factor", &val, 1.0f, 3.0f)) {
-        graphics->parameters().blitFactor() = val;
+    if (ImGui::SliderFloat("bloom strength", &bloomParams.strength, 0.0f, 2.0f)) {
+        graphics->requestUpdate(moon::deferredGraphics::Names::Bloom::name);
     }
+    ImGui::SetNextItemWidth(150.0f);
+    if (ImGui::SliderFloat("bloom radius", &bloomParams.filterRadius, 0.1f, 5.0f)) {
+        graphics->requestUpdate(moon::deferredGraphics::Names::Bloom::name);
+    }
+    auto& params = graphics->parameters();
+    static float farBlurDepth = graphics->parameters().bloomThreshold();
+    ImGui::SetNextItemWidth(150.0f);
+    if (ImGui::SliderFloat("bloom threshold", &farBlurDepth, 0.0f, 5.0f)) {
+        params.bloomThreshold() = farBlurDepth;
+    }
+}
+
+
+inline void blurProps(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> graphics, float width = 150.0f) {
+    if(!graphics) return;
 
     static bool manualBlurDepth = false;
     static float farBlurDepth = 1.0f;
@@ -251,8 +266,6 @@ inline bool graphicsProps(std::shared_ptr<moon::deferredGraphics::DeferredGraphi
             graphics->parameters().blurDepth() = depthTransform(farBlurDepth);
         }
     }
-
-    return true;
 }
 
 }

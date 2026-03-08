@@ -12,10 +12,9 @@ struct BloomParameters : workflows::Parameters {
     struct{
         utils::AttachmentName bloom;
     }out;
-    uint32_t blitAttachmentsCount{ 0 };
-    float blitFactor{ 1.5f };
-    float xSamplerStep{ 1.5f };
-    float ySamplerStep{ 1.5f };
+    uint32_t attachmentsCount{ 8 };
+    float filterRadius{ 1.0f };
+    float strength{ 0.8f };
     VkImageLayout inputImageLayout{ VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
 };
 
@@ -25,27 +24,22 @@ private:
     BloomParameters& parameters;
 
     std::vector<utils::Attachments> frames;
-    utils::Attachments bufferAttachment;
     const utils::Attachments* srcAttachment{nullptr};
 
-    struct Filter : public Workbody{
+    struct Downsample : public Workbody{
         const BloomParameters& parameters;
-        Filter() = default;
-        Filter(const BloomParameters& parameters) : parameters(parameters) {};
+        Downsample() = default;
+        Downsample(const BloomParameters& parameters) : parameters(parameters) {};
         void create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass) override;
-    }filter;
+    }downsample;
 
-    struct Bloom : public Workbody{
+    struct Upsample : public Workbody{
         const BloomParameters& parameters;
-        Bloom() = default;
-        Bloom(const BloomParameters& parameters) : parameters(parameters) {};
+        Upsample() = default;
+        Upsample(const BloomParameters& parameters) : parameters(parameters) {};
         void create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass) override;
-    }bloom;
+    }upsample;
 
-    void render(VkCommandBuffer commandBuffer, const utils::Attachments& image, uint32_t frameNumber, uint32_t framebufferIndex, Workbody* worker);
-
-    void createRenderPass();
-    void createFramebuffers();
     void updateCommandBuffer(uint32_t frameNumber) override;
 
 public:
