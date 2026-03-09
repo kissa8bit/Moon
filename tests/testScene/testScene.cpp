@@ -85,7 +85,7 @@ void testScene::create()
         setEnable(moon::deferredGraphics::Names::Blur::param, true).
         setEnable(moon::deferredGraphics::Names::Bloom::param, true).
         setEnable(moon::deferredGraphics::Names::SSAO::param, true).
-        setEnable(moon::deferredGraphics::Names::SSLR::param, false).
+        setEnable(moon::deferredGraphics::Names::SSLR::param, true).
         setEnable(moon::deferredGraphics::Names::Scattering::param, true).
         setEnable(moon::deferredGraphics::Names::Shadow::param, true).
         setEnable(moon::deferredGraphics::Names::Selector::param, true);
@@ -123,12 +123,6 @@ void testScene::create()
     createModels();
     createObjects();
     createLight();
-
-    groups["lightBox"]->translate({0.0f,0.0f,25.0f});
-    groups["ufo0"]->translate({5.0f,0.0f,5.0f});
-    groups["ufo1"]->translate({-5.0f,0.0f,5.0f});
-    groups["ufo2"]->translate({10.0f,0.0f,5.0f});
-    groups["ufo3"]->translate({-10.0f,0.0f,5.0f});
 }
 
 void testScene::requestUpdate() {
@@ -142,6 +136,7 @@ void testScene::requestUpdate() {
 #endif
 }
 
+#ifdef IMGUI_GRAPHICS
 void testScene::makeGui() {
     if (ImGui::TreeNodeEx("General", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen)) {
         if (ImGui::Button("Update")) {
@@ -363,6 +358,7 @@ void testScene::makeGui() {
         }
     }
 }
+#endif
 
 void testScene::updateFrame(uint32_t frameNumber, float inFrameTime)
 {
@@ -394,11 +390,11 @@ void testScene::updateFrame(uint32_t frameNumber, float inFrameTime)
     static float globalTime = 0.0f;
     globalTime += animationTime;
 
-    skyboxObjects["stars"]->rotate(0.1f * animationTime, normalized(moon::math::vec3(1.0f, 1.0f, 1.0f)));
+    skyboxObjects["stars"]->rotate(0.01f * animationTime, normalized(moon::math::vec3(1.0f, 1.0f, 1.0f)));
     objects["helmet"]->rotate(0.5f * animationTime, normalized(moon::math::vec3(0.0f, 0.0f, 1.0f)));
     objects["helmet"]->translation() = moon::math::quat(0.0f, {27.0f, -10.0f, 14.0f + 0.2f * std::sin(globalTime)});
     objects["helmet"]->update();
-
+    
     std::for_each(std::execution::par_unseq, objects.begin(), objects.end(), [frameNumber, animationTime](auto& object) {
         auto pBaseObject = dynamic_cast<moon::entities::BaseObject*>(object.second.get());
         if(!pBaseObject) return;
@@ -566,16 +562,16 @@ void testScene::createObjects()
         groups[key]->add(objects[key].get());
     }
 
-    skyboxObjects["lake"] = std::make_shared<moon::entities::SkyboxObject>(
-        moon::utils::vkDefault::Paths{
-            ExternalPath / "dependences/texture/skybox/left.jpg",
-            ExternalPath / "dependences/texture/skybox/right.jpg",
-            ExternalPath / "dependences/texture/skybox/front.jpg",
-            ExternalPath / "dependences/texture/skybox/back.jpg",
-            ExternalPath / "dependences/texture/skybox/top.jpg",
-            ExternalPath / "dependences/texture/skybox/bottom.jpg"
-    });
-    skyboxObjects["lake"]->scale({200.0f,200.0f,200.0f});
+    // skyboxObjects["lake"] = std::make_shared<moon::entities::SkyboxObject>(
+    //     moon::utils::vkDefault::Paths{
+    //         ExternalPath / "dependences/texture/skybox/left.jpg",
+    //         ExternalPath / "dependences/texture/skybox/right.jpg",
+    //         ExternalPath / "dependences/texture/skybox/front.jpg",
+    //         ExternalPath / "dependences/texture/skybox/back.jpg",
+    //         ExternalPath / "dependences/texture/skybox/top.jpg",
+    //         ExternalPath / "dependences/texture/skybox/bottom.jpg"
+    // });
+    // skyboxObjects["lake"]->scale({200.0f,200.0f,200.0f});
 
     skyboxObjects["stars"] = std::make_shared<moon::entities::SkyboxObject>(
         moon::utils::vkDefault::Paths{
@@ -587,6 +583,12 @@ void testScene::createObjects()
             ExternalPath / "dependences/texture/skybox1/bottom.png"
     });
     skyboxObjects["stars"]->scale({200.0f,200.0f,200.0f});
+
+    groups["lightBox"]->translate({ 0.0f,0.0f,25.0f });
+    groups["ufo0"]->translate({ 5.0f,0.0f,5.0f });
+    groups["ufo1"]->translate({ -5.0f,0.0f,5.0f });
+    groups["ufo2"]->translate({ 10.0f,0.0f,5.0f });
+    groups["ufo3"]->translate({ -10.0f,0.0f,5.0f });
 
     for(auto& [_,graph]: graphics){
         for(auto& [_,object]: objects){

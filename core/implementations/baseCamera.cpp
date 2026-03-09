@@ -7,6 +7,7 @@ BaseCamera::BaseCamera()
 {}
 
 void BaseCamera::update(uint32_t frameNumber, VkCommandBuffer commandBuffer) {
+    hostBuffer.invViewProj = math::inverse(hostBuffer.view * hostBuffer.proj);
     uniformBuffer.update(frameNumber, commandBuffer);
 }
 
@@ -31,6 +32,10 @@ const BaseCamera::Buffer& BaseCamera::buffer() const {
 
 void BaseCamera::setTransformation(const math::mat4& transformation) {
 	buffer(true).view = transpose(inverse(transformation));
+}
+
+void BaseCamera::setViewport(float width, float height) {
+	buffer(true).viewport = math::vec2{width, height};
 }
 
 }

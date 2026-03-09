@@ -7,11 +7,17 @@
 
 layout(location = 0) in vec4 eyePosition;
 
-layout(input_attachment_index = 0, binding = 0) uniform subpassInput inPositionTexture;
-layout(input_attachment_index = 1, binding = 1) uniform subpassInput inNormalTexture;
-layout(input_attachment_index = 2, binding = 2) uniform subpassInput inBaseColorTexture;
-layout(input_attachment_index = 3, binding = 3) uniform subpassInput inEmissiveColorTexture;
-layout(input_attachment_index = 4, binding = 4) uniform subpassInput inDepthTexture;
+layout(input_attachment_index = 0, binding = 0) uniform subpassInput inNormalTexture;
+layout(input_attachment_index = 1, binding = 1) uniform subpassInput inBaseColorTexture;
+layout(input_attachment_index = 2, binding = 2) uniform subpassInput inEmissiveColorTexture;
+layout(input_attachment_index = 3, binding = 3) uniform subpassInput inDepthTexture;
+
+layout(set = 0, binding = 4) uniform GlobalUniformBuffer {
+    mat4 view;
+    mat4 proj;
+    mat4 invViewProj;
+    vec2 viewport;
+} global;
 
 layout(set = 1, binding = 0) uniform sampler2D shadowMap;
 layout(set = 2, binding = 1) uniform sampler2D lightTexture;
@@ -20,19 +26,22 @@ layout(location = 0) out vec4 outColor;
 layout(location = 1) out vec4 outBloom;
 
 void main() {
-    vec4 position = subpassLoad(inPositionTexture);
     vec4 normal = subpassLoad(inNormalTexture);
     vec4 color = subpassLoad(inBaseColorTexture);
     vec4 emissive = subpassLoad(inEmissiveColorTexture);
-    vec4 depth = subpassLoad(inDepthTexture);
-    
-    bool outlining = uint((0xff000000 & floatBitsToUint(position.a)) >> 24) == 1;
+    float depth = subpassLoad(inDepthTexture).x;
+
+    bool outlining = uint((0xff000000 & floatBitsToUint(normal.b)) >> 24) == 1;
     if(outlining) {
         outColor = color;
         outBloom = emissive;
         return;
     }
 
-    outColor = calcLight(position, normal, color, eyePosition, shadowMap, lightTexture, SPOT_LIGHTING_TYPE_SQUARE);
+    vec2 screenUV = gl_FragCoord.xy / global.viewport;
+    vec3 worldPos = reconstructPosition(global.invViewProj, screenUV, depth);
+    vec3 decodedNormal = decodeSphericalNormal(normal.xy);
+
+    outColor = calcLight(worldPos, decodedNormal, normal.b, color, eyePosition, shadowMap, lightTexture, SPOT_LIGHTING_TYPE_SQUARE);
     outBloom = emissive;
 }

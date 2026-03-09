@@ -47,7 +47,6 @@ struct Names {
         static inline const utils::AttachmentName bloom{ prefix + "bloom" };
         struct GBuffer {
             static inline const utils::AttachmentName prefix{ MainGraphics::prefix + "GBuffer." };
-            static inline const utils::AttachmentName position{ prefix + "position" };
             static inline const utils::AttachmentName normal{ prefix + "normal" };
             static inline const utils::AttachmentName color{ prefix + "color" };
             static inline const utils::AttachmentName emission{ prefix + "emission" };

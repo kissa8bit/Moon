@@ -64,7 +64,9 @@ private:
     void createLight();
     void createObjects();
     void requestUpdate();
+#ifdef IMGUI_GRAPHICS
     void makeGui();
+#endif
 
 public:
     testScene(moon::graphicsManager::GraphicsManager& app, moon::tests::GlfwWindow& window, const std::filesystem::path& ExternalPath);

@@ -8,7 +8,6 @@ namespace moon::workflows {
 struct SSAOParameters : workflows::Parameters{
     struct{
         utils::BufferName camera;
-        utils::AttachmentName position;
         utils::AttachmentName normal;
         utils::AttachmentName color;
         utils::AttachmentName depth;

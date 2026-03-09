@@ -73,7 +73,6 @@ void DeferredGraphics::createGraphicsPasses()
     graphicsParams.in.nullDepthMapKey = Names::nullDepthMapKey;
     graphicsParams.out.image = Names::MainGraphics::image;
     graphicsParams.out.bloom = Names::MainGraphics::bloom;
-    graphicsParams.out.position = Names::MainGraphics::GBuffer::position;
     graphicsParams.out.normal = Names::MainGraphics::GBuffer::normal;
     graphicsParams.out.color = Names::MainGraphics::GBuffer::color;
     graphicsParams.out.emission = Names::MainGraphics::GBuffer::emission;
@@ -96,15 +95,14 @@ void DeferredGraphics::createGraphicsPasses()
     scatteringParams.imageInfo = imageInfo;
 
     SSLRParams.in.camera = Names::camera;
-    SSLRParams.in.position = l0 + Names::MainGraphics::GBuffer::position;
     SSLRParams.in.normal = l0 + Names::MainGraphics::GBuffer::normal;
+    SSLRParams.in.depth = l0 + Names::MainGraphics::GBuffer::depth;
     SSLRParams.in.color = l0 + Names::MainGraphics::image;
     SSLRParams.out.sslr = Names::SSLR::output;
     SSLRParams.shadersPath = params.workflowsShadersPath;
     SSLRParams.imageInfo = imageInfo;
 
     SSAOParams.in.camera = Names::camera;
-    SSAOParams.in.position = l0 + Names::MainGraphics::GBuffer::position;
     SSAOParams.in.normal = l0 + Names::MainGraphics::GBuffer::normal;
     SSAOParams.in.color = l0 + Names::MainGraphics::GBuffer::color;
     SSAOParams.in.depth = l0 + Names::MainGraphics::GBuffer::depth;
@@ -116,7 +114,6 @@ void DeferredGraphics::createGraphicsPasses()
     layersCombinerParams.in.camera = Names::camera;
     layersCombinerParams.in.color = Names::MainGraphics::image;
     layersCombinerParams.in.bloom = Names::MainGraphics::bloom;
-    layersCombinerParams.in.position = Names::MainGraphics::GBuffer::position;
     layersCombinerParams.in.normal = Names::MainGraphics::GBuffer::normal;
     layersCombinerParams.in.depth = Names::MainGraphics::GBuffer::depth;
     layersCombinerParams.in.skyboxColor = Names::Skybox::color;
@@ -266,6 +263,7 @@ void DeferredGraphics::update(uint32_t imageIndex) {
     CHECK(copyCommandBuffers[imageIndex].reset());
     CHECK(copyCommandBuffers[imageIndex].begin());
     if (params.cameraObject) {
+        params.cameraObject->setViewport(float(params.extent[0]), float(params.extent[1]));
         params.cameraObject->update(imageIndex, copyCommandBuffers[imageIndex]);
     }
     for (auto& object : objects) {

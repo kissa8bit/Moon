@@ -70,7 +70,6 @@ void LayersCombiner::Combiner::create(const workflows::ShaderNames& shadersNames
         bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), layersCount));
         bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), layersCount));
         bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), layersCount));
-        bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), layersCount));
         bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
         bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
         bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
@@ -162,7 +161,6 @@ void LayersCombiner::updateDescriptors(
     {
         std::vector<VkDescriptorImageInfo> colorLayersImageInfos(parameters.layersCount.get());
         std::vector<VkDescriptorImageInfo> bloomLayersImageInfos(parameters.layersCount.get());
-        std::vector<VkDescriptorImageInfo> positionLayersImageInfos(parameters.layersCount.get());
         std::vector<VkDescriptorImageInfo> normalLayersImageInfos(parameters.layersCount.get());
         std::vector<VkDescriptorImageInfo> depthLayersImageInfos(parameters.layersCount.get());
 
@@ -171,7 +169,6 @@ void LayersCombiner::updateDescriptors(
 
             colorLayersImageInfos.at(index.get()) = aDatabase.descriptorImageInfo(pref + parameters.in.color, i);
             bloomLayersImageInfos.at(index.get()) = aDatabase.descriptorImageInfo(pref + parameters.in.bloom, i);
-            positionLayersImageInfos.at(index.get()) = aDatabase.descriptorImageInfo(pref + parameters.in.position, i);
             normalLayersImageInfos.at(index.get()) = aDatabase.descriptorImageInfo(pref + parameters.in.normal, i);
             depthLayersImageInfos.at(index.get()) = aDatabase.descriptorImageInfo(pref + parameters.in.depth, i, parameters.in.defaultDepthTexture);
         }
@@ -182,7 +179,6 @@ void LayersCombiner::updateDescriptors(
         WRITE_DESCRIPTOR(writes, descriptorSet, bDatabase.descriptorBufferInfo(parameters.in.camera, i));
         utils::descriptorSet::write(writes, descriptorSet, colorLayersImageInfos);
         utils::descriptorSet::write(writes, descriptorSet, bloomLayersImageInfos);
-        utils::descriptorSet::write(writes, descriptorSet, positionLayersImageInfos);
         utils::descriptorSet::write(writes, descriptorSet, normalLayersImageInfos);
         utils::descriptorSet::write(writes, descriptorSet, depthLayersImageInfos);
         WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.skyboxColor, i));

@@ -17,6 +17,8 @@ public:
     struct Buffer {
         alignas(16) math::mat4 view{ 1.0f };
         alignas(16) math::mat4 proj{ 1.0f };
+        alignas(16) math::mat4 invViewProj{ 1.0f };
+        alignas(8)  math::vec2 viewport{ 0.0f };
     };
 
     BaseCamera();
@@ -24,6 +26,7 @@ public:
     const Buffer& buffer() const;
 
     void setTransformation(const math::mat4& transformation) override;
+    void setViewport(float width, float height) override;
 
 private:
     Buffer hostBuffer;

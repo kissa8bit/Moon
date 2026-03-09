@@ -6,12 +6,13 @@
 layout(set = 0, binding = 0) uniform GlobalUniformBuffer {
     mat4 view;
     mat4 proj;
+    mat4 invViewProj;
+    vec2 viewport;
 } global;
 
-layout(set = 0, binding = 1) uniform sampler2D position;
-layout(set = 0, binding = 2) uniform sampler2D normal;
-layout(set = 0, binding = 3) uniform sampler2D color;
-layout(set = 0, binding = 4) uniform sampler2D depth;
+layout(set = 0, binding = 1) uniform sampler2D normal;
+layout(set = 0, binding = 2) uniform sampler2D color;
+layout(set = 0, binding = 3) uniform sampler2D depth;
 
 layout(push_constant) uniform PC {
     int   kernelSize;
@@ -36,17 +37,18 @@ float SSAO() {
         return pc.aoMin;
     }
 
-    vec3 worldPos    = texture(position, fragTexCoord).xyz;
-    vec3 worldNormal = normalize(texture(normal, fragTexCoord).xyz);
+    vec3 worldNormal = decodeSphericalNormal(texture(normal, fragTexCoord).xy);
 
     if (checkZeroNormal(worldNormal)) return 1.0;
+
+    vec3 worldPos = reconstructPosition(global.invViewProj, fragTexCoord, texture(depth, fragTexCoord).x);
 
     // Transform surface to view space
     vec3 viewPos    = vec3(global.view * vec4(worldPos, 1.0));
     vec3 viewNormal = normalize(mat3(global.view) * worldNormal);
 
     // Per-pixel random rotation around view-space normal
-    float angle    = hash(fragTexCoord * vec2(textureSize(position, 0)) / 4.0) * 2.0 * pi;
+    float angle    = hash(fragTexCoord * vec2(textureSize(normal, 0)) / 4.0) * 2.0 * pi;
     vec3 randomVec = vec3(cos(angle), sin(angle), 0.0);
 
     // Gram–Schmidt TBN aligned to the view-space normal
@@ -77,8 +79,9 @@ float SSAO() {
 
         if (!isInside(sampleUV)) continue;
 
-        // Actual geometry depth at the projected UV
-        vec3 geomViewPos = vec3(global.view * vec4(texture(position, sampleUV).xyz, 1.0));
+        // Actual geometry depth at the projected UV — reconstruct world pos, then to view space
+        vec3 geomWorldPos = reconstructPosition(global.invViewProj, sampleUV, texture(depth, sampleUV).x);
+        vec3 geomViewPos = vec3(global.view * vec4(geomWorldPos, 1.0));
 
         // Geometry closer to camera (less negative Z) than the sample → occlusion
         // Range check prevents distant geometry from contributing

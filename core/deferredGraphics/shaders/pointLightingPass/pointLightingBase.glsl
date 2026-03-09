@@ -13,16 +13,17 @@ layout(set = 2, binding = 0) uniform LightBufferObject {
 } light;
 
 vec4 calcPointLight(
-    const in vec4 position,
-    const in vec4 normal,
+    const in vec3 position,
+    const in vec3 normal,
+    const in float packedParams,
     const in vec4 color,
     const in vec4 eyePosition)
 {
-    if(checkZeroNormal(normal.xyz)) {
+    if(checkZeroNormal(normal)) {
         return vec4(0.0f);
     }
 
-    const float dist = length(position.xyz - light.position.xyz);
+    const float dist = length(position - light.position.xyz);
     const float t = clamp(dist / max(light.prop.x, 0.001), 0.0, 1.0);
     const float window = pow(1.0 - t * t, 2.0);
     if(window <= 0.0) {
@@ -30,7 +31,7 @@ vec4 calcPointLight(
     }
 
     const vec3 lightPosition = light.position.xyz;
-    const vec4 pbrColor = pbr(position, normal, color, eyePosition, light.color, lightPosition);
+    const vec4 pbrColor = pbr(position, normal, packedParams, color, eyePosition, light.color, lightPosition);
 
     const float lightDropFactor = light.prop.z;
     const float lightDrop = lightDrop(max(lightDropFactor, 0.01) * max(dist, 0.01));

@@ -26,7 +26,6 @@ void Graphics::createAttachments(utils::AttachmentsDatabase& aDatabase) {
 
     deferredAttachments.image() = utils::Attachments(physicalDevice, device, f16Info, usage);
     deferredAttachments.bloom() = utils::Attachments(physicalDevice, device, f16Info, usage | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    deferredAttachments.position() = utils::Attachments(physicalDevice, device, f32Info, usage | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
     deferredAttachments.normal() = utils::Attachments(physicalDevice, device, f32Info, usage | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
     deferredAttachments.color() = utils::Attachments(physicalDevice, device, f16Info, usage | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
     deferredAttachments.emission() = utils::Attachments(physicalDevice, device, f16Info, usage | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
@@ -37,7 +36,6 @@ void Graphics::createAttachments(utils::AttachmentsDatabase& aDatabase) {
     const auto pref = layerPrefix(layerIndex);
     aDatabase.addAttachmentData(pref + parameters.out.image, parameters.enable, &deferredAttachments.image());
     aDatabase.addAttachmentData(pref + parameters.out.bloom, parameters.enable, &deferredAttachments.bloom());
-    aDatabase.addAttachmentData(pref + parameters.out.position, parameters.enable, &deferredAttachments.position());
     aDatabase.addAttachmentData(pref + parameters.out.normal, parameters.enable, &deferredAttachments.normal());
     aDatabase.addAttachmentData(pref + parameters.out.color, parameters.enable, &deferredAttachments.color());
     aDatabase.addAttachmentData(pref + parameters.out.emission, parameters.enable, &deferredAttachments.emission());
@@ -49,7 +47,6 @@ void Graphics::createRenderPass()
     utils::vkDefault::RenderPass::AttachmentDescriptions attachments = {
         utils::Attachments::imageDescription(deferredAttachments.image().format()),
         utils::Attachments::imageDescription(deferredAttachments.bloom().format()),
-        utils::Attachments::imageDescription(deferredAttachments.position().format()),
         utils::Attachments::imageDescription(deferredAttachments.normal().format()),
         utils::Attachments::imageDescription(deferredAttachments.color().format()),
         utils::Attachments::imageDescription(deferredAttachments.emission().format()),
@@ -60,7 +57,6 @@ void Graphics::createRenderPass()
 
     auto& geometry = subpassInfos.emplace_back();
     geometry.out = {
-        VkAttachmentReference{DeferredAttachments::positionIndex(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
         VkAttachmentReference{DeferredAttachments::normalIndex(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
         VkAttachmentReference{DeferredAttachments::colorIndex(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
         VkAttachmentReference{DeferredAttachments::emissionIndex(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL}
@@ -75,7 +71,6 @@ void Graphics::createRenderPass()
         VkAttachmentReference{DeferredAttachments::bloomIndex(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL}
     };
     lighting.in = {
-        VkAttachmentReference{DeferredAttachments::positionIndex(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},
         VkAttachmentReference{DeferredAttachments::normalIndex(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},
         VkAttachmentReference{DeferredAttachments::colorIndex(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},
         VkAttachmentReference{DeferredAttachments::emissionIndex(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},

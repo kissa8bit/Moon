@@ -21,7 +21,6 @@ struct LayersCombinerParameters : workflows::Parameters {
         utils::BufferName camera;
         utils::AttachmentName color;
         utils::AttachmentName bloom;
-        utils::AttachmentName position;
         utils::AttachmentName normal;
         utils::AttachmentName depth;
         utils::AttachmentName skyboxColor;

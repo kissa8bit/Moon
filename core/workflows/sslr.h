@@ -8,8 +8,8 @@ namespace moon::workflows {
 struct SSLRParameters : workflows::Parameters{
     struct{
         utils::BufferName camera;
-        utils::AttachmentName position;
         utils::AttachmentName normal;
+        utils::AttachmentName depth;
         utils::AttachmentName color;
     }in;
     struct{

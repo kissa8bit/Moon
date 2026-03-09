@@ -8,9 +8,11 @@
 layout(set = 0, binding = 0) uniform GlobalUniformBuffer {
     mat4 view;
     mat4 proj;
+    mat4 invViewProj;
+    vec2 viewport;
 } global;
-layout(set = 0, binding = 1) uniform sampler2D position;
-layout(set = 0, binding = 2) uniform sampler2D normal;
+layout(set = 0, binding = 1) uniform sampler2D normal;
+layout(set = 0, binding = 2) uniform sampler2D depth;
 layout(set = 0, binding = 3) uniform sampler2D Sampler;
 
 layout(location = 0) in vec2 fragTexCoord;
@@ -45,8 +47,8 @@ vec4 calcPos(vec4 p, vec4 r, vec2 planeCoords) {
 
 float findPosDis(vec4 p, vec4 r, vec2 planeCoords) {
     vec4 i_pos = calcPos(p, r, planeCoords);
-    vec4 r_pos = vec4(texture(position, planeCoords).xyz, 1.0);
-    return zProj(projview, i_pos - r_pos);
+    vec3 r_pos = reconstructPosition(global.invViewProj, planeCoords, texture(depth, planeCoords).x);
+    return zProj(projview, i_pos - vec4(r_pos, 1.0));
 }
 
 vec4 SSLR(const in vec4 p, const in vec4 surf_n, const in vec4 d, const in vec4 r, vec2 planeCoords, vec2 increment, int steps, float f0) {
@@ -74,7 +76,7 @@ vec4 SSLR(const in vec4 p, const in vec4 surf_n, const in vec4 d, const in vec4 
     if (convergence <= 0.0f) return vec4(0.0);
 
     // Отклонить обратные грани: нормаль в точке попадания должна смотреть против луча
-    vec3 hitNormal = texture(normal, planeCoords).xyz;
+    vec3 hitNormal = decodeSphericalNormal(texture(normal, planeCoords).xy);
     if (dot(r.xyz, hitNormal) >= 0.0f) return vec4(0.0);
 
     // Затухание у краёв экрана — прячет резкий обрыв отражений
@@ -90,8 +92,8 @@ vec4 SSLR(const in vec4 p, const in vec4 surf_n, const in vec4 d, const in vec4 
 void main() {
     outColor = vec4(0.0);
 
-    ivec2 texCoord = ivec2(fragTexCoord * vec2(textureSize(position, 0)));
-    float material  = texelFetch(position, texCoord, 0).a;
+    ivec2 texCoord = ivec2(fragTexCoord * vec2(textureSize(normal, 0)));
+    float material  = texelFetch(normal, texCoord, 0).b;
     float roughness = decodeParameter(0x000000ff, 0, material) / 255.0f;
     float metallic  = decodeParameter(0x0000ff00, 8, material) / 255.0f;
     float ao        = decodeParameter(0x00ff0000, 16, material) / 255.0f;
@@ -104,8 +106,9 @@ void main() {
     const int steps = 50;
     const float incrementFactor = 0.5f / steps;
 
-    vec4 p      = vec4(texture(position, fragTexCoord).xyz, 1.0);
-    vec4 surf_n = vec4(texture(normal, fragTexCoord).xyz, 0.0);
+    vec3 worldPos = reconstructPosition(global.invViewProj, fragTexCoord, texture(depth, fragTexCoord).x);
+    vec4 p      = vec4(worldPos, 1.0);
+    vec4 surf_n = vec4(decodeSphericalNormal(texture(normal, fragTexCoord).xy), 0.0);
     vec4 d      = normalize(p - p0);
     vec4 r      = normalize(reflect(d, surf_n));
 

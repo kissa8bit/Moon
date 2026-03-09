@@ -41,6 +41,7 @@ public:
     virtual void update(uint32_t frameNumber, VkCommandBuffer commandBuffer) = 0;
 
     virtual void setTransformation(const math::mat4& transformation) = 0;
+    virtual void setViewport(float width, float height) = 0;
 };
 
 } // moon::interfaces

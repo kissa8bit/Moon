@@ -15,36 +15,37 @@ layout(set = 2, binding = 0) uniform LightBufferObject {
 } light;
 
 vec4 calcLight(
-    const in vec4 position,
-    const in vec4 normal,
+    const in vec3 position,
+    const in vec3 normal,
+    const in float packedParams,
     const in vec4 color,
     const in vec4 eyePosition,
     sampler2D shadowMap,
     sampler2D lightTexture,
-    uint type) 
+    uint type)
 {
-    if(checkZeroNormal(normal.xyz)) {
+    if(checkZeroNormal(normal)) {
         return vec4(0.0f);
     }
 
-    const vec4 localPosition = light.view * vec4(position.xyz, 1.0);
+    const vec4 localPosition = light.view * vec4(position, 1.0);
     if(outsideSpot(light.proj, type, localPosition)){
         return vec4(0.0f);
-    }   
+    }
 
     const vec3 ndcCoords = normalizedCoords(light.proj, localPosition);
     const float shadowFactor = calcShadowFactor(light.proj, shadowMap, ndcCoords);
 
     const vec4 lightTextureColor = texture(lightTexture, ndcCoords.xy);
     const vec4 lightColor = vec4(max(light.color, lightTextureColor).xyz, 1.0);
-    
-    vec3 lightPosition = viewPosition(light.view);
-    const vec4 pbrColor = pbr(position, normal, color, eyePosition, lightColor, lightPosition);
 
-    const float distribusion = lightDistribusion(position.xyz, light.proj, light.view, light.prop.x, light.prop.y, type);
+    vec3 lightPosition = viewPosition(light.view);
+    const vec4 pbrColor = pbr(position, normal, packedParams, color, eyePosition, lightColor, lightPosition);
+
+    const float distribusion = lightDistribusion(position, light.proj, light.view, light.prop.x, light.prop.y, type);
 
     const float lightDropFactor = light.prop.w;
-    const float lightDrop = lightDrop(max(lightDropFactor, 0.01) * max(length(lightPosition - position.xyz), 0.01));
+    const float lightDrop = lightDrop(max(lightDropFactor, 0.01) * max(length(lightPosition - position), 0.01));
 
     const float lightPowerFactor = light.prop.z;
     const float lightPower = shadowFactor * lightPowerFactor * distribusion / lightDrop;

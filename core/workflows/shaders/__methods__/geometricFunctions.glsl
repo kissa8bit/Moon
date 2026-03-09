@@ -110,6 +110,22 @@ vec3 viewPosition(const in mat4 view) {
     return -transpose(mat3(view)) * vec3(view[3]);
 }
 
+vec2 encodeSphericalNormal(vec3 n) {
+    return vec2(atan(n.y, n.x), acos(clamp(n.z, -1.0, 1.0)));
+}
+
+vec3 decodeSphericalNormal(vec2 s) {
+    float sinTheta = sin(s.y);
+    return vec3(sinTheta * cos(s.x), sinTheta * sin(s.x), cos(s.y));
+}
+
+vec3 reconstructPosition(mat4 invViewProj, vec2 screenUV, float depth) {
+    vec2 ndc = screenUV * 2.0 - 1.0;
+    vec4 clip = vec4(ndc, depth, 1.0);
+    vec4 world = invViewProj * clip;
+    return world.xyz / world.w;
+}
+
 #define PYRAMID_INDICES int pyramid_indices[18] = int[](0,4,1,0,1,2,0,2,3,0,3,4,4,2,1,2,4,3);
 
 #define SPHERE_LON 8

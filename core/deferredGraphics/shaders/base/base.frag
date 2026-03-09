@@ -2,6 +2,7 @@
 
 #include "../../../workflows/shaders/__methods__/defines.glsl"
 #include "../../../workflows/shaders/__methods__/colorFunctions.glsl"
+#include "../../../workflows/shaders/__methods__/geometricFunctions.glsl"
 #include "../../../workflows/shaders/__methods__/math.glsl"
 #include "material.glsl"
 
@@ -37,10 +38,9 @@ layout (set = 1, binding = 0) uniform LocalUniformBuffer
     vec4 bloomFactor;
 } local;
 
-layout(location = 0) out vec4 outPosition;
-layout(location = 1) out vec4 outNormal;
-layout(location = 2) out vec4 outBaseColor;
-layout(location = 3) out vec4 outEmissiveColor;
+layout(location = 0) out vec4 outNormal;
+layout(location = 1) out vec4 outBaseColor;
+layout(location = 2) out vec4 outEmissiveColor;
 
 vec3 getNormal() {
     vec3 tangentNormal = normalize(texture(normalTexture, pc.material.normalTextureSet == 0 ? UV0 : UV1).xyz * 2.0 - 1.0);
@@ -146,11 +146,12 @@ void main()
     uint ao_u8 = uint(255.0f * ao);
     uint outlining = uint(0);
     float params = uintBitsToFloat((perceptualRoughness_u8 << 0) | (metallic_u8 << 8) | (ao_u8 << 16) | (outlining << 24));
-    
     float number = uintBitsToFloat(pc.material.number);
 
+    vec3 n = pc.material.normalTextureSet > -1 ? getNormal() : normal;
+    vec2 spherical = encodeSphericalNormal(n);
+
+    outNormal = vec4(spherical, params, number);
     outBaseColor = baseColor;
     outEmissiveColor = bloomColor;
-    outPosition = vec4(position.xyz, params);
-    outNormal = vec4(pc.material.normalTextureSet > -1 ? getNormal() : normal, number);
 }

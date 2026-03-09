@@ -57,7 +57,6 @@ void Graphics::Base::create(interfaces::ObjectType type, const workflows::Shader
     const std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachment = {
         utils::vkDefault::colorBlendAttachmentState(VK_FALSE),
         utils::vkDefault::colorBlendAttachmentState(VK_FALSE),
-        utils::vkDefault::colorBlendAttachmentState(VK_FALSE),
         utils::vkDefault::colorBlendAttachmentState(VK_FALSE)
     };
     const VkPipelineColorBlendStateCreateInfo colorBlending = utils::vkDefault::colorBlendState(static_cast<uint32_t>(colorBlendAttachment.size()), colorBlendAttachment.data());

@@ -18,8 +18,14 @@ void Graphics::Lighting::create(VkDevice device, VkRenderPass renderPass) {
         bindings.push_back(utils::vkDefault::inAttachmentFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
         bindings.push_back(utils::vkDefault::inAttachmentFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
         bindings.push_back(utils::vkDefault::inAttachmentFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
-        bindings.push_back(utils::vkDefault::inAttachmentFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
-        bindings.push_back(utils::vkDefault::bufferVertexLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
+        {
+            VkDescriptorSetLayoutBinding cameraBinding{};
+            cameraBinding.binding = static_cast<uint32_t>(bindings.size());
+            cameraBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            cameraBinding.descriptorCount = 1;
+            cameraBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+            bindings.push_back(cameraBinding);
+        }
 
     descriptorSetLayout = utils::vkDefault::DescriptorSetLayout(device, bindings);
     shadowDescriptorSetLayout = utils::DepthMap::createDescriptorSetLayout(device);
@@ -58,7 +64,6 @@ void Graphics::Lighting::update(VkDevice device, const utils::BuffersDatabase& b
         auto pref = layerPrefix(layerIndex);
 
         utils::descriptorSet::Writes writes;
-        WRITE_DESCRIPTOR_T(writes, descriptorSet, aDatabase.descriptorImageInfo(pref + parameters.out.position, i), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
         WRITE_DESCRIPTOR_T(writes, descriptorSet, aDatabase.descriptorImageInfo(pref + parameters.out.normal, i), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
         WRITE_DESCRIPTOR_T(writes, descriptorSet, aDatabase.descriptorImageInfo(pref + parameters.out.color, i), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
         WRITE_DESCRIPTOR_T(writes, descriptorSet, aDatabase.descriptorImageInfo(pref + parameters.out.emission, i), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);

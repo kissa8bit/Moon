@@ -23,22 +23,22 @@ vec3 specularReflection(vec3 specular0, vec3 specular90, float HdotV) {
 }
 
 vec4 pbr(
-    vec4 position,
-    vec4 normal,
+    vec3 position,
+    vec3 Normal,
+    float packedParams,
     vec4 baseColorTexture,
     vec4 eyePosition,
     vec4 lightColor,
     vec3 lightPosition
 ) {
-    vec3 Direction      = normalize(eyePosition.xyz - position.xyz);
-    vec3 LightDirection = normalize(lightPosition - position.xyz);
-    vec3 Normal         = normal.xyz;
+    vec3 Direction      = normalize(eyePosition.xyz - position);
+    vec3 LightDirection = normalize(lightPosition - position);
     vec3 H              = normalize(Direction + LightDirection);
     vec4 BaseColor      = baseColorTexture;
 
-    float perceptualRoughness = max(decodeParameter(0x000000ff, 0, position.a) / 255.0f, MIN_ROUGHNESS);
-    float metallic = decodeParameter(0x0000ff00, 8, position.a) / 255.0f;
-    float ao = decodeParameter(0x00ff0000, 16, position.a) / 255.0f;
+    float perceptualRoughness = max(decodeParameter(0x000000ff, 0, packedParams) / 255.0f, MIN_ROUGHNESS);
+    float metallic = decodeParameter(0x0000ff00, 8, packedParams) / 255.0f;
+    float ao = decodeParameter(0x00ff0000, 16, packedParams) / 255.0f;
 
     float alphaRoughness = perceptualRoughness * perceptualRoughness;
     vec3 f0 = vec3(MIN_ROUGHNESS);

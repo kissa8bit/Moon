@@ -25,7 +25,6 @@ struct GraphicsParameters : workflows::Parameters {
     struct{
         utils::AttachmentName image;
         utils::AttachmentName bloom;
-        utils::AttachmentName position;
         utils::AttachmentName normal;
         utils::AttachmentName color;
         utils::AttachmentName emission;

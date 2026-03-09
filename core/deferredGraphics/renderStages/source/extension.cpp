@@ -48,7 +48,6 @@ void Graphics::OutliningExtension::create(interfaces::ObjectType type, const wor
     std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachment = {
         utils::vkDefault::colorBlendAttachmentState(VK_FALSE),
         utils::vkDefault::colorBlendAttachmentState(VK_FALSE),
-        utils::vkDefault::colorBlendAttachmentState(VK_FALSE),
         utils::vkDefault::colorBlendAttachmentState(VK_FALSE)
     };
     VkPipelineColorBlendStateCreateInfo colorBlending = utils::vkDefault::colorBlendState(static_cast<uint32_t>(colorBlendAttachment.size()),colorBlendAttachment.data());
