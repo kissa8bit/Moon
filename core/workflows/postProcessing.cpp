@@ -8,7 +8,7 @@ namespace moon::workflows{
 PostProcessingGraphics::PostProcessingGraphics(PostProcessingParameters& parameters) : parameters(parameters), postProcessing(parameters) {}
 
 void PostProcessingGraphics::createAttachments(utils::AttachmentsDatabase& aDatabase){
-    const utils::vkDefault::ImageInfo info = { parameters.imageInfo.Count, VK_FORMAT_R32G32B32A32_SFLOAT, parameters.imageInfo.Extent, parameters.imageInfo.Samples };
+    const utils::vkDefault::ImageInfo info = { parameters.imageInfo.Count, VK_FORMAT_R16G16B16A16_SFLOAT, parameters.imageInfo.Extent, parameters.imageInfo.Samples };
     frame = utils::Attachments(physicalDevice, device, info);
     aDatabase.addAttachmentData(parameters.out.postProcessing, parameters.enable, &frame);
 }

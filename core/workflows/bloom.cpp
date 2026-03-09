@@ -103,7 +103,7 @@ void BloomGraphics::create(const utils::vkDefault::CommandPool& commandPool, uti
         for (uint32_t i = 0; i < parameters.attachmentsCount; i++) {
             const utils::vkDefault::ImageInfo mipInfo = {
                 parameters.imageInfo.Count,
-                VK_FORMAT_R32G32B32A32_SFLOAT,
+                VK_FORMAT_R16G16B16A16_SFLOAT,
                 { std::max(w, 1u), std::max(h, 1u) },
                 parameters.imageInfo.Samples
             };

@@ -10,7 +10,7 @@ SSLRGraphics::SSLRGraphics(SSLRParameters& parameters) :
 {}
 
 void SSLRGraphics::createAttachments(utils::AttachmentsDatabase& aDatabase){
-    const utils::vkDefault::ImageInfo info = { parameters.imageInfo.Count, VK_FORMAT_R32G32B32A32_SFLOAT, parameters.imageInfo.Extent, parameters.imageInfo.Samples };
+    const utils::vkDefault::ImageInfo info = { parameters.imageInfo.Count, VK_FORMAT_R16G16B16A16_SFLOAT, parameters.imageInfo.Extent, parameters.imageInfo.Samples };
     frame = utils::Attachments(physicalDevice, device, info, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
     aDatabase.addAttachmentData(parameters.out.sslr, parameters.enable, &frame);
 }

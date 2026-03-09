@@ -11,7 +11,7 @@ LayersCombiner::LayersCombiner(LayersCombinerParameters& parameters) : combiner(
 
 void LayersCombiner::createAttachments(utils::AttachmentsDatabase& aDatabase)
 {
-    const utils::vkDefault::ImageInfo f32Info = { parameters.imageInfo.Count, VK_FORMAT_R32G32B32A32_SFLOAT, parameters.imageInfo.Extent, VK_SAMPLE_COUNT_1_BIT };
+    const utils::vkDefault::ImageInfo f32Info = { parameters.imageInfo.Count, VK_FORMAT_R16G16B16A16_SFLOAT, parameters.imageInfo.Extent, VK_SAMPLE_COUNT_1_BIT };
     const VkImageUsageFlags usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 
     frame.color = utils::Attachments(physicalDevice, device, f32Info, usage);

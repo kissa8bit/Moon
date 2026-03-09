@@ -12,7 +12,7 @@ SkyboxGraphics::SkyboxGraphics(SkyboxParameters& parameters, const interfaces::O
 {}
 
 void SkyboxGraphics::createAttachments(utils::AttachmentsDatabase& aDatabase){
-    const utils::vkDefault::ImageInfo info = { parameters.imageInfo.Count, VK_FORMAT_R32G32B32A32_SFLOAT, parameters.imageInfo.Extent, parameters.imageInfo.Samples };
+    const utils::vkDefault::ImageInfo info = { parameters.imageInfo.Count, VK_FORMAT_R16G16B16A16_SFLOAT, parameters.imageInfo.Extent, parameters.imageInfo.Samples };
     utils::createAttachments(physicalDevice, device, info, 2, &frame, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
     aDatabase.addAttachmentData(parameters.out.baseColor, parameters.enable, &frame.color);
     aDatabase.addAttachmentData(parameters.out.bloom, parameters.enable, &frame.bloom);

@@ -9,7 +9,7 @@ GaussianBlur::GaussianBlur(GaussianBlurParameters& parameters) : parameters(para
 
 void GaussianBlur::createAttachments(utils::AttachmentsDatabase& aDatabase)
 {
-    const utils::vkDefault::ImageInfo info = { parameters.imageInfo.Count, VK_FORMAT_R32G32B32A32_SFLOAT, parameters.imageInfo.Extent, VK_SAMPLE_COUNT_1_BIT };
+    const utils::vkDefault::ImageInfo info = { parameters.imageInfo.Count, VK_FORMAT_R16G16B16A16_SFLOAT, parameters.imageInfo.Extent, VK_SAMPLE_COUNT_1_BIT };
     bufferAttachment = utils::Attachments(physicalDevice, device, info, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
     frame = utils::Attachments(physicalDevice, device, info, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
     aDatabase.addAttachmentData(parameters.out.blur, parameters.enable, &frame);
