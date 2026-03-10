@@ -23,12 +23,13 @@ void Graphics::createAttachments(utils::AttachmentsDatabase& aDatabase) {
 
     const utils::vkDefault::ImageInfo f32Info = { parameters.imageInfo.Count, VK_FORMAT_R32G32B32A32_SFLOAT, parameters.imageInfo.Extent, parameters.imageInfo.Samples };
     const utils::vkDefault::ImageInfo f16Info = { parameters.imageInfo.Count, VK_FORMAT_R16G16B16A16_SFLOAT, parameters.imageInfo.Extent, parameters.imageInfo.Samples };
+    const utils::vkDefault::ImageInfo u8Info = { parameters.imageInfo.Count, VK_FORMAT_R8G8B8A8_UNORM, parameters.imageInfo.Extent, parameters.imageInfo.Samples };
 
     deferredAttachments.image() = utils::Attachments(physicalDevice, device, f16Info, usage);
     deferredAttachments.bloom() = utils::Attachments(physicalDevice, device, f16Info, usage | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     deferredAttachments.normal() = utils::Attachments(physicalDevice, device, f32Info, usage | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
-    deferredAttachments.color() = utils::Attachments(physicalDevice, device, f16Info, usage | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
-    deferredAttachments.emission() = utils::Attachments(physicalDevice, device, f16Info, usage | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+    deferredAttachments.color() = utils::Attachments(physicalDevice, device, u8Info, usage | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+    deferredAttachments.emission() = utils::Attachments(physicalDevice, device, u8Info, usage | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
 
     const utils::vkDefault::ImageInfo depthImage = { parameters.imageInfo.Count, utils::image::depthStencilFormat(physicalDevice), parameters.imageInfo.Extent, parameters.imageInfo.Samples };
     deferredAttachments.depth() = utils::Attachments(physicalDevice, device, depthImage, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, { { 1.0f, 0 } }, utils::vkDefault::depthSampler());
