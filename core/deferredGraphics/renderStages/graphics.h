@@ -31,7 +31,7 @@ struct GraphicsParameters : workflows::Parameters {
         utils::AttachmentName depth;
     }out;
 
-    float minAmbientFactor{ 0.0f };
+    float minAmbientFactor{ 0.1f };
 };
 
 class Graphics : public workflows::Workflow

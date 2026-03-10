@@ -17,13 +17,12 @@ layout(set = 0, binding = 3) uniform sampler2D depth;
 layout(push_constant) uniform PC {
     int   kernelSize;
     float radius;
-    float aoMin;
     float aoFactor;
     float aoPower;
 } pc;
 
 layout(location = 0) in vec2 fragTexCoord;
-layout(location = 0) out vec4 outColor;
+layout(location = 0) out float outColor;
 
 const float BIAS = 0.025;
 
@@ -34,7 +33,7 @@ float hash(vec2 p) {
 
 float SSAO() {
     if(pc.aoFactor <= 0.0f){
-        return pc.aoMin;
+        return 1.0f;
     }
 
     vec3 worldNormal = decodeSphericalNormal(texture(normal, fragTexCoord).xy);
@@ -90,11 +89,14 @@ float SSAO() {
     }
 
     float raw = 1.0 - occlusion / float(pc.kernelSize);
-    return clamp(pc.aoMin + pc.aoFactor * pow(raw, pc.aoPower), 0.0, 1.0);
+    return clamp(pc.aoFactor * pow(raw, pc.aoPower), 0.0, 1.0);
 }
 
 void main() {
-    float ao = SSAO();
-    vec3 rgb = texture(color, fragTexCoord).rgb;
-    outColor = vec4(ao * rgb, 1.0);
+    const vec4 rgba = texture(color, fragTexCoord).rgba;
+    if(dot(rgba, rgba) == 0.0f){
+        outColor = 1.0f;
+        return;
+    }
+    outColor = SSAO();
 }

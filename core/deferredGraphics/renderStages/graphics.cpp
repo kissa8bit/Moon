@@ -200,7 +200,7 @@ void Graphics::updateCommandBuffer(uint32_t frameNumber){
     vkCmdNextSubpass(commandBuffers.at(frameNumber), VK_SUBPASS_CONTENTS_INLINE);
 
         lighting.render(frameNumber,commandBuffers.at(frameNumber));
-        // ambientLighting.render(frameNumber,commandBuffers.at(frameNumber));
+        ambientLighting.render(frameNumber,commandBuffers.at(frameNumber));
 
     vkCmdEndRenderPass(commandBuffers.at(frameNumber));
 }

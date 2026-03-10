@@ -191,26 +191,29 @@ inline void spotLightProjectionSliders(moon::entities::SpotLight& light, int ind
 
 inline void ssaoProps(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> graphics, float width = 150.0f) {
     if (!graphics) return;
-    auto& params = graphics->ssaoWorkflowParams();
+    auto& ssaoParams = graphics->ssaoWorkflowParams();
     ImGui::SetNextItemWidth(width);
-    if (ImGui::SliderInt("kernel size", &params.kernelSize, 4, 64)) {
+    if (ImGui::SliderInt("ssao kernel size", &ssaoParams.kernelSize, 4, 64)) {
         graphics->requestUpdate(moon::deferredGraphics::Names::SSAO::name);
     }
     ImGui::SetNextItemWidth(width);
-    if (ImGui::SliderFloat("radius", &params.radius, 0.05f, 2.0f)) {
+    if (ImGui::SliderFloat("ssao radius", &ssaoParams.radius, 0.05f, 2.0f)) {
         graphics->requestUpdate(moon::deferredGraphics::Names::SSAO::name);
     }
     ImGui::SetNextItemWidth(width);
-    if (ImGui::SliderFloat("ao min", &params.aoMin, 0.0f, 0.1f)) {
+    if (ImGui::SliderFloat("ssao factor", &ssaoParams.aoFactor, 0.0f, 1.0f)) {
         graphics->requestUpdate(moon::deferredGraphics::Names::SSAO::name);
     }
     ImGui::SetNextItemWidth(width);
-    if (ImGui::SliderFloat("ao factor", &params.aoFactor, 0.0f, 0.1f)) {
+    if (ImGui::SliderFloat("ssao power", &ssaoParams.aoPower, 0.5f, 8.0f)) {
         graphics->requestUpdate(moon::deferredGraphics::Names::SSAO::name);
     }
-    ImGui::SetNextItemWidth(width);
-    if (ImGui::SliderFloat("ao power", &params.aoPower, 0.5f, 8.0f)) {
-        graphics->requestUpdate(moon::deferredGraphics::Names::SSAO::name);
+
+    auto& params = graphics->parameters();
+    static float minao = params.minAmbientFactor();
+    ImGui::SetNextItemWidth(150.0f);
+    if (ImGui::SliderFloat("ao min", &minao, 0.0f, 0.1f)) {
+		params.minAmbientFactor() = minao;
     }
 }
 
@@ -239,7 +242,7 @@ inline void bloomProps(std::shared_ptr<moon::deferredGraphics::DeferredGraphics>
         graphics->requestUpdate(moon::deferredGraphics::Names::Bloom::name);
     }
     auto& params = graphics->parameters();
-    static float farBlurDepth = graphics->parameters().bloomThreshold();
+    static float farBlurDepth = params.bloomThreshold();
     ImGui::SetNextItemWidth(150.0f);
     if (ImGui::SliderFloat("bloom threshold", &farBlurDepth, 0.0f, 5.0f)) {
         params.bloomThreshold() = farBlurDepth;

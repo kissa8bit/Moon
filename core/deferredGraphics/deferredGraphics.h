@@ -146,9 +146,11 @@ struct Parameters {
     struct {
         utils::DirtyValue<float>    bloomThreshold{ 1.0f };
         utils::DirtyValue<float>    blurDepth{ 0.0f };
+        utils::DirtyValue<float>    minAmbientFactor{ 0.1f };
     } workflowsParameters;
 
     utils::DirtyValue<float>&   bloomThreshold() { return workflowsParameters.bloomThreshold; }
+    utils::DirtyValue<float>&   minAmbientFactor() { return workflowsParameters.minAmbientFactor; }
     utils::DirtyValue<float>&   blurDepth() { return workflowsParameters.blurDepth; }
 };
 

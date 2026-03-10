@@ -114,10 +114,14 @@ void main()
     }
     
     if(pc.material.alphaMask == 1.0f){
-        if( baseColor.a < pc.material.alphaMaskCutoff){
+        if(baseColor.a < pc.material.alphaMaskCutoff){
             discard;
         }
         baseColor.a = 1.0f;
+    }
+    
+    if(baseColor.a == 0.0){
+        discard;
     }
 
 //    vec3 I = normalize(position.xyz - eyePosition.xyz);

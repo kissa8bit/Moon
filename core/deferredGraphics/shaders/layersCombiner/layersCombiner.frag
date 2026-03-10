@@ -54,9 +54,8 @@ void main() {
     outColor = accum(colorMap);
     outBloom = accum(bloomMap);
 
-    const vec4 aoColor = texture(ssaoMap, fragTexCoord);
-    // screen blend: src*(1-dst) + dst (ONE_MINUS_DST_COLOR + ONE)
-    outColor = vec4(aoColor.rgb * (vec3(1.0) - outColor.rgb) + outColor.rgb, outColor.a);
+    const float ao = texture(ssaoMap, fragTexCoord).r;
+    outColor *= ao;
 
     if(texture(depthMap[0], fragTexCoord).r == 1.0) {
         outColor += texture(skyboxMap, fragTexCoord);

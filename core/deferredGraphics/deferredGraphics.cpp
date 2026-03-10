@@ -255,6 +255,11 @@ void DeferredGraphics::updateParameters() {
         layersCombinerParams.bloomThreshold = bloomThreshold;
         requestUpdate(Names::LayersCombiner::name);
     }
+    if (params.minAmbientFactor().isDirty()) {
+        const auto ao = params.minAmbientFactor().consume();
+        graphicsParams.minAmbientFactor = ao;
+        requestUpdate(Names::MainGraphics::name);
+    }
 }
 
 void DeferredGraphics::update(uint32_t imageIndex) {

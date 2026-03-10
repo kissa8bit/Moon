@@ -8,7 +8,6 @@ namespace moon::workflows {
 struct SSAOPushConst {
     alignas(4) int32_t kernelSize { 32 };
     alignas(4) float   radius     { 0.5f };
-    alignas(4) float   aoMin      { 0.0f };
     alignas(4) float   aoFactor   { 1.0f };
     alignas(4) float   aoPower    { 2.0f };
 };
@@ -18,7 +17,7 @@ SSAOGraphics::SSAOGraphics(SSAOParameters& parameters) :
 {}
 
 void SSAOGraphics::createAttachments(utils::AttachmentsDatabase& aDatabase){
-    const utils::vkDefault::ImageInfo info = { parameters.imageInfo.Count, VK_FORMAT_R16G16B16A16_SFLOAT, parameters.imageInfo.Extent, parameters.imageInfo.Samples };
+    const utils::vkDefault::ImageInfo info = { parameters.imageInfo.Count, VK_FORMAT_R8_UNORM, parameters.imageInfo.Extent, parameters.imageInfo.Samples };
     frame = utils::Attachments(physicalDevice, device, info);
     aDatabase.addAttachmentData(parameters.out.ssao, parameters.enable, &frame);
 }
@@ -161,7 +160,7 @@ void SSAOGraphics::updateCommandBuffer(uint32_t frameNumber){
 
     vkCmdBeginRenderPass(commandBuffers[frameNumber], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        SSAOPushConst pushConst{ parameters.kernelSize, parameters.radius, parameters.aoMin, parameters.aoFactor, parameters.aoPower };
+        SSAOPushConst pushConst{ parameters.kernelSize, parameters.radius, parameters.aoFactor, parameters.aoPower };
         vkCmdPushConstants(commandBuffers[frameNumber], ssao.pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(SSAOPushConst), &pushConst);
         vkCmdBindPipeline(commandBuffers[frameNumber], VK_PIPELINE_BIND_POINT_GRAPHICS, ssao.pipeline);
         vkCmdBindDescriptorSets(commandBuffers[frameNumber], VK_PIPELINE_BIND_POINT_GRAPHICS, ssao.pipelineLayout, 0, 1, &ssao.descriptorSets[frameNumber], 0, nullptr);
