@@ -12,7 +12,7 @@ SSLRGraphics::SSLRGraphics(SSLRParameters& parameters) :
 void SSLRGraphics::createAttachments(utils::AttachmentsDatabase& aDatabase){
     const utils::vkDefault::ImageInfo info = { parameters.imageInfo.Count, VK_FORMAT_R16G16B16A16_SFLOAT, parameters.imageInfo.Extent, parameters.imageInfo.Samples };
     frame = utils::Attachments(physicalDevice, device, info, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
-    aDatabase.addAttachmentData(parameters.out.sslr, parameters.enable, &frame);
+    aDatabase.addAttachmentData(parameters.out.sslr, &frame);
 }
 
 void SSLRGraphics::createRenderPass()
@@ -103,7 +103,7 @@ void SSLRGraphics::SSLR::create(const workflows::ShaderNames& shadersNames, VkDe
 
 void SSLRGraphics::create(const utils::vkDefault::CommandPool& commandPool, utils::AttachmentsDatabase& aDatabase) {
     commandBuffers = commandPool.allocateCommandBuffers(parameters.imageInfo.Count);
-    if(parameters.enable && !created){
+    if(!created){
         createAttachments(aDatabase);
         createRenderPass();
         createFramebuffers();
@@ -117,7 +117,7 @@ void SSLRGraphics::create(const utils::vkDefault::CommandPool& commandPool, util
 }
 
 void SSLRGraphics::updateDescriptors(const utils::BuffersDatabase& bDatabase, const utils::AttachmentsDatabase& aDatabase) {
-    if (!parameters.enable || !created) return;
+    if (!created) return;
 
     for (uint32_t i = 0; i < parameters.imageInfo.Count; i++) {
         auto descriptorSet = sslr.descriptorSets[i];
@@ -132,7 +132,7 @@ void SSLRGraphics::updateDescriptors(const utils::BuffersDatabase& bDatabase, co
 }
 
 void SSLRGraphics::updateCommandBuffer(uint32_t frameNumber){
-    if (!parameters.enable || !created) return;
+    if (!created) return;
 
     std::vector<VkClearValue> clearValues = {frame.clearValue()};
 
@@ -147,9 +147,11 @@ void SSLRGraphics::updateCommandBuffer(uint32_t frameNumber){
 
     vkCmdBeginRenderPass(commandBuffers[frameNumber], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
+    if (parameters.enable) {
         vkCmdBindPipeline(commandBuffers[frameNumber], VK_PIPELINE_BIND_POINT_GRAPHICS, sslr.pipeline);
         vkCmdBindDescriptorSets(commandBuffers[frameNumber], VK_PIPELINE_BIND_POINT_GRAPHICS, sslr.pipelineLayout, 0, 1, &sslr.descriptorSets[frameNumber], 0, nullptr);
         vkCmdDraw(commandBuffers[frameNumber], 6, 1, 0, 0);
+    }
 
     vkCmdEndRenderPass(commandBuffers[frameNumber]);
 }

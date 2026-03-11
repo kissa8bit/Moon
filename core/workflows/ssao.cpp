@@ -18,8 +18,8 @@ SSAOGraphics::SSAOGraphics(SSAOParameters& parameters) :
 
 void SSAOGraphics::createAttachments(utils::AttachmentsDatabase& aDatabase){
     const utils::vkDefault::ImageInfo info = { parameters.imageInfo.Count, VK_FORMAT_R8_UNORM, parameters.imageInfo.Extent, parameters.imageInfo.Samples };
-    frame = utils::Attachments(physicalDevice, device, info);
-    aDatabase.addAttachmentData(parameters.out.ssao, parameters.enable, &frame);
+    frame = utils::Attachments(physicalDevice, device, info, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, { {1.0f} });
+    aDatabase.addAttachmentData(parameters.out.ssao, &frame);
 }
 
 void SSAOGraphics::createRenderPass()
@@ -116,7 +116,7 @@ void SSAOGraphics::SSAO::create(const workflows::ShaderNames& shadersNames, VkDe
 
 void SSAOGraphics::create(const utils::vkDefault::CommandPool& commandPool, utils::AttachmentsDatabase& aDatabase) {
     commandBuffers = commandPool.allocateCommandBuffers(parameters.imageInfo.Count);
-    if(parameters.enable && !created){
+    if(!created){
         createAttachments(aDatabase);
         createRenderPass();
         createFramebuffers();
@@ -130,7 +130,7 @@ void SSAOGraphics::create(const utils::vkDefault::CommandPool& commandPool, util
 }
 
 void SSAOGraphics::updateDescriptors(const utils::BuffersDatabase& bDatabase, const utils::AttachmentsDatabase& aDatabase) {
-    if (!parameters.enable || !created) return;
+    if (!created) return;
 
     for (uint32_t i = 0; i < parameters.imageInfo.Count; i++) {
         auto descriptorSet = ssao.descriptorSets[i];
@@ -145,7 +145,7 @@ void SSAOGraphics::updateDescriptors(const utils::BuffersDatabase& bDatabase, co
 }
 
 void SSAOGraphics::updateCommandBuffer(uint32_t frameNumber){
-    if (!parameters.enable || !created) return;
+    if (!created) return;
 
     std::vector<VkClearValue> clearValues = {frame.clearValue()};
 
@@ -160,11 +160,13 @@ void SSAOGraphics::updateCommandBuffer(uint32_t frameNumber){
 
     vkCmdBeginRenderPass(commandBuffers[frameNumber], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
+    if (parameters.enable) {
         SSAOPushConst pushConst{ parameters.kernelSize, parameters.radius, parameters.aoFactor, parameters.aoPower };
         vkCmdPushConstants(commandBuffers[frameNumber], ssao.pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(SSAOPushConst), &pushConst);
         vkCmdBindPipeline(commandBuffers[frameNumber], VK_PIPELINE_BIND_POINT_GRAPHICS, ssao.pipeline);
         vkCmdBindDescriptorSets(commandBuffers[frameNumber], VK_PIPELINE_BIND_POINT_GRAPHICS, ssao.pipelineLayout, 0, 1, &ssao.descriptorSets[frameNumber], 0, nullptr);
         vkCmdDraw(commandBuffers[frameNumber], 6, 1, 0, 0);
+    }
 
     vkCmdEndRenderPass(commandBuffers[frameNumber]);
 }

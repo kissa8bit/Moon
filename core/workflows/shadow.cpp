@@ -96,7 +96,7 @@ void ShadowGraphics::Shadow::create(interfaces::ObjectType type, const workflows
 
 void ShadowGraphics::create(const utils::vkDefault::CommandPool& commandPool, utils::AttachmentsDatabase&) {
     commandBuffers = commandPool.allocateCommandBuffers(parameters.imageInfo.Count);
-    if(parameters.enable && !created){
+    if(!created){
         createRenderPass();
 
         const workflows::ShaderNames shaderNames = {
@@ -120,20 +120,8 @@ void ShadowGraphics::create(const utils::vkDefault::CommandPool& commandPool, ut
     }
 }
 
-void ShadowGraphics::updateFramebuffersMap() {
-    FramebuffersMap newFramebuffersMap;
-    for (const auto& [light, depthMap] : *shadow.depthMaps) {
-        if (framebuffersMap.find(&depthMap) != framebuffersMap.end()) {
-            newFramebuffersMap[&depthMap] = std::move(framebuffersMap[&depthMap]);
-        }
-    }
-    std::swap(framebuffersMap, newFramebuffersMap);
-}
-
 void ShadowGraphics::updateCommandBuffer(uint32_t frameNumber) {
-    if (!parameters.enable || !created) return;
-
-    updateFramebuffersMap();
+    if (!created) return;
 
     for(const auto& [light, depthMap] : *shadow.depthMaps){
         if (!light) continue;
@@ -159,7 +147,7 @@ void ShadowGraphics::updateCommandBuffer(uint32_t frameNumber) {
 
 void ShadowGraphics::render(uint32_t frameNumber, VkCommandBuffer commandBuffer, const interfaces::Light* lightSource, const utils::DepthMap& depthMap, const utils::vkDefault::Framebuffer& framebuffer)
 {
-    if(!shadow.objects) return;
+    if(!shadow.objects || !lightSource) return;
 
     std::vector<VkClearValue> clearValues;
     clearValues.push_back(depthMap.attachments().clearValue());
@@ -175,7 +163,7 @@ void ShadowGraphics::render(uint32_t frameNumber, VkCommandBuffer commandBuffer,
 
     vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    if (const auto lightProps = lightSource->lightMask().property(); lightProps.has(interfaces::LightProperty::enableShadow))
+    if (const auto lightProps = lightSource->lightMask().property(); parameters.enable && lightProps.has(interfaces::LightProperty::enableShadow))
     {
         for (const auto& object : *shadow.objects) {
             if (!object) continue;

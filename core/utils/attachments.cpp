@@ -238,21 +238,16 @@ bool AttachmentsDatabase::addEmptyTexture(const utils::ImageName& id, Texture* e
     return true;
 }
 
-bool AttachmentsDatabase::addAttachmentData(const utils::AttachmentName& id, bool enable, const Attachments* pImages){
+bool AttachmentsDatabase::addAttachmentData(const utils::AttachmentName& id, const Attachments* pImages){
     if(attachmentsMap.count(id) > 0) return false;
 
-    attachmentsMap[id] = data{enable, pImages};
+    attachmentsMap[id] = pImages;
     return true;
-}
-
-bool AttachmentsDatabase::enable(const utils::AttachmentName& id) const {
-    auto it = attachmentsMap.find(id);
-    return it != attachmentsMap.end() && it->second.enable;
 }
 
 const Attachments* AttachmentsDatabase::get(const utils::AttachmentName& id) const{
     auto it = attachmentsMap.find(id);
-    return (it != attachmentsMap.end() && it->second.enable) ? it->second.pImages : nullptr;
+    return it != attachmentsMap.end() ? it->second : nullptr;
 }
 
 const Texture* AttachmentsDatabase::getEmpty(const utils::ImageName& id) const {

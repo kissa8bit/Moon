@@ -90,7 +90,7 @@ void BloomGraphics::Upsample::create(const workflows::ShaderNames& shadersNames,
 
 void BloomGraphics::create(const utils::vkDefault::CommandPool& commandPool, utils::AttachmentsDatabase& aDatabase) {
     commandBuffers = commandPool.allocateCommandBuffers(parameters.imageInfo.Count);
-    if(parameters.enable && !created){
+    if(!created){
         frames.resize(parameters.attachmentsCount);
 
         VkSamplerCreateInfo bloomSampler = utils::vkDefault::sampler();
@@ -114,7 +114,7 @@ void BloomGraphics::create(const utils::vkDefault::CommandPool& commandPool, uti
             h /= 2;
         }
 
-        aDatabase.addAttachmentData(parameters.out.bloom, parameters.enable, &frames[0]);
+        aDatabase.addAttachmentData(parameters.out.bloom, &frames[0]);
 
         const workflows::ShaderNames downsampleShaderNames = {
             {workflows::ShaderType::Compute, "bloom/bloomDownsampleComp.spv"}
@@ -132,7 +132,7 @@ void BloomGraphics::create(const utils::vkDefault::CommandPool& commandPool, uti
 
 void BloomGraphics::updateDescriptors(const utils::BuffersDatabase&, const utils::AttachmentsDatabase& aDatabase)
 {
-    if(!parameters.enable || !created) return;
+    if(!created) return;
 
     srcAttachment = aDatabase.get(parameters.in.bloom);
 
@@ -174,7 +174,18 @@ void BloomGraphics::updateDescriptors(const utils::BuffersDatabase&, const utils
 }
 
 void BloomGraphics::updateCommandBuffer(uint32_t frameNumber){
-    if(!parameters.enable || !created) return;
+    if(!created) return;
+
+    if(!parameters.enable) {
+        utils::texture::transitionLayout(commandBuffers[frameNumber], frames[0].image(frameNumber),
+            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_REMAINING_MIP_LEVELS, 0, 1);
+        VkClearColorValue clearColor{};
+        VkImageSubresourceRange range{ VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, 1 };
+        vkCmdClearColorImage(commandBuffers[frameNumber], frames[0].image(frameNumber), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clearColor, 1, &range);
+        utils::texture::transitionLayout(commandBuffers[frameNumber], frames[0].image(frameNumber),
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_REMAINING_MIP_LEVELS, 0, 1);
+        return;
+    }
 
     const uint32_t mipCount = parameters.attachmentsCount;
 

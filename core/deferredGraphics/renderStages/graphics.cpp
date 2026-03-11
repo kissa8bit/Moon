@@ -35,12 +35,12 @@ void Graphics::createAttachments(utils::AttachmentsDatabase& aDatabase) {
     deferredAttachments.depth() = utils::Attachments(physicalDevice, device, depthImage, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, { { 1.0f, 0 } }, utils::vkDefault::depthSampler());
 
     const auto pref = layerPrefix(layerIndex);
-    aDatabase.addAttachmentData(pref + parameters.out.image, parameters.enable, &deferredAttachments.image());
-    aDatabase.addAttachmentData(pref + parameters.out.bloom, parameters.enable, &deferredAttachments.bloom());
-    aDatabase.addAttachmentData(pref + parameters.out.normal, parameters.enable, &deferredAttachments.normal());
-    aDatabase.addAttachmentData(pref + parameters.out.color, parameters.enable, &deferredAttachments.color());
-    aDatabase.addAttachmentData(pref + parameters.out.emission, parameters.enable, &deferredAttachments.emission());
-    aDatabase.addAttachmentData(pref + parameters.out.depth, parameters.enable, &deferredAttachments.depth());
+    aDatabase.addAttachmentData(pref + parameters.out.image, &deferredAttachments.image());
+    aDatabase.addAttachmentData(pref + parameters.out.bloom, &deferredAttachments.bloom());
+    aDatabase.addAttachmentData(pref + parameters.out.normal, &deferredAttachments.normal());
+    aDatabase.addAttachmentData(pref + parameters.out.color, &deferredAttachments.color());
+    aDatabase.addAttachmentData(pref + parameters.out.emission, &deferredAttachments.emission());
+    aDatabase.addAttachmentData(pref + parameters.out.depth, &deferredAttachments.depth());
 }
 
 void Graphics::createRenderPass()
@@ -164,7 +164,7 @@ void Graphics::createPipelines() {
 
 void Graphics::create(const utils::vkDefault::CommandPool& commandPool, utils::AttachmentsDatabase& aDatabase) {
     commandBuffers = commandPool.allocateCommandBuffers(parameters.imageInfo.Count);
-    if(parameters.enable && !created){
+    if(!created){
         createAttachments(aDatabase);
         createRenderPass();
         createFramebuffers();
@@ -174,13 +174,13 @@ void Graphics::create(const utils::vkDefault::CommandPool& commandPool, utils::A
 }
 
 void Graphics::updateDescriptors(const utils::BuffersDatabase& bDatabase, const utils::AttachmentsDatabase& aDatabase) {
-    if (!parameters.enable || !created) return;
+    if (!created) return;
     base.update(device, bDatabase, aDatabase);
     lighting.update(device, bDatabase, aDatabase);
 }
 
 void Graphics::updateCommandBuffer(uint32_t frameNumber){
-    if (!parameters.enable || !created) return;
+    if (!created) return;
 
     const std::vector<VkClearValue> clearValues = deferredAttachments.clearValues();
     VkRenderPassBeginInfo renderPassInfo{};
@@ -194,13 +194,17 @@ void Graphics::updateCommandBuffer(uint32_t frameNumber){
 
     vkCmdBeginRenderPass(commandBuffers.at(frameNumber), &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
+    if (parameters.enable) {
         base.render(frameNumber,commandBuffers.at(frameNumber));
         outlining.render(frameNumber,commandBuffers.at(frameNumber));
+    }
 
     vkCmdNextSubpass(commandBuffers.at(frameNumber), VK_SUBPASS_CONTENTS_INLINE);
 
+    if (parameters.enable) {
         lighting.render(frameNumber,commandBuffers.at(frameNumber));
         ambientLighting.render(frameNumber,commandBuffers.at(frameNumber));
+    }
 
     vkCmdEndRenderPass(commandBuffers.at(frameNumber));
 }

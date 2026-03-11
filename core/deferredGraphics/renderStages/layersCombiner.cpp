@@ -17,9 +17,9 @@ void LayersCombiner::createAttachments(utils::AttachmentsDatabase& aDatabase)
     frame.color = utils::Attachments(physicalDevice, device, f32Info, usage);
     frame.bloom = utils::Attachments(physicalDevice, device, f32Info, usage | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     frame.blur = utils::Attachments(physicalDevice, device, f32Info, usage);
-    aDatabase.addAttachmentData(parameters.out.color, parameters.enable, &frame.color);
-    aDatabase.addAttachmentData(parameters.out.bloom, parameters.enable, &frame.bloom);
-    aDatabase.addAttachmentData(parameters.out.blur, parameters.enable, &frame.blur);
+    aDatabase.addAttachmentData(parameters.out.color, &frame.color);
+    aDatabase.addAttachmentData(parameters.out.bloom, &frame.bloom);
+    aDatabase.addAttachmentData(parameters.out.blur, &frame.blur);
 }
 
 void LayersCombiner::createRenderPass(){
@@ -139,7 +139,7 @@ void LayersCombiner::Combiner::create(const workflows::ShaderNames& shadersNames
 
 void LayersCombiner::create(const utils::vkDefault::CommandPool& commandPool, utils::AttachmentsDatabase& aDatabase) {
     commandBuffers = commandPool.allocateCommandBuffers(parameters.imageInfo.Count);
-    if(parameters.enable && !created){
+    if(!created){
         createAttachments(aDatabase);
         createRenderPass();
         createFramebuffers();
@@ -155,7 +155,7 @@ void LayersCombiner::create(const utils::vkDefault::CommandPool& commandPool, ut
 void LayersCombiner::updateDescriptors(
     const utils::BuffersDatabase& bDatabase,
     const utils::AttachmentsDatabase& aDatabase) {
-    if (!parameters.enable || !created) return;
+    if (!created) return;
 
     for (uint32_t i = 0; i < parameters.imageInfo.Count; i++)
     {
@@ -191,7 +191,7 @@ void LayersCombiner::updateDescriptors(
 }
 
 void LayersCombiner::updateCommandBuffer(uint32_t frameNumber){
-    if (!parameters.enable || !created) return;
+    if (!created) return;
 
     std::vector<VkClearValue> clearValues = { frame.color.clearValue(), frame.bloom.clearValue(), frame.blur.clearValue() };
 
@@ -206,10 +206,12 @@ void LayersCombiner::updateCommandBuffer(uint32_t frameNumber){
 
     vkCmdBeginRenderPass(commandBuffers.at(frameNumber), &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
+    if (parameters.enable) {
         vkCmdBindPipeline(commandBuffers.at(frameNumber), VK_PIPELINE_BIND_POINT_GRAPHICS, combiner.pipeline);
         vkCmdBindDescriptorSets(commandBuffers.at(frameNumber), VK_PIPELINE_BIND_POINT_GRAPHICS, combiner.pipelineLayout, 0, 1, &combiner.descriptorSets.at(frameNumber), 0, nullptr);
         vkCmdPushConstants(commandBuffers.at(frameNumber), combiner.pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(float), &parameters.bloomThreshold);
         vkCmdDraw(commandBuffers.at(frameNumber), 6, 1, 0, 0);
+    }
 
     vkCmdEndRenderPass(commandBuffers.at(frameNumber));
 }

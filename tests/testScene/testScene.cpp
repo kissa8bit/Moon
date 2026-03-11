@@ -177,7 +177,7 @@ void testScene::makeGui() {
 
         ImGui::BeginGroup();
             ImGui::Text("pipelines : "); ImGui::SameLine(); ImGui::Separator();
-            window.windowResized() |= moon::tests::gui::switchers(graphics["base"]);
+            moon::tests::gui::switchers(graphics["base"]);
         ImGui::EndGroup();
 
         ImGui::TreePop();

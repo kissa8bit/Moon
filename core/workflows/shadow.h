@@ -46,7 +46,6 @@ private:
     void render(uint32_t frameNumber, VkCommandBuffer commandBuffer, const interfaces::Light* lightSource, const utils::DepthMap& depthMap, const utils::vkDefault::Framebuffer& framebuffer);
     void createRenderPass();
     void updateCommandBuffer(uint32_t frameNumber) override;
-    void updateFramebuffersMap();
 
 public:
     ShadowGraphics(ShadowGraphicsParameters& parameters, const interfaces::Objects* objects = nullptr, interfaces::DepthMaps* depthMaps = nullptr);

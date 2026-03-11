@@ -12,7 +12,7 @@ BoundingBoxGraphics::BoundingBoxGraphics(BoundingBoxParameters& parameters, cons
 void BoundingBoxGraphics::createAttachments(utils::AttachmentsDatabase& aDatabase){
     const utils::vkDefault::ImageInfo info = { parameters.imageInfo.Count, VK_FORMAT_R8G8B8A8_UNORM, parameters.imageInfo.Extent, parameters.imageInfo.Samples };
     frame = utils::Attachments(physicalDevice, device, info);
-    aDatabase.addAttachmentData(parameters.out.boundingBox, parameters.enable, &frame);
+    aDatabase.addAttachmentData(parameters.out.boundingBox, &frame);
 }
 
 void BoundingBoxGraphics::createRenderPass(){
@@ -117,7 +117,7 @@ void BoundingBoxGraphics::BoundingBox::create(const workflows::ShaderNames& shad
 
 void BoundingBoxGraphics::create(const utils::vkDefault::CommandPool& commandPool, utils::AttachmentsDatabase& aDatabase) {
     commandBuffers = commandPool.allocateCommandBuffers(parameters.imageInfo.Count);
-    if(parameters.enable && !created){
+    if(!created){
         createAttachments(aDatabase);
         createRenderPass();
         createFramebuffers();
@@ -131,7 +131,7 @@ void BoundingBoxGraphics::create(const utils::vkDefault::CommandPool& commandPoo
 }
 
 void BoundingBoxGraphics::updateDescriptors(const utils::BuffersDatabase& bDatabase, const utils::AttachmentsDatabase&) {
-    if (!parameters.enable || !created) return;
+    if (!created) return;
 
     for (uint32_t i = 0; i < parameters.imageInfo.Count; i++) {
         utils::descriptorSet::Writes writes;
@@ -141,7 +141,7 @@ void BoundingBoxGraphics::updateDescriptors(const utils::BuffersDatabase& bDatab
 }
 
 void BoundingBoxGraphics::updateCommandBuffer(uint32_t frameNumber){
-    if (!parameters.enable || !created) return;
+    if (!created) return;
 
     std::vector<VkClearValue> clearValues = {frame.clearValue()};
 
@@ -156,7 +156,9 @@ void BoundingBoxGraphics::updateCommandBuffer(uint32_t frameNumber){
 
     vkCmdBeginRenderPass(commandBuffers[frameNumber], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
+    if (parameters.enable) {
         box.render(frameNumber, commandBuffers[frameNumber]);
+    }
 
     vkCmdEndRenderPass(commandBuffers[frameNumber]);
 }

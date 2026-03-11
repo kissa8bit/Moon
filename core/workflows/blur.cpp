@@ -12,7 +12,7 @@ void GaussianBlur::createAttachments(utils::AttachmentsDatabase& aDatabase)
     const utils::vkDefault::ImageInfo info = { parameters.imageInfo.Count, VK_FORMAT_R16G16B16A16_SFLOAT, parameters.imageInfo.Extent, VK_SAMPLE_COUNT_1_BIT };
     bufferAttachment = utils::Attachments(physicalDevice, device, info, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
     frame = utils::Attachments(physicalDevice, device, info, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
-    aDatabase.addAttachmentData(parameters.out.blur, parameters.enable, &frame);
+    aDatabase.addAttachmentData(parameters.out.blur, &frame);
 }
 
 void GaussianBlur::createRenderPass(){
@@ -140,7 +140,7 @@ void GaussianBlur::Blur::create(const workflows::ShaderNames& shadersNames, VkDe
 
 void GaussianBlur::create(const utils::vkDefault::CommandPool& commandPool, utils::AttachmentsDatabase& aDatabasep) {
     commandBuffers = commandPool.allocateCommandBuffers(parameters.imageInfo.Count);
-    if(parameters.enable && !created){
+    if(!created){
         createAttachments(aDatabasep);
         createRenderPass();
         createFramebuffers();
@@ -159,7 +159,7 @@ void GaussianBlur::create(const utils::vkDefault::CommandPool& commandPool, util
 }
 
 void GaussianBlur::updateDescriptors(const utils::BuffersDatabase&, const utils::AttachmentsDatabase& aDatabase) {
-    if(!parameters.enable || !created) return;
+    if(!created) return;
 
     for (uint32_t i = 0; i < parameters.imageInfo.Count; i++) {
         utils::descriptorSet::Writes writes;
@@ -177,7 +177,7 @@ void GaussianBlur::updateDescriptors(const utils::BuffersDatabase&, const utils:
 }
 
 void GaussianBlur::updateCommandBuffer(uint32_t frameNumber){
-    if(!parameters.enable || !created) return;
+    if(!created) return;
 
     std::vector<VkClearValue> clearValues = { frame.clearValue() , bufferAttachment.clearValue()};
 
@@ -192,20 +192,24 @@ void GaussianBlur::updateCommandBuffer(uint32_t frameNumber){
 
     vkCmdBeginRenderPass(commandBuffers[frameNumber], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
+    if (parameters.enable) {
         vkCmdPushConstants(commandBuffers[frameNumber], xblur.pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(float), &parameters.blurDepth);
 
         vkCmdBindPipeline(commandBuffers[frameNumber], VK_PIPELINE_BIND_POINT_GRAPHICS, xblur.pipeline);
         vkCmdBindDescriptorSets(commandBuffers[frameNumber], VK_PIPELINE_BIND_POINT_GRAPHICS, xblur.pipelineLayout, 0, 1, &xblur.descriptorSets[frameNumber], 0, nullptr);
         vkCmdDraw(commandBuffers[frameNumber], 6, 1, 0, 0);
+    }
 
     vkCmdNextSubpass(commandBuffers[frameNumber], VK_SUBPASS_CONTENTS_INLINE);
     vkCmdNextSubpass(commandBuffers[frameNumber], VK_SUBPASS_CONTENTS_INLINE);
 
+    if (parameters.enable) {
         vkCmdPushConstants(commandBuffers[frameNumber], yblur.pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(float), &parameters.blurDepth);
 
         vkCmdBindPipeline(commandBuffers[frameNumber], VK_PIPELINE_BIND_POINT_GRAPHICS, yblur.pipeline);
         vkCmdBindDescriptorSets(commandBuffers[frameNumber], VK_PIPELINE_BIND_POINT_GRAPHICS, yblur.pipelineLayout, 0, 1, &yblur.descriptorSets[frameNumber], 0, nullptr);
         vkCmdDraw(commandBuffers[frameNumber], 6, 1, 0, 0);
+    }
 
     vkCmdEndRenderPass(commandBuffers[frameNumber]);
 }

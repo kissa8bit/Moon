@@ -99,14 +99,9 @@ void createAttachments(
     VkSamplerCreateInfo                 samplerInfo = utils::vkDefault::sampler());
 
 struct AttachmentsDatabase {
-    struct data{
-        bool enable{false};
-        const Attachments* pImages{nullptr};
-    };
-
     utils::ImageName defaultEmptyTexture;
-    std::unordered_map<utils::ImageName, Texture*> emptyTexturesMap;
-    std::unordered_map<utils::AttachmentName, data> attachmentsMap;
+    std::unordered_map<utils::ImageName, const Texture*> emptyTexturesMap;
+    std::unordered_map<utils::AttachmentName, const Attachments*> attachmentsMap;
 
     AttachmentsDatabase() = default;
     AttachmentsDatabase(const utils::ImageName& emptyTextureId, Texture* emptyTexture);
@@ -116,8 +111,7 @@ struct AttachmentsDatabase {
     void destroy();
 
     bool addEmptyTexture(const utils::ImageName& id, Texture* emptyTexture);
-    bool addAttachmentData(const utils::AttachmentName& id, bool enable, const Attachments* pImages);
-    bool enable(const utils::AttachmentName& id) const;
+    bool addAttachmentData(const utils::AttachmentName& id, const Attachments* pImages);
     const Attachments* get(const utils::AttachmentName& id) const;
     const Texture* getEmpty(const utils::ImageName& id = utils::ImageName("")) const;
     VkImageView imageView(const utils::AttachmentName& id, const uint32_t imageIndex, const std::optional<utils::ImageName>& emptyTextureId = std::nullopt) const;

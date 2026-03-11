@@ -14,8 +14,8 @@ SkyboxGraphics::SkyboxGraphics(SkyboxParameters& parameters, const interfaces::O
 void SkyboxGraphics::createAttachments(utils::AttachmentsDatabase& aDatabase){
     const utils::vkDefault::ImageInfo info = { parameters.imageInfo.Count, VK_FORMAT_R16G16B16A16_SFLOAT, parameters.imageInfo.Extent, parameters.imageInfo.Samples };
     utils::createAttachments(physicalDevice, device, info, 2, &frame, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
-    aDatabase.addAttachmentData(parameters.out.baseColor, parameters.enable, &frame.color);
-    aDatabase.addAttachmentData(parameters.out.bloom, parameters.enable, &frame.bloom);
+    aDatabase.addAttachmentData(parameters.out.baseColor, &frame.color);
+    aDatabase.addAttachmentData(parameters.out.bloom, &frame.bloom);
 }
 
 void SkyboxGraphics::createRenderPass()
@@ -113,7 +113,7 @@ void SkyboxGraphics::Skybox::create(const workflows::ShaderNames& shadersNames, 
 
 void SkyboxGraphics::create(const utils::vkDefault::CommandPool& commandPool, utils::AttachmentsDatabase& aDatabase) {
     commandBuffers = commandPool.allocateCommandBuffers(parameters.imageInfo.Count);
-    if(parameters.enable && !created){
+    if(!created){
         createAttachments(aDatabase);
         createRenderPass();
         createFramebuffers();
@@ -127,7 +127,7 @@ void SkyboxGraphics::create(const utils::vkDefault::CommandPool& commandPool, ut
 }
 
 void SkyboxGraphics::updateDescriptors(const utils::BuffersDatabase& bDatabase, const utils::AttachmentsDatabase&) {
-    if (!parameters.enable || !created) return;
+    if (!created) return;
 
     for (uint32_t i = 0; i < parameters.imageInfo.Count; i++){
         utils::descriptorSet::Writes writes;
@@ -137,7 +137,7 @@ void SkyboxGraphics::updateDescriptors(const utils::BuffersDatabase& bDatabase, 
 }
 
 void SkyboxGraphics::updateCommandBuffer(uint32_t frameNumber){
-    if (!parameters.enable || !created) return;
+    if (!created) return;
 
     std::vector<VkClearValue> clearValues = {frame.color.clearValue(), frame.bloom.clearValue()};
 
@@ -152,21 +152,23 @@ void SkyboxGraphics::updateCommandBuffer(uint32_t frameNumber){
 
     vkCmdBeginRenderPass(commandBuffers[frameNumber], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    vkCmdBindPipeline(commandBuffers[frameNumber], VK_PIPELINE_BIND_POINT_GRAPHICS, skybox.pipeline);
-    for(const auto& object: *skybox.objects)
-    {
-        if (!object) continue;
+    if (parameters.enable) {
+        vkCmdBindPipeline(commandBuffers[frameNumber], VK_PIPELINE_BIND_POINT_GRAPHICS, skybox.pipeline);
+        for(const auto& object: *skybox.objects)
+        {
+            if (!object) continue;
 
-        const auto mask = object->objectMask();
-        const auto type = mask.type();
-        const auto property = mask.property();
+            const auto mask = object->objectMask();
+            const auto type = mask.type();
+            const auto property = mask.property();
 
-        if (!property.has(interfaces::ObjectProperty::enable)) continue;
-        if (!type.has(interfaces::ObjectType::Value::skybox)) continue;
+            if (!property.has(interfaces::ObjectProperty::enable)) continue;
+            if (!type.has(interfaces::ObjectType::Value::skybox)) continue;
 
-        utils::vkDefault::DescriptorSets descriptorSets = { skybox.descriptorSets[frameNumber], object->getDescriptorSet(frameNumber) };
-        vkCmdBindDescriptorSets(commandBuffers[frameNumber], VK_PIPELINE_BIND_POINT_GRAPHICS, skybox.pipelineLayout, 0, static_cast<uint32_t>(descriptorSets.size()), descriptorSets.data(), 0, NULL);
-        vkCmdDraw(commandBuffers[frameNumber], 36, 1, 0, 0);
+            utils::vkDefault::DescriptorSets descriptorSets = { skybox.descriptorSets[frameNumber], object->getDescriptorSet(frameNumber) };
+            vkCmdBindDescriptorSets(commandBuffers[frameNumber], VK_PIPELINE_BIND_POINT_GRAPHICS, skybox.pipelineLayout, 0, static_cast<uint32_t>(descriptorSets.size()), descriptorSets.data(), 0, NULL);
+            vkCmdDraw(commandBuffers[frameNumber], 36, 1, 0, 0);
+        }
     }
 
     vkCmdEndRenderPass(commandBuffers[frameNumber]);

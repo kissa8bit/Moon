@@ -10,7 +10,7 @@ PostProcessingGraphics::PostProcessingGraphics(PostProcessingParameters& paramet
 void PostProcessingGraphics::createAttachments(utils::AttachmentsDatabase& aDatabase){
     const utils::vkDefault::ImageInfo info = { parameters.imageInfo.Count, VK_FORMAT_R16G16B16A16_SFLOAT, parameters.imageInfo.Extent, parameters.imageInfo.Samples };
     frame = utils::Attachments(physicalDevice, device, info);
-    aDatabase.addAttachmentData(parameters.out.postProcessing, parameters.enable, &frame);
+    aDatabase.addAttachmentData(parameters.out.postProcessing, &frame);
 }
 
 void PostProcessingGraphics::createRenderPass()
@@ -101,7 +101,7 @@ void PostProcessingGraphics::PostProcessing::create(const workflows::ShaderNames
 
 void PostProcessingGraphics::create(const utils::vkDefault::CommandPool& commandPool, utils::AttachmentsDatabase& aDatabase) {
     commandBuffers = commandPool.allocateCommandBuffers(parameters.imageInfo.Count);
-    if(parameters.enable && !created){
+    if(!created){
         createAttachments(aDatabase);
         createRenderPass();
         createFramebuffers();
@@ -115,7 +115,7 @@ void PostProcessingGraphics::create(const utils::vkDefault::CommandPool& command
 }
 
 void PostProcessingGraphics::updateDescriptors(const utils::BuffersDatabase&, const utils::AttachmentsDatabase& aDatabase) {
-    if (!parameters.enable || !created) return;
+    if (!created) return;
 
     for (uint32_t i = 0; i < parameters.imageInfo.Count; i++){
         auto descriptorSet = postProcessing.descriptorSets[i];
@@ -130,7 +130,7 @@ void PostProcessingGraphics::updateDescriptors(const utils::BuffersDatabase&, co
 }
 
 void PostProcessingGraphics::updateCommandBuffer(uint32_t frameNumber){
-    if (!parameters.enable || !created) return;
+    if (!created) return;
 
     std::vector<VkClearValue> clearValues;
     clearValues.push_back(VkClearValue{});
@@ -146,9 +146,11 @@ void PostProcessingGraphics::updateCommandBuffer(uint32_t frameNumber){
 
     vkCmdBeginRenderPass(commandBuffers[frameNumber], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
+    if (parameters.enable) {
         vkCmdBindPipeline(commandBuffers[frameNumber], VK_PIPELINE_BIND_POINT_GRAPHICS, postProcessing.pipeline);
         vkCmdBindDescriptorSets(commandBuffers[frameNumber], VK_PIPELINE_BIND_POINT_GRAPHICS, postProcessing.pipelineLayout, 0, 1, &postProcessing.descriptorSets[frameNumber], 0, nullptr);
         vkCmdDraw(commandBuffers[frameNumber], 6, 1, 0, 0);
+    }
 
     vkCmdEndRenderPass(commandBuffers[frameNumber]);
 }

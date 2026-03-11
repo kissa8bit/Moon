@@ -37,27 +37,22 @@ void scaleManipulator(transformational::Object& obj, const char* name, float wid
     }
 }
 
-inline bool switcher(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> graphics, const moon::workflows::ParameterName& name) {
-    if (auto val = graphics->getEnable(name); ImGui::RadioButton(name.get().c_str(), val)) {
-        graphics->setEnable(name, !val);
-        return true;
+inline void switcher(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> graphics, const moon::workflows::ParameterName& param, const moon::workflows::WorkflowName& name) {
+    if (auto val = graphics->getEnable(param); ImGui::RadioButton(param.get().c_str(), val)) {
+        graphics->setEnable(param, !val);
+        graphics->requestUpdate(name);
     }
-    return false;
 }
 
-inline bool switchers(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> graphics) {
-    bool framebufferResized = false;
-    ImGui::BeginGroup();
-    framebufferResized |= moon::tests::gui::switcher(graphics, moon::deferredGraphics::Names::Bloom::param);
-    framebufferResized |= moon::tests::gui::switcher(graphics, moon::deferredGraphics::Names::Blur::param);
-    framebufferResized |= moon::tests::gui::switcher(graphics, moon::deferredGraphics::Names::Skybox::param);
-    framebufferResized |= moon::tests::gui::switcher(graphics, moon::deferredGraphics::Names::SSLR::param);
-    framebufferResized |= moon::tests::gui::switcher(graphics, moon::deferredGraphics::Names::SSAO::param);
-    framebufferResized |= moon::tests::gui::switcher(graphics, moon::deferredGraphics::Names::Shadow::param);
-    framebufferResized |= moon::tests::gui::switcher(graphics, moon::deferredGraphics::Names::Scattering::param);
-    framebufferResized |= moon::tests::gui::switcher(graphics, moon::deferredGraphics::Names::BoundingBox::param);
-    ImGui::EndGroup();
-    return framebufferResized;
+inline void switchers(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> graphics) {
+    moon::tests::gui::switcher(graphics, moon::deferredGraphics::Names::Bloom::param,       moon::deferredGraphics::Names::Bloom::name);
+    moon::tests::gui::switcher(graphics, moon::deferredGraphics::Names::Blur::param,        moon::deferredGraphics::Names::Blur::name);
+    moon::tests::gui::switcher(graphics, moon::deferredGraphics::Names::Skybox::param,      moon::deferredGraphics::Names::Skybox::name);
+    moon::tests::gui::switcher(graphics, moon::deferredGraphics::Names::SSLR::param,        moon::deferredGraphics::Names::SSLR::name);
+    moon::tests::gui::switcher(graphics, moon::deferredGraphics::Names::SSAO::param,        moon::deferredGraphics::Names::SSAO::name);
+    moon::tests::gui::switcher(graphics, moon::deferredGraphics::Names::Shadow::param,      moon::deferredGraphics::Names::Shadow::name);
+    moon::tests::gui::switcher(graphics, moon::deferredGraphics::Names::Scattering::param,  moon::deferredGraphics::Names::Scattering::name);
+    moon::tests::gui::switcher(graphics, moon::deferredGraphics::Names::BoundingBox::param, moon::deferredGraphics::Names::BoundingBox::name);
 }
 
 inline bool setOutlighting(tests::ControledObject& obj, float width = 300.0f) {
