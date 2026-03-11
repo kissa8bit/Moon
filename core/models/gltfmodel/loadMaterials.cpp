@@ -23,7 +23,7 @@ utils::Texture loadTexture(const tinygltf::Model& gltfModel, const utils::Physic
             uint32_t line = gltfimage.component * (gltfimage.width * downsampleHeight * i + downsampleHeight * j);
 
             buffer[offset + 3] = 255;
-            for (uint32_t k = 0; k < gltfimage.component; ++k) {
+            for (uint32_t k = 0; k < static_cast<uint32_t>(gltfimage.component); ++k) {
                 buffer[offset + k] = gltfimage.image[line + k];
             }
             offset += 4;
@@ -64,7 +64,7 @@ public:
         }
 
         if (factor.size() >= 4) {
-            textureParameters.factor = math::vec4(factor[0], factor[1], factor[2], factor[3]);
+            textureParameters.factor = math::vec4(static_cast<float>(factor[0]), static_cast<float>(factor[1]), static_cast<float>(factor[2]), static_cast<float>(factor[3]));
         }
 
         return textureParameters;
@@ -138,13 +138,13 @@ void GltfModel::loadMaterials(const tinygltf::Model& gltfModel, const utils::Phy
         auto& material = materials.emplace_back();
         material.baseColor = extractor(pbr.baseColorTexture, VK_FORMAT_R8G8B8A8_SRGB, pbr.baseColorFactor);
         material.metallicRoughness = extractor(pbr.metallicRoughnessTexture, VK_FORMAT_R8G8B8A8_UNORM);
-        material.metallicRoughness.factor[interfaces::Material::metallicIndex] = pbr.metallicFactor;
-        material.metallicRoughness.factor[interfaces::Material::roughnessIndex] = pbr.roughnessFactor;
+        material.metallicRoughness.factor[interfaces::Material::metallicIndex] = static_cast<float>(pbr.metallicFactor);
+        material.metallicRoughness.factor[interfaces::Material::roughnessIndex] = static_cast<float>(pbr.roughnessFactor);
         material.normal = extractor(mat.normalTexture, VK_FORMAT_R8G8B8A8_UNORM);
         material.emissive = extractor(mat.emissiveTexture, VK_FORMAT_R8G8B8A8_SRGB, mat.emissiveFactor);
         material.occlusion = extractor(mat.occlusionTexture, VK_FORMAT_R8G8B8A8_UNORM);
         material.alphaMode = alphaModeMap.at(mat.alphaMode);
-        material.alphaCutoff = mat.alphaCutoff;
+        material.alphaCutoff = static_cast<float>(mat.alphaCutoff);
 
         if (auto extIt = mat.extensions.find("KHR_materials_pbrSpecularGlossiness"); extIt != mat.extensions.end()) {
             const auto& extensions = extIt->second;

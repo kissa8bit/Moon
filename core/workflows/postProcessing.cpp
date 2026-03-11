@@ -19,7 +19,7 @@ void PostProcessingGraphics::createRenderPass()
         utils::Attachments::imageDescription(frame.format())
     };
 
-    utils::vkDefault::SubpassInfos subpassInfos = utils::vkDefault::subpassInfos(attachments.size());
+    utils::vkDefault::SubpassInfos subpassInfos = utils::vkDefault::subpassInfos(static_cast<uint32_t>(attachments.size()));
 
     utils::vkDefault::RenderPass::SubpassDependencies dependencies;
     dependencies.push_back(VkSubpassDependency{});

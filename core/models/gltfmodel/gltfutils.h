@@ -13,7 +13,7 @@ template <typename T1, size_t n, typename T2>
 void convert(math::Vector<T1, n>& dst,const std::vector<T2>& src) {
     if (src.size() == n) {
         for (size_t i = 0; i < n; ++i) {
-            dst[i] = static_cast<T1>(src[i]);
+            dst[static_cast<uint32_t>(i)] = static_cast<T1>(src[i]);
         }
     }
 }
@@ -40,7 +40,7 @@ void convert(math::Matrix<T1, n, m>& dst, const std::vector<T2>& src) {
         const T2* data = src.data();
         for (size_t i = 0; i < n; ++i) {
             for (size_t j = 0; j < m; ++j) {
-                dst[i][j] = static_cast<T1>(data[m * i + j]);
+                dst[static_cast<uint32_t>(i)][static_cast<uint32_t>(j)] = static_cast<T1>(data[m * i + j]);
             }
         }
     }

@@ -48,7 +48,7 @@ utils::vkDefault::DescriptorSetLayout Skeleton::descriptorSetLayout(VkDevice dev
 
 void Mesh::renderBB(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets) const {
     for (const auto& primitive : primitives) {
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, descriptorSets.size(), descriptorSets.data(), 0, nullptr);
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, static_cast<uint32_t>(descriptorSets.size()), descriptorSets.data(), 0, nullptr);
         vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(math::box), (void*)&primitive.bb);
         vkCmdDraw(commandBuffer, 24, 1, 0, 0);
     }
@@ -62,7 +62,7 @@ void Mesh::render(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout
         auto descriptors = descriptorSets;
         descriptors.push_back(material.descriptorSet);
         if (primitive.morphDeltas.descriptorSet) descriptors.push_back(primitive.morphDeltas.descriptorSet);
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, descriptors.size(), descriptors.data(), 0, nullptr);
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, static_cast<uint32_t>(descriptors.size()), descriptors.data(), 0, nullptr);
 
         const auto buffer = material.buffer(primitiveCount++);
         vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(buffer), &buffer);

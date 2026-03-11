@@ -240,7 +240,7 @@ void loadVertices(const tinygltf::Model& gltfModel, const tinygltf::Mesh& mesh, 
         if (isInvalid(primitive.indices)) continue;
         const GltfBufferExtractor indicesExtract(gltfModel, primitive.indices);
 
-        uint32_t indexOffset = indices.size();
+        uint32_t indexOffset = static_cast<uint32_t>(indices.size());
 #define GLTFMODEL_LOADVERTEXBUFFER_INDEX_CASE(ComponentType, type)                                          \
     case ComponentType:                                                                                     \
         pushBackIndex((const type*)indicesExtract.data, indicesExtract.count, vertexStart, indices);        \

@@ -262,8 +262,8 @@ public:
 	Surface() = default;
 	Surface(const Surface&) = delete;
 	Surface& operator=(const Surface&) = delete;
-	Surface(Surface&& other) { swap(other); }
-	Surface& operator=(Surface&& other) { swap(other); return *this; }
+	Surface(Surface&& other) noexcept { swap(other); }
+	Surface& operator=(Surface&& other) noexcept { swap(other); return *this; }
 	void swap(Surface& other) {
 		std::swap(surface, other.surface);
 		std::swap(instance, other.instance);

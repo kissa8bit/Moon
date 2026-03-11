@@ -29,7 +29,7 @@ void LayersCombiner::createRenderPass(){
         utils::Attachments::imageDescription(frame.blur.format(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
     };
 
-    utils::vkDefault::SubpassInfos subpassInfos = utils::vkDefault::subpassInfos(attachments.size());
+    utils::vkDefault::SubpassInfos subpassInfos = utils::vkDefault::subpassInfos(static_cast<uint32_t>(attachments.size()));
 
     utils::vkDefault::RenderPass::SubpassDependencies dependencies;
     dependencies.push_back(VkSubpassDependency{});

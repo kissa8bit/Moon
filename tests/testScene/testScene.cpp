@@ -507,7 +507,7 @@ void testScene::createObjects()
     static_cast<moon::entities::BaseObject*>(objects["RecursiveSkeletons"].get())->animation.play(0);
 
     objects["MorphStressTest"] = std::make_shared<moon::entities::BaseObject>(models["MorphStressTest"].get(), 0, resourceCount, moon::entities::BaseObject::AnimationConfig{ .transition = moon::entities::BaseObject::AnimationConfig::Transition::Instant });
-    objects["MorphStressTest"]->scale(0.02f).rotate(moon::math::radians(90.0f), { 1.0f,0.0f,0.0f }).translate(moon::math::vec3(-3.5f, 6.5f, 12.5f)).scale(moon::math::vec3(0.7));
+    objects["MorphStressTest"]->scale(0.02f).rotate(moon::math::radians(90.0f), { 1.0f,0.0f,0.0f }).translate(moon::math::vec3(-3.5f, 6.5f, 12.5f)).scale(moon::math::vec3(0.7f));
     static_cast<moon::entities::BaseObject*>(objects["MorphStressTest"].get())->animation.play(0);
 
     objects["SimpleSkin"] = std::make_shared<moon::entities::BaseObject>(models["SimpleSkin"].get(), 0, resourceCount);
@@ -712,12 +712,12 @@ void testScene::mouseEvent()
     const auto xy = window.mousePose();
     if(mouse.control->pressed(GLFW_MOUSE_BUTTON_LEFT) || mouse.control->pressed(GLFW_MOUSE_BUTTON_RIGHT)){
         const auto delta = mouse.pose - xy;
-        cameras["base"]->rotateX(sensitivity * delta[1]);
-        cameras["base"]->rotateY(sensitivity * delta[0]);
+        cameras["base"]->rotateX(static_cast<float>(sensitivity * delta[1]));
+        cameras["base"]->rotateY(static_cast<float>(sensitivity * delta[0]));
     }
     if (mouse.control->pressed(GLFW_MOUSE_BUTTON_LEFT)) {
         const auto sizes = window.sizes();
-        mouse.cursor->update(xy[0] / sizes[0], xy[1] / sizes[1]);
+        mouse.cursor->update(static_cast<float>(xy[0] / sizes[0]), static_cast<float>(xy[1] / sizes[1]));
     }
     mouse.pose = xy;
 

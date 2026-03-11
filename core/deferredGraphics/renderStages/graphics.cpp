@@ -114,7 +114,7 @@ void Graphics::createRenderPass()
 
 void Graphics::createFramebuffers() {
     framebuffers.resize(parameters.imageInfo.Count);
-    for (size_t imageIndex = 0; imageIndex < parameters.imageInfo.Count; imageIndex++){
+    for (uint32_t imageIndex = 0; imageIndex < parameters.imageInfo.Count; imageIndex++){
         auto views = deferredAttachments.views(imageIndex);
         VkFramebufferCreateInfo framebufferInfo{};
             framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;

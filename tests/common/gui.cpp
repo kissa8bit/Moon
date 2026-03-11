@@ -57,7 +57,7 @@ void fpsPlot(float currentFrameFPS, uint32_t points) {
     average /= points;
     max = std::max(max, fps[fps.size() - 1]);
     min = std::min(min, fps[fps.size() - 1]);
-    ImGui::PlotLines(("FPS:\n[" + std::to_string(min) + ",\n" + std::to_string(max) + "]").c_str(), fps.data(), fps.size(), 0, ("average = " + std::to_string(average)).c_str(), min, max, { 250.0f, 100.0f });
+    ImGui::PlotLines(("FPS:\n[" + std::to_string(min) + ",\n" + std::to_string(max) + "]").c_str(), fps.data(), static_cast<int>(fps.size()), 0, ("average = " + std::to_string(average)).c_str(), min, max, { 250.0f, 100.0f });
 }
 
 void setPoseInWindow(std::shared_ptr<moon::graphicsManager::GraphicsInterface> graphics) {

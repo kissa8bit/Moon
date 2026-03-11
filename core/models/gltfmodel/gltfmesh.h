@@ -24,8 +24,8 @@ struct GltfMesh : public interfaces::Mesh {
             const auto& posAccessor = gltfModel.accessors.at(poseIndex);
 
             const interfaces::Material* material = isValid(primitive.material) ? &materials.at(primitive.material) : &materials.back();
-            const uint32_t indexCount = isValid(primitive.indices) ? gltfModel.accessors.at(primitive.indices).count : 0;
-            const uint32_t vertexCount = posAccessor.count;
+            const uint32_t indexCount = isValid(primitive.indices) ? static_cast<uint32_t>(gltfModel.accessors.at(primitive.indices).count) : 0;
+            const uint32_t vertexCount = static_cast<uint32_t>(posAccessor.count);
 
             primitives.emplace_back(
                 interfaces::Primitive({firstIndex, indexCount}, {0, vertexCount}, material, { math::vec4(toVector3f(posAccessor.minValues), -1.0f), math::vec4(toVector3f(posAccessor.maxValues), -1.0f) })
@@ -40,19 +40,19 @@ struct GltfMesh : public interfaces::Mesh {
             for (uint32_t index = range.first; index < range.last(); index++) {
                 const auto& vertex = vertices[indices[index]];
                 const auto& pos = vertex.pos;
-                const int joint = vertex.joint[0];
+                const int joint = static_cast<int>(vertex.joint[0]);
                 if (joint == -1) continue;
 
                 auto& box = boxes[skin.joints.at(joint).jointedNodeId];
-                box.max = math::vec4(math::max(box.max.dvec(), pos), joint);
-                box.min = math::vec4(math::min(box.min.dvec(), pos), joint);
+                box.max = math::vec4(math::max(box.max.dvec(), pos), static_cast<float>(joint));
+                box.min = math::vec4(math::min(box.min.dvec(), pos), static_cast<float>(joint));
             }
         }
     }
 
     void renderNodeBB(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets) const {
         for (const auto& [_, box] : boxes) {
-            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, descriptorSets.size(), descriptorSets.data(), 0, NULL);
+            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, static_cast<uint32_t>(descriptorSets.size()), descriptorSets.data(), 0, NULL);
             vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(math::box), (void*)&box);
             vkCmdDraw(commandBuffer, 24, 1, 0, 0);
         }
