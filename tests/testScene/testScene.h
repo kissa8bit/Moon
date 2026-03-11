@@ -13,8 +13,12 @@
 #include "controledObject.h"
 #include "mouse.h"
 
+// #define TEST_RESOURCE_USAGE
+
+#ifndef TEST_RESOURCE_USAGE
 // #define SECOND_VIEW_WINDOW
 #define IMGUI_GRAPHICS
+#endif // !TEST_RESOURCE_USAGE
 
 namespace moon::interfaces { class Model;}
 namespace moon::graphicsManager { class GraphicsManager;}

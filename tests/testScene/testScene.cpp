@@ -76,6 +76,10 @@ void testScene::create()
     deferredGraphicsParameters.workflowsShadersPath = ExternalPath / "core/workflows/spv";
     deferredGraphicsParameters.extent = window.sizes();
 	deferredGraphicsParameters.layersCount = 2;
+#ifdef TEST_RESOURCE_USAGE
+    deferredGraphicsParameters.layersCount = 1;
+#endif
+
     graphics["base"] = std::make_shared<moon::deferredGraphics::DeferredGraphics>(deferredGraphicsParameters);
     app.setGraphics(graphics["base"].get());
     graphics["base"]->bind(cameras["base"]->camera());
@@ -120,9 +124,11 @@ void testScene::create()
     }
 #endif
 
+#ifndef TEST_RESOURCE_USAGE
     createModels();
     createObjects();
     createLight();
+#endif
 }
 
 void testScene::requestUpdate() {
@@ -390,10 +396,14 @@ void testScene::updateFrame(uint32_t frameNumber, float inFrameTime)
     static float globalTime = 0.0f;
     globalTime += animationTime;
 
-    skyboxObjects["stars"]->rotate(0.01f * animationTime, normalized(moon::math::vec3(1.0f, 1.0f, 1.0f)));
-    objects["helmet"]->rotate(0.5f * animationTime, normalized(moon::math::vec3(0.0f, 0.0f, 1.0f)));
-    objects["helmet"]->translation() = moon::math::quat(0.0f, {27.0f, -10.0f, 14.0f + 0.2f * std::sin(globalTime)});
-    objects["helmet"]->update();
+    if (skyboxObjects.find("stars") != skyboxObjects.end()) {
+        skyboxObjects["stars"]->rotate(0.01f * animationTime, normalized(moon::math::vec3(1.0f, 1.0f, 1.0f)));
+    }
+    if (objects.find("helmet") != objects.end()) {
+        objects["helmet"]->rotate(0.5f * animationTime, normalized(moon::math::vec3(0.0f, 0.0f, 1.0f)));
+        objects["helmet"]->translation() = moon::math::quat(0.0f, { 27.0f, -10.0f, 14.0f + 0.2f * std::sin(globalTime) });
+        objects["helmet"]->update();
+    }
     
     std::for_each(std::execution::par_unseq, objects.begin(), objects.end(), [frameNumber, animationTime](auto& object) {
         auto pBaseObject = dynamic_cast<moon::entities::BaseObject*>(object.second.get());
