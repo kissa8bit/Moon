@@ -10,6 +10,8 @@ namespace moon::workflows {
 struct BoundingBoxParameters : workflows::Parameters {
     struct{
         utils::BufferName camera;
+        utils::AttachmentName depth;
+        utils::ImageName defaultDepthTexture;
     }in;
     struct{
         utils::AttachmentName boundingBox;

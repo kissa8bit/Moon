@@ -53,6 +53,7 @@ void BoundingBoxGraphics::createFramebuffers(){
 void BoundingBoxGraphics::BoundingBox::create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass){
     std::vector<VkDescriptorSetLayoutBinding> bindings;
     bindings.push_back(utils::vkDefault::bufferVertexLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
+    bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
 
     descriptorSetLayout = utils::vkDefault::DescriptorSetLayout(device, bindings);
     objectDescriptorSetLayout = implementations::BaseObject::createDescriptorSetLayout(device);
@@ -130,12 +131,13 @@ void BoundingBoxGraphics::create(const utils::vkDefault::CommandPool& commandPoo
     }
 }
 
-void BoundingBoxGraphics::updateDescriptors(const utils::BuffersDatabase& bDatabase, const utils::AttachmentsDatabase&) {
+void BoundingBoxGraphics::updateDescriptors(const utils::BuffersDatabase& bDatabase, const utils::AttachmentsDatabase& aDatabase) {
     if (!created) return;
 
     for (uint32_t i = 0; i < parameters.imageInfo.Count; i++) {
         utils::descriptorSet::Writes writes;
         WRITE_DESCRIPTOR(writes, box.descriptorSets[i], bDatabase.descriptorBufferInfo(parameters.in.camera, i));
+        WRITE_DESCRIPTOR(writes, box.descriptorSets[i], aDatabase.descriptorImageInfo(parameters.in.depth, i, parameters.in.defaultDepthTexture));
         utils::descriptorSet::update(device, writes);
     }
 }

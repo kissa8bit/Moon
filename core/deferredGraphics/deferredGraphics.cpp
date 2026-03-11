@@ -141,6 +141,8 @@ void DeferredGraphics::createGraphicsPasses()
     blurParams.imageInfo = imageInfo;
 
     bbParams.in.camera = Names::camera;
+    bbParams.in.depth = l0 + Names::MainGraphics::GBuffer::depth;
+    bbParams.in.defaultDepthTexture = Names::whiteTexture;
     bbParams.out.boundingBox = Names::BoundingBox::output;
     bbParams.shadersPath = params.workflowsShadersPath;
     bbParams.imageInfo = imageInfo;
