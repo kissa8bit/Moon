@@ -18,6 +18,9 @@ void Graphics::Lighting::createPipeline(interfaces::LightType type, const workfl
     VkPipelineRasterizationStateCreateInfo rasterizer = utils::vkDefault::rasterizationState();
     VkPipelineMultisampleStateCreateInfo multisampling = utils::vkDefault::multisampleState();
     VkPipelineDepthStencilStateCreateInfo depthStencil = utils::vkDefault::depthStencilDisable();
+    depthStencil.depthTestEnable = VK_TRUE;
+    depthStencil.depthWriteEnable = VK_FALSE;
+    depthStencil.depthCompareOp = VK_COMPARE_OP_GREATER;
 
     std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments = {
         utils::vkDefault::colorBlendAttachmentState(VK_TRUE),

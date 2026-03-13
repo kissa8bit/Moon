@@ -75,7 +75,10 @@ void Graphics::createRenderPass()
         VkAttachmentReference{DeferredAttachments::normalIndex(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},
         VkAttachmentReference{DeferredAttachments::colorIndex(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},
         VkAttachmentReference{DeferredAttachments::emissionIndex(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},
-        VkAttachmentReference{DeferredAttachments::depthIndex(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL}
+        VkAttachmentReference{DeferredAttachments::depthIndex(), VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL}
+    };
+    lighting.depth = {
+        VkAttachmentReference{DeferredAttachments::depthIndex(), VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL}
     };
 
     utils::vkDefault::RenderPass::SubpassDependencies dependencies;

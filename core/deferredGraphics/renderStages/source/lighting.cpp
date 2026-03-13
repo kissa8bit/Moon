@@ -67,7 +67,9 @@ void Graphics::Lighting::update(VkDevice device, const utils::BuffersDatabase& b
         WRITE_DESCRIPTOR_T(writes, descriptorSet, aDatabase.descriptorImageInfo(pref + parameters.out.normal, i), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
         WRITE_DESCRIPTOR_T(writes, descriptorSet, aDatabase.descriptorImageInfo(pref + parameters.out.color, i), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
         WRITE_DESCRIPTOR_T(writes, descriptorSet, aDatabase.descriptorImageInfo(pref + parameters.out.emission, i), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
-        WRITE_DESCRIPTOR_T(writes, descriptorSet, aDatabase.descriptorImageInfo(pref + parameters.out.depth, i), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
+        auto depthInfo = aDatabase.descriptorImageInfo(pref + parameters.out.depth, i);
+        depthInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+        WRITE_DESCRIPTOR_T(writes, descriptorSet, depthInfo, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
         WRITE_DESCRIPTOR(writes, descriptorSet, bDatabase.descriptorBufferInfo(parameters.in.camera, utils::ResourceIndex(i)));
         utils::descriptorSet::update(device, writes);
     }

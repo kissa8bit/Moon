@@ -40,6 +40,12 @@ void main() {
 
     vec2 screenUV = gl_FragCoord.xy / global.viewport;
     vec3 worldPos = reconstructPosition(global.invViewProj, screenUV, depth);
+
+    // Scene geometry is outside the point light radius
+    if (length(worldPos - light.position.xyz) > light.prop.x) {
+        discard;
+    }
+
     vec3 decodedNormal = decodeSphericalNormal(normal.xy);
 
     outColor = calcPointLight(worldPos, decodedNormal, normal.b, color, eyePosition);
