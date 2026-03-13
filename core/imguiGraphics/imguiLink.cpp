@@ -5,7 +5,7 @@
 
 namespace moon::imguiGraphics {
 
-void ImguiLink::draw(VkCommandBuffer commandBuffer, uint32_t) const {
+void ImguiLink::draw(VkCommandBuffer commandBuffer, utils::ResourceIndex) const {
     // Rendering
     ImGui::Render();
     ImDrawData* draw_data = ImGui::GetDrawData();

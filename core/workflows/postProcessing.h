@@ -32,7 +32,7 @@ private:
     void createAttachments(utils::AttachmentsDatabase& aDatabase);
     void createRenderPass();
     void createFramebuffers();
-    void updateCommandBuffer(uint32_t frameNumber) override;
+    void updateCommandBuffer(utils::ResourceIndex resourceIndex) override;
 
 public:
     PostProcessingGraphics(PostProcessingParameters& parameters);

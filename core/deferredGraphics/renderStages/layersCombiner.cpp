@@ -176,7 +176,7 @@ void LayersCombiner::updateDescriptors(
         auto descriptorSet = combiner.descriptorSets.at(i);
 
         utils::descriptorSet::Writes writes;
-        WRITE_DESCRIPTOR(writes, descriptorSet, bDatabase.descriptorBufferInfo(parameters.in.camera, i));
+        WRITE_DESCRIPTOR(writes, descriptorSet, bDatabase.descriptorBufferInfo(parameters.in.camera, utils::ResourceIndex(i)));
         utils::descriptorSet::write(writes, descriptorSet, colorLayersImageInfos);
         utils::descriptorSet::write(writes, descriptorSet, bloomLayersImageInfos);
         utils::descriptorSet::write(writes, descriptorSet, normalLayersImageInfos);
@@ -190,9 +190,10 @@ void LayersCombiner::updateDescriptors(
     }
 }
 
-void LayersCombiner::updateCommandBuffer(uint32_t frameNumber){
+void LayersCombiner::updateCommandBuffer(utils::ResourceIndex resourceIndex){
     if (!created) return;
 
+    const auto frameNumber = resourceIndex.get();
     std::vector<VkClearValue> clearValues = { frame.color.clearValue(), frame.bloom.clearValue(), frame.blur.clearValue() };
 
     VkRenderPassBeginInfo renderPassInfo{};

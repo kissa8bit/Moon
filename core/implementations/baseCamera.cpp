@@ -6,9 +6,9 @@ BaseCamera::BaseCamera()
     : uniformBuffer(&hostBuffer, sizeof(hostBuffer))
 {}
 
-void BaseCamera::update(uint32_t frameNumber, VkCommandBuffer commandBuffer) {
+void BaseCamera::update(utils::ResourceIndex resourceIndex, VkCommandBuffer commandBuffer) {
     hostBuffer.invViewProj = math::inverse(hostBuffer.view * hostBuffer.proj);
-    uniformBuffer.update(frameNumber, commandBuffer);
+    uniformBuffer.update(resourceIndex, commandBuffer);
 }
 
 void BaseCamera::create(const utils::PhysicalDevice& device, uint32_t imageCount) {

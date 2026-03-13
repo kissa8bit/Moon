@@ -46,13 +46,13 @@ private:
 
         void createPipeline(interfaces::LightType type, const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass pRenderPass);
         void create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass) override {}
-        void render(uint32_t frameNumber, VkCommandBuffer commandBuffers);
+        void render(utils::ResourceIndex resourceIndex, VkCommandBuffer commandBuffers);
     }lighting;
 
     void createAttachments(utils::AttachmentsDatabase& aDatabase);
     void createRenderPass();
     void createFramebuffers();
-    void updateCommandBuffer(uint32_t frameNumber) override;
+    void updateCommandBuffer(utils::ResourceIndex resourceIndex) override;
 
 public:
     Scattering(ScatteringParameters& parameters, const interfaces::Lights* lightSources = nullptr, const interfaces::DepthMaps* depthMaps = nullptr);

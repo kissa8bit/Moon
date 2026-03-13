@@ -5,6 +5,7 @@
 
 #include <utils/buffer.h>
 #include <utils/device.h>
+#include <utils/types.h>
 
 #include <math/linearAlgebra.h>
 
@@ -38,7 +39,7 @@ public:
     CameraMask& cameraMask() { return mask; }
     virtual utils::Buffers& buffers() = 0;
     virtual void create(const utils::PhysicalDevice& device, uint32_t imageCount) = 0;
-    virtual void update(uint32_t frameNumber, VkCommandBuffer commandBuffer) = 0;
+    virtual void update(utils::ResourceIndex resourceIndex, VkCommandBuffer commandBuffer) = 0;
 
     virtual void setTransformation(const math::mat4& transformation) = 0;
     virtual void setViewport(float width, float height) = 0;

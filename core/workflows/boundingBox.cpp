@@ -136,13 +136,14 @@ void BoundingBoxGraphics::updateDescriptors(const utils::BuffersDatabase& bDatab
 
     for (uint32_t i = 0; i < parameters.imageInfo.Count; i++) {
         utils::descriptorSet::Writes writes;
-        WRITE_DESCRIPTOR(writes, box.descriptorSets[i], bDatabase.descriptorBufferInfo(parameters.in.camera, i));
+        WRITE_DESCRIPTOR(writes, box.descriptorSets[i], bDatabase.descriptorBufferInfo(parameters.in.camera, utils::ResourceIndex(i)));
         WRITE_DESCRIPTOR(writes, box.descriptorSets[i], aDatabase.descriptorImageInfo(parameters.in.depth, i, parameters.in.defaultDepthTexture));
         utils::descriptorSet::update(device, writes);
     }
 }
 
-void BoundingBoxGraphics::updateCommandBuffer(uint32_t frameNumber){
+void BoundingBoxGraphics::updateCommandBuffer(utils::ResourceIndex resourceIndex){
+    const auto frameNumber = resourceIndex.get();
     if (!created) return;
 
     std::vector<VkClearValue> clearValues = {frame.clearValue()};
@@ -159,13 +160,14 @@ void BoundingBoxGraphics::updateCommandBuffer(uint32_t frameNumber){
     vkCmdBeginRenderPass(commandBuffers[frameNumber], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
     if (parameters.enable) {
-        box.render(frameNumber, commandBuffers[frameNumber]);
+        box.render(resourceIndex, commandBuffers[frameNumber]);
     }
 
     vkCmdEndRenderPass(commandBuffers[frameNumber]);
 }
 
-void BoundingBoxGraphics::BoundingBox::render(uint32_t frameNumber, VkCommandBuffer commandBuffers){
+void BoundingBoxGraphics::BoundingBox::render(utils::ResourceIndex resourceIndex, VkCommandBuffer commandBuffers){
+    const auto frameNumber = resourceIndex.get();
     if (!objects) return;
 
     vkCmdBindPipeline(commandBuffers, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
@@ -179,8 +181,8 @@ void BoundingBoxGraphics::BoundingBox::render(uint32_t frameNumber, VkCommandBuf
         if (!property.has(interfaces::ObjectProperty::enable)) continue;
         if (!model) continue;
 
-        utils::vkDefault::DescriptorSets descriptors = { descriptorSets[frameNumber], object->getDescriptorSet(frameNumber) };
-        model->renderBB(object->getInstanceNumber(frameNumber), commandBuffers, pipelineLayout, descriptors);
+        utils::vkDefault::DescriptorSets descriptors = { descriptorSets[frameNumber], object->getDescriptorSet(resourceIndex) };
+        model->renderBB(object->getInstanceNumber(resourceIndex), commandBuffers, pipelineLayout, descriptors);
     }
 }
 

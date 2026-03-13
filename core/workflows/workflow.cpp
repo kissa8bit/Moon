@@ -10,11 +10,12 @@ Workflow& Workflow::setDeviceProp(VkPhysicalDevice physical, VkDevice logical){
     return *this;
 }
 
-void Workflow::update(uint32_t frameNumber) {
+void Workflow::update(utils::ResourceIndex resourceIndex) {
+    const auto frameNumber = resourceIndex.get();
     if (commandBuffers[frameNumber].dropFlag()) {
         CHECK(commandBuffers[frameNumber].reset());
         CHECK(commandBuffers[frameNumber].begin());
-        updateCommandBuffer(frameNumber);
+        updateCommandBuffer(resourceIndex);
         CHECK(commandBuffers[frameNumber].end());
     }
 }

@@ -8,8 +8,8 @@ Light::Light(LightMask lightMask)
     : mask(lightMask)
 {}
 
-const VkDescriptorSet& Light::getDescriptorSet(uint32_t i) const {
-    return descriptorSets[i];
+const VkDescriptorSet& Light::getDescriptorSet(utils::ResourceIndex resourceIndex) const {
+    return descriptorSets[resourceIndex.get()];
 }
 
 LightMask& Light::lightMask() {

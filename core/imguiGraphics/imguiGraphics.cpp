@@ -65,14 +65,14 @@ void ImguiGraphics::reset() {
 	isImGuilVulkanInit = true;
 }
 
-void ImguiGraphics::update(uint32_t) {}
+void ImguiGraphics::update(utils::ResourceIndex) {}
 
-utils::vkDefault::VkSemaphores ImguiGraphics::submit(uint32_t, const utils::vkDefault::VkSemaphores& externalSemaphore) {
+utils::vkDefault::VkSemaphores ImguiGraphics::submit(utils::ResourceIndex, const utils::vkDefault::VkSemaphores& externalSemaphore) {
     return externalSemaphore;
 }
 
-void ImguiGraphics::draw(VkCommandBuffer commandBuffer, uint32_t imageNumber) const {
-    linkMember.draw(commandBuffer, imageNumber);
+void ImguiGraphics::draw(utils::ResourceIndex resourceIndex, VkCommandBuffer commandBuffer) const {
+    linkMember.draw(commandBuffer, resourceIndex);
 }
 
 } // moon::imguiGraphics

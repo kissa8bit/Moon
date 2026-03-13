@@ -33,7 +33,7 @@ private:
     utils::UniformBuffer uniformBuffer;
 
     void create(const utils::PhysicalDevice& device, uint32_t imageCount) override;
-    void update(uint32_t frameNumber, VkCommandBuffer commandBuffer) override;
+    void update(utils::ResourceIndex resourceIndex, VkCommandBuffer commandBuffer) override;
     utils::Buffers& buffers() override;
 };
 

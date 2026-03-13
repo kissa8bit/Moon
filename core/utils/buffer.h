@@ -30,7 +30,7 @@ struct UniformBuffer {
     UniformBuffer& operator=(UniformBuffer&&) noexcept;
     void swap(UniformBuffer&) noexcept;
 
-    void update(uint32_t frameNumber, VkCommandBuffer commandBuffer);
+    void update(ResourceIndex resourceIndex, VkCommandBuffer commandBuffer);
 };
 
 struct BuffersDatabase{
@@ -43,8 +43,8 @@ struct BuffersDatabase{
     bool add(const utils::BufferName& id, const Buffers* pBuffer);
     bool remove(const utils::BufferName& id);
     const Buffers* get(const utils::BufferName& id) const;
-    VkBuffer buffer(const utils::BufferName& id, const uint32_t imageIndex) const;
-    VkDescriptorBufferInfo descriptorBufferInfo(const utils::BufferName& id, const uint32_t imageIndex) const;
+    VkBuffer buffer(const utils::BufferName& id, ResourceIndex resourceIndex) const;
+    VkDescriptorBufferInfo descriptorBufferInfo(const utils::BufferName& id, ResourceIndex resourceIndex) const;
 };
 
 }

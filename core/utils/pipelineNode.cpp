@@ -25,8 +25,8 @@ PipelineStage::PipelineStage(const std::vector<const vkDefault::CommandBuffers*>
     }
 }
 
-VkResult PipelineStage::submit(uint32_t frameIndex) const {
-    const auto& frame = frames.at(frameIndex);
+VkResult PipelineStage::submit(ResourceIndex resourceIndex) const {
+    const auto& frame = frames.at(resourceIndex.get());
 
     const uint32_t waitCount = static_cast<uint32_t>(frame.wait.size());
     std::vector<VkPipelineStageFlags> waitStagesMasks;
@@ -75,23 +75,23 @@ PipelineNode::PipelineNode(VkDevice device, PipelineStages&& instages, PipelineN
     }
 }
 
-vkDefault::VkSemaphores PipelineNode::submit(const uint32_t frameIndex, const vkDefault::VkSemaphores& externalSemaphore){
+vkDefault::VkSemaphores PipelineNode::submit(ResourceIndex resourceIndex, const vkDefault::VkSemaphores& externalSemaphore){
     if (!externalSemaphore.empty()) {
         CHECK_M(stages.size() == 1, std::string("[PipelineStage::submit] first PipelineNode must have single PipelineStage"));
-        stages.front().frames.at(frameIndex).wait = externalSemaphore;
+        stages.front().frames.at(resourceIndex.get()).wait = externalSemaphore;
     }
 
     for(const auto& stage: stages){
-        CHECK(stage.submit(frameIndex));
+        CHECK(stage.submit(resourceIndex));
     }
 
-    return next ? next->submit(frameIndex) : semaphores(frameIndex);
+    return next ? next->submit(resourceIndex) : semaphores(resourceIndex);
 }
 
-vkDefault::VkSemaphores PipelineNode::semaphores(uint32_t frameIndex) {
+vkDefault::VkSemaphores PipelineNode::semaphores(ResourceIndex resourceIndex) {
     vkDefault::VkSemaphores semaphores;
     for (const auto& stage : stages) {
-        const auto& signal = stage.frames.at(frameIndex).signal;
+        const auto& signal = stage.frames.at(resourceIndex.get()).signal;
         CHECK_M(signal.size() == 1, std::string("[PipelineStage::semaphores] each final PipelineStage must have single signal semaphore"));
         semaphores.push_back(signal.front());
     }

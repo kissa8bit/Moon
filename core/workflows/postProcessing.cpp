@@ -129,7 +129,8 @@ void PostProcessingGraphics::updateDescriptors(const utils::BuffersDatabase&, co
     }
 }
 
-void PostProcessingGraphics::updateCommandBuffer(uint32_t frameNumber){
+void PostProcessingGraphics::updateCommandBuffer(utils::ResourceIndex resourceIndex){
+    const auto frameNumber = resourceIndex.get();
     if (!created) return;
 
     std::vector<VkClearValue> clearValues;

@@ -42,7 +42,7 @@ private:
 public:
     RayTracingLink() = default;
     RayTracingLink(VkDevice device, const RayTracingLinkParameters& parameters, VkRenderPass renderPass, const moon::utils::AttachmentsDatabase& aDatabase);
-    void draw(VkCommandBuffer commandBuffer, uint32_t imageNumber) const;
+    void draw(VkCommandBuffer commandBuffer, utils::ResourceIndex resourceIndex) const;
 };
 
 } // moon::rayTracingGraphics

@@ -193,9 +193,9 @@ private:
     void createStages();
     void updateParameters();
 
-    void update(uint32_t imageIndex) override;
-    utils::vkDefault::VkSemaphores submit(const uint32_t frameIndex, const utils::vkDefault::VkSemaphores& externalSemaphore = {}) override;
-    void draw(VkCommandBuffer commandBuffer, uint32_t imageNumber) const override;
+    void update(utils::ResourceIndex resourceIndex) override;
+    utils::vkDefault::VkSemaphores submit(utils::ResourceIndex resourceIndex, const utils::vkDefault::VkSemaphores& externalSemaphore = {}) override;
+    void draw(utils::ResourceIndex resourceIndex, VkCommandBuffer commandBuffer) const override;
 
 public:
     DeferredGraphics(const Parameters& parameters);

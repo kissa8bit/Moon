@@ -55,11 +55,12 @@ UniformBuffer::UniformBuffer(const utils::PhysicalDevice& physicalDevice, uint32
     }
 }
 
-void UniformBuffer::update(uint32_t frameNumber, VkCommandBuffer commandBuffer) {
-    if (frameNumber >= device.size() || frameNumber >= cache.size()) return;
-    if (device[frameNumber].dropFlag()) {
-        cache[frameNumber].copy(host);
-        utils::buffer::copy(commandBuffer, size, cache[frameNumber], device[frameNumber]);
+void UniformBuffer::update(ResourceIndex resourceIndex, VkCommandBuffer commandBuffer) {
+    const auto index = resourceIndex.get();
+    if (index >= device.size() || index >= cache.size()) return;
+    if (device[index].dropFlag()) {
+        cache[index].copy(host);
+        utils::buffer::copy(commandBuffer, size, cache[index], device[index]);
     }
 }
 
@@ -78,25 +79,27 @@ const Buffers* BuffersDatabase::get(const utils::BufferName& id) const {
     return it != buffersMap.end() ? it->second : nullptr;
 }
 
-VkBuffer BuffersDatabase::buffer(const utils::BufferName& id, const uint32_t imageIndex) const
+VkBuffer BuffersDatabase::buffer(const utils::BufferName& id, ResourceIndex resourceIndex) const
 {
+    const auto index = resourceIndex.get();
     auto it = buffersMap.find(id);
-    if (it == buffersMap.end() || !(it->second) || imageIndex >= it->second->size()) return VK_NULL_HANDLE;
-    return static_cast<VkBuffer>(it->second->at(imageIndex));
+    if (it == buffersMap.end() || !(it->second) || index >= it->second->size()) return VK_NULL_HANDLE;
+    return static_cast<VkBuffer>(it->second->at(index));
 }
 
-VkDescriptorBufferInfo BuffersDatabase::descriptorBufferInfo(const utils::BufferName& id, const uint32_t imageIndex) const
+VkDescriptorBufferInfo BuffersDatabase::descriptorBufferInfo(const utils::BufferName& id, ResourceIndex resourceIndex) const
 {
+    const auto index = resourceIndex.get();
     VkDescriptorBufferInfo bufferInfo{};
     auto it = buffersMap.find(id);
-    if (it == buffersMap.end() || !(it->second) || imageIndex >= it->second->size()) {
+    if (it == buffersMap.end() || !(it->second) || index >= it->second->size()) {
         bufferInfo.buffer = VK_NULL_HANDLE;
         bufferInfo.offset = 0;
         bufferInfo.range = 0;
         return bufferInfo;
     }
 
-    const auto& buffer = it->second->at(imageIndex);
+    const auto& buffer = it->second->at(index);
     bufferInfo.buffer = static_cast<VkBuffer>(buffer);
     bufferInfo.offset = 0;
     bufferInfo.range = buffer.size();

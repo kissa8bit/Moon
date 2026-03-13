@@ -49,8 +49,8 @@ public:
     BoundingBoxGraphics() = default;
 
     void create(VkPhysicalDevice physicalDevice, VkDevice device, const moon::utils::vkDefault::ImageInfo& image, const std::filesystem::path& shadersPath);
-    void update(uint32_t imageIndex);
-    void render(VkCommandBuffer commandBuffer, uint32_t imageIndex) const;
+    void update(moon::utils::ResourceIndex resourceIndex);
+    void render(VkCommandBuffer commandBuffer, moon::utils::ResourceIndex resourceIndex) const;
 
     const moon::utils::Attachments& getAttachments() const;
     void clear();

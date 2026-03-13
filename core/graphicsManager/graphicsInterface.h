@@ -30,9 +30,9 @@ protected:
     PositionInWindow position;
 
 private:
-    virtual void update(uint32_t imageIndex) = 0;
-    virtual utils::vkDefault::VkSemaphores submit(const uint32_t frameIndex, const utils::vkDefault::VkSemaphores& externalSemaphore) = 0;
-    virtual void draw(VkCommandBuffer commandBuffer, uint32_t imageNumber) const = 0;
+    virtual void update(utils::ResourceIndex resourceIndex) = 0;
+    virtual utils::vkDefault::VkSemaphores submit(utils::ResourceIndex resourceIndex, const utils::vkDefault::VkSemaphores& externalSemaphore) = 0;
+    virtual void draw(utils::ResourceIndex resourceIndex, VkCommandBuffer commandBuffer) const = 0;
 
     virtual void setProperties(
         const utils::PhysicalDevice::Map& devicesMap,

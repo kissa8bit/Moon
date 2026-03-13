@@ -176,7 +176,8 @@ void GaussianBlur::updateDescriptors(const utils::BuffersDatabase&, const utils:
     }
 }
 
-void GaussianBlur::updateCommandBuffer(uint32_t frameNumber){
+void GaussianBlur::updateCommandBuffer(utils::ResourceIndex resourceIndex){
+    const auto frameNumber = resourceIndex.get();
     if(!created) return;
 
     std::vector<VkClearValue> clearValues = { frame.clearValue() , bufferAttachment.clearValue()};

@@ -37,10 +37,10 @@ public:
     utils::Attachments& emission() { return attachments[emissionIndex()]; }
     utils::Attachments& depth() { return attachments[depthIndex()]; }
 
-    std::vector<VkImageView> views(uint32_t frameIndex) const {
+    std::vector<VkImageView> views(utils::ResourceIndex resourceIndex) const {
         std::vector<VkImageView> views;
         for (const auto& attachment : attachments) {
-            views.push_back(attachment.imageView(frameIndex));
+            views.push_back(attachment.imageView(resourceIndex.get()));
         }
         return views;
     }

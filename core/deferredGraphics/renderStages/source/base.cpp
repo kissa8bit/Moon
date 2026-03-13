@@ -134,7 +134,7 @@ void Graphics::Base::update(VkDevice device, const utils::BuffersDatabase& bData
         const auto colorId = needPrevLayer ? layerPrefix(layerIndex - 1) + parameters.out.color : utils::AttachmentName("");
 
         utils::descriptorSet::Writes writes;
-        WRITE_DESCRIPTOR(writes, descriptorSet, bDatabase.descriptorBufferInfo(parameters.in.camera, i));
+        WRITE_DESCRIPTOR(writes, descriptorSet, bDatabase.descriptorBufferInfo(parameters.in.camera, utils::ResourceIndex(i)));
         WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorEmptyInfo());
         WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(depthId, i));
         WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(colorId, i));
@@ -142,10 +142,11 @@ void Graphics::Base::update(VkDevice device, const utils::BuffersDatabase& bData
     }
 }
 
-void Graphics::Base::render(uint32_t frameNumber, VkCommandBuffer commandBuffers) const
+void Graphics::Base::render(utils::ResourceIndex resourceIndex, VkCommandBuffer commandBuffers) const
 {
     if (!objects) return;
 
+    const auto frameNumber = resourceIndex.get();
     uint32_t primitiveCount = 0;
     for(const auto& object: *objects){
         if(!object) continue;
@@ -163,10 +164,10 @@ void Graphics::Base::render(uint32_t frameNumber, VkCommandBuffer commandBuffers
 
         vkCmdBindPipeline(commandBuffers, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineDesc.pipeline);
 
-        const utils::vkDefault::DescriptorSets descriptors = {descriptorSets.at(frameNumber), object->getDescriptorSet(frameNumber)};
+        const utils::vkDefault::DescriptorSets descriptors = {descriptorSets.at(frameNumber), object->getDescriptorSet(resourceIndex)};
 
         object->primitiveRange().first = primitiveCount;
-        model->render(object->getInstanceNumber(frameNumber), commandBuffers, pipelineDesc.pipelineLayout, descriptors, primitiveCount);
+        model->render(object->getInstanceNumber(resourceIndex), commandBuffers, pipelineDesc.pipelineLayout, descriptors, primitiveCount);
         object->primitiveRange().setLast(primitiveCount);
     }
 }

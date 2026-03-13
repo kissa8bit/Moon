@@ -160,13 +160,14 @@ void Scattering::updateDescriptors(const utils::BuffersDatabase& bDatabase, cons
         auto descriptorSet = lighting.descriptorSets[i];
 
         utils::descriptorSet::Writes writes;
-        WRITE_DESCRIPTOR(writes, descriptorSet, bDatabase.descriptorBufferInfo(parameters.in.camera, i));
+        WRITE_DESCRIPTOR(writes, descriptorSet, bDatabase.descriptorBufferInfo(parameters.in.camera, utils::ResourceIndex(i)));
         WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.depth, i));
         utils::descriptorSet::update(device, writes);
     }
 }
 
-void Scattering::updateCommandBuffer(uint32_t frameNumber){
+void Scattering::updateCommandBuffer(utils::ResourceIndex resourceIndex){
+    const auto frameNumber = resourceIndex.get();
     if (!created) return;
 
     std::vector<VkClearValue> clearValues = {frame.clearValue()};
@@ -201,7 +202,7 @@ void Scattering::updateCommandBuffer(uint32_t frameNumber){
             vkCmdPushConstants(commandBuffers[frameNumber], pipelineDesc.pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(ScatteringPushConst), &pushConst);
 
             const utils::vkDefault::DescriptorSets descriptors = { lighting.descriptorSets.at(frameNumber), depthMap.descriptorSets().at(frameNumber) };
-            lightSource->render(frameNumber, commandBuffers.at(frameNumber), descriptors, pipelineDesc.pipelineLayout, pipelineDesc.pipeline);
+            lightSource->render(resourceIndex, commandBuffers.at(frameNumber), descriptors, pipelineDesc.pipelineLayout, pipelineDesc.pipeline);
         }
     }
 

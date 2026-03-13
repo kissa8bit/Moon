@@ -2,6 +2,10 @@
 #define MOON_UTILS_TYPES_H
 
 #include <cstdint>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <functional>
 
 namespace moon::utils {
 

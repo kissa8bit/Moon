@@ -123,7 +123,7 @@ void SSLRGraphics::updateDescriptors(const utils::BuffersDatabase& bDatabase, co
         auto descriptorSet = sslr.descriptorSets[i];
 
         utils::descriptorSet::Writes writes;
-        WRITE_DESCRIPTOR(writes, descriptorSet, bDatabase.descriptorBufferInfo(parameters.in.camera, i));
+        WRITE_DESCRIPTOR(writes, descriptorSet, bDatabase.descriptorBufferInfo(parameters.in.camera, utils::ResourceIndex(i)));
         WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.normal, i));
         WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.depth, i));
         WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.color, i));
@@ -131,7 +131,8 @@ void SSLRGraphics::updateDescriptors(const utils::BuffersDatabase& bDatabase, co
     }
 }
 
-void SSLRGraphics::updateCommandBuffer(uint32_t frameNumber){
+void SSLRGraphics::updateCommandBuffer(utils::ResourceIndex resourceIndex){
+    const auto frameNumber = resourceIndex.get();
     if (!created) return;
 
     std::vector<VkClearValue> clearValues = {frame.clearValue()};

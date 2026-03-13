@@ -40,7 +40,7 @@ void SpotLight::create(const utils::PhysicalDevice& device, VkCommandPool comman
 }
 
 void SpotLight::render(
-	uint32_t frameNumber,
+	utils::ResourceIndex resourceIndex,
 	VkCommandBuffer commandBuffer,
 	const utils::vkDefault::DescriptorSets& descriptorSet,
 	VkPipelineLayout pipelineLayout,
@@ -48,13 +48,13 @@ void SpotLight::render(
 {
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 	utils::vkDefault::DescriptorSets descriptors = descriptorSet;
-	descriptors.push_back(descriptorSets[frameNumber]);
+	descriptors.push_back(descriptorSets[resourceIndex.get()]);
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, static_cast<uint32_t>(descriptors.size()), descriptors.data(), 0, nullptr);
 	vkCmdDraw(commandBuffer, 18, 1, 0, 0);
 }
 
-void SpotLight::update(uint32_t frameNumber, VkCommandBuffer commandBuffer) {
-	uniformBuffer.update(frameNumber, commandBuffer);
+void SpotLight::update(utils::ResourceIndex resourceIndex, VkCommandBuffer commandBuffer) {
+	uniformBuffer.update(resourceIndex, commandBuffer);
 }
 
 void SpotLight::createDescriptors(const utils::PhysicalDevice& device, uint32_t imageCount) {

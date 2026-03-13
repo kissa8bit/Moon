@@ -54,7 +54,8 @@ void SelectorGraphics::updateDescriptors(const utils::BuffersDatabase& bDatabase
     }
 }
 
-void SelectorGraphics::updateCommandBuffer(uint32_t frameNumber){
+void SelectorGraphics::updateCommandBuffer(utils::ResourceIndex resourceIndex){
+    const auto frameNumber = resourceIndex.get();
     if (!parameters.enable || !created) return;
 
     vkCmdBindPipeline(commandBuffers[frameNumber], VK_PIPELINE_BIND_POINT_COMPUTE, selector.pipeline);

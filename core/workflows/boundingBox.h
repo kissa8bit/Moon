@@ -32,13 +32,13 @@ private:
 
         BoundingBox(const BoundingBoxParameters& parameters, const interfaces::Objects* objects) : parameters(parameters), objects(objects) {};
         void create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass) override;
-        void render(uint32_t frameNumber, VkCommandBuffer commandBuffers);
+        void render(utils::ResourceIndex resourceIndex, VkCommandBuffer commandBuffers);
     }box;
 
     void createAttachments(utils::AttachmentsDatabase& aDatabase);
     void createRenderPass();
     void createFramebuffers();
-    void updateCommandBuffer(uint32_t frameNumber) override;
+    void updateCommandBuffer(utils::ResourceIndex resourceIndex) override;
 
 public:
     BoundingBoxGraphics(BoundingBoxParameters& parameters, const interfaces::Objects* objects = nullptr);

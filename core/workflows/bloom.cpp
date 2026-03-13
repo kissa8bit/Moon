@@ -173,7 +173,8 @@ void BloomGraphics::updateDescriptors(const utils::BuffersDatabase&, const utils
     }
 }
 
-void BloomGraphics::updateCommandBuffer(uint32_t frameNumber){
+void BloomGraphics::updateCommandBuffer(utils::ResourceIndex resourceIndex){
+    const auto frameNumber = resourceIndex.get();
     if(!created) return;
 
     if(!parameters.enable) {

@@ -20,8 +20,8 @@ BaseObject::BaseObject(interfaces::Model* model, uint32_t firstInstance, uint32_
         uniformBuffer(&hostBuffer, sizeof(hostBuffer))
 {}
 
-void BaseObject::update(uint32_t frameNumber, VkCommandBuffer commandBuffer) {
-    uniformBuffer.update(frameNumber, commandBuffer);
+void BaseObject::update(utils::ResourceIndex resourceIndex, VkCommandBuffer commandBuffer) {
+    uniformBuffer.update(resourceIndex, commandBuffer);
 }
 
 void BaseObject::createDescriptors(const utils::PhysicalDevice& device, uint32_t imageCount) {

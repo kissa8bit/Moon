@@ -53,7 +53,8 @@ void RayTracingGraphics::ImageResource::moveFromHostToHostDevice(VkExtent2D exte
     hostDevice.copy(host.data());
 }
 
-void RayTracingGraphics::ImageResource::copyToDevice(VkCommandBuffer commandBuffer, VkExtent2D extent, uint32_t imageIndex){
+void RayTracingGraphics::ImageResource::copyToDevice(VkCommandBuffer commandBuffer, VkExtent2D extent, utils::ResourceIndex resourceIndex){
+    const auto imageIndex = resourceIndex.get();
     moon::utils::texture::transitionLayout(commandBuffer, device.image(imageIndex), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, 0, 1);
     moon::utils::texture::copy(commandBuffer, hostDevice, device.image(imageIndex), {extent.width, extent.height, 1}, 1);
     moon::utils::texture::transitionLayout(commandBuffer, device.image(imageIndex), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1, 0, 1);
@@ -105,24 +106,24 @@ void RayTracingGraphics::reset()
     rayTracer.create();
 }
 
-utils::vkDefault::VkSemaphores RayTracingGraphics::submit(uint32_t frameIndex, const utils::vkDefault::VkSemaphores& externalSemaphore)
+utils::vkDefault::VkSemaphores RayTracingGraphics::submit(utils::ResourceIndex resourceIndex, const utils::vkDefault::VkSemaphores& externalSemaphore)
 {
     rayTracer.calculateImage(color.host.data(), bloom.host.data());
 
     color.moveFromHostToHostDevice(extent);
     bloom.moveFromHostToHostDevice(extent);
 
-    bloomGraph->update(frameIndex);
+    bloomGraph->update(resourceIndex);
 
     std::vector<VkCommandBuffer> commandBuffers;
     auto& commandBuffer = commandBuffers.emplace_back(moon::utils::singleCommandBuffer::create(device->device(), commandPool));
-    color.copyToDevice(commandBuffer, extent, frameIndex);
-    bloom.copyToDevice(commandBuffer, extent, frameIndex);
-    bbGraphics.render(commandBuffer, frameIndex);
+    color.copyToDevice(commandBuffer, extent, resourceIndex);
+    bloom.copyToDevice(commandBuffer, extent, resourceIndex);
+    bbGraphics.render(commandBuffer, resourceIndex);
     CHECK(vkEndCommandBuffer(commandBuffer));
 
     const utils::vkDefault::CommandBuffers& bloomCommandBuffers = *bloomGraph;
-    commandBuffers.push_back(bloomCommandBuffers[frameIndex]);
+    commandBuffers.push_back(bloomCommandBuffers[resourceIndex.get()]);
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -134,9 +135,9 @@ utils::vkDefault::VkSemaphores RayTracingGraphics::submit(uint32_t frameIndex, c
     return {};
 }
 
-void RayTracingGraphics::update(uint32_t imageIndex) {
+void RayTracingGraphics::update(utils::ResourceIndex resourceIndex) {
     rayTracer.update();
-    bbGraphics.update(imageIndex);
+    bbGraphics.update(resourceIndex);
 }
 
 void RayTracingGraphics::setEnableBoundingBox(bool enable){
@@ -203,8 +204,8 @@ void RayTracingGraphics::buildBoundingBoxes(bool primitive, bool tree, bool only
     }
 }
 
-void RayTracingGraphics::draw(VkCommandBuffer commandBuffer, uint32_t imageNumber) const {
-    linkMember.draw(commandBuffer, imageNumber);
+void RayTracingGraphics::draw(utils::ResourceIndex resourceIndex, VkCommandBuffer commandBuffer) const {
+    linkMember.draw(commandBuffer, resourceIndex);
 }
 
 }

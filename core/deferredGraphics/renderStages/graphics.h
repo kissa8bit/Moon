@@ -67,7 +67,7 @@ private:
 
         void create(interfaces::ObjectType type, const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass);
         void update(VkDevice device, const utils::BuffersDatabase& bDatabase, const utils::AttachmentsDatabase& aDatabase);
-        void render(uint32_t frameNumber, VkCommandBuffer commandBuffers) const;
+        void render(utils::ResourceIndex resourceIndex, VkCommandBuffer commandBuffers) const;
     } base;
 
     struct OutliningExtension {
@@ -78,7 +78,7 @@ private:
         OutliningExtension(const Base& parent);
 
         void create(interfaces::ObjectType type, const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass);
-        void render(uint32_t frameNumber, VkCommandBuffer commandBuffers) const;
+        void render(utils::ResourceIndex resourceIndex, VkCommandBuffer commandBuffers) const;
     } outlining;
 
     struct Lighting {
@@ -105,7 +105,7 @@ private:
 
         void create(VkDevice device, VkRenderPass renderPass);
         void update(VkDevice device, const utils::BuffersDatabase& bDatabase, const utils::AttachmentsDatabase& aDatabase);
-        void render(uint32_t frameNumber, VkCommandBuffer commandBuffer) const;
+        void render(utils::ResourceIndex resourceIndex, VkCommandBuffer commandBuffer) const;
     } lighting;
 
     struct AmbientLighting {
@@ -117,7 +117,7 @@ private:
         AmbientLighting(const Lighting& parent);
 
         void create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass);
-        void render(uint32_t frameNumber, VkCommandBuffer commandBuffers) const;
+        void render(utils::ResourceIndex resourceIndex, VkCommandBuffer commandBuffers) const;
     } ambientLighting;
 
     void createAttachments(utils::AttachmentsDatabase& aDatabase);
@@ -125,7 +125,7 @@ private:
     void createFramebuffers();
     void createPipelines();
 
-    void updateCommandBuffer(uint32_t frameNumber) override;
+    void updateCommandBuffer(utils::ResourceIndex resourceIndex) override;
 
 public:
     Graphics(GraphicsParameters& parameters,

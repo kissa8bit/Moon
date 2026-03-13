@@ -3,12 +3,14 @@
 
 #include <vulkan.h>
 
+#include <utils/types.h>
+
 namespace moon::imguiGraphics {
 
 class ImguiLink {
 public:
     ImguiLink() = default;
-    void draw(VkCommandBuffer commandBuffer, uint32_t imageNumber) const;
+    void draw(VkCommandBuffer commandBuffer, utils::ResourceIndex resourceIndex) const;
 };
 
 } // moon::imguiGraphics

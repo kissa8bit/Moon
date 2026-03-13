@@ -120,7 +120,8 @@ void ShadowGraphics::create(const utils::vkDefault::CommandPool& commandPool, ut
     }
 }
 
-void ShadowGraphics::updateCommandBuffer(uint32_t frameNumber) {
+void ShadowGraphics::updateCommandBuffer(utils::ResourceIndex resourceIndex) {
+    const auto frameNumber = resourceIndex.get();
     if (!created) return;
 
     for(const auto& [light, depthMap] : *shadow.depthMaps){
@@ -141,12 +142,13 @@ void ShadowGraphics::updateCommandBuffer(uint32_t frameNumber) {
             }
         }
 
-        render(frameNumber, commandBuffers[frameNumber], light, depthMap, framebuffersMap[&depthMap][frameNumber]);
+        render(resourceIndex, commandBuffers[frameNumber], light, depthMap, framebuffersMap[&depthMap][frameNumber]);
     }
 }
 
-void ShadowGraphics::render(uint32_t frameNumber, VkCommandBuffer commandBuffer, const interfaces::Light* lightSource, const utils::DepthMap& depthMap, const utils::vkDefault::Framebuffer& framebuffer)
+void ShadowGraphics::render(utils::ResourceIndex resourceIndex, VkCommandBuffer commandBuffer, const interfaces::Light* lightSource, const utils::DepthMap& depthMap, const utils::vkDefault::Framebuffer& framebuffer)
 {
+    const auto frameNumber = resourceIndex.get();
     if(!shadow.objects || !lightSource) return;
 
     std::vector<VkClearValue> clearValues;
@@ -185,8 +187,8 @@ void ShadowGraphics::render(uint32_t frameNumber, VkCommandBuffer commandBuffer,
             vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineDesc.pipeline);
 
             uint32_t primitives = 0;
-            utils::vkDefault::DescriptorSets descriptorSets = { lightSource->getDescriptorSet(frameNumber), object->getDescriptorSet(frameNumber) };
-            model->render(object->getInstanceNumber(frameNumber), commandBuffer, pipelineDesc.pipelineLayout, descriptorSets, primitives);
+            utils::vkDefault::DescriptorSets descriptorSets = { lightSource->getDescriptorSet(resourceIndex), object->getDescriptorSet(resourceIndex) };
+            model->render(object->getInstanceNumber(resourceIndex), commandBuffer, pipelineDesc.pipelineLayout, descriptorSets, primitives);
         }
     }
 

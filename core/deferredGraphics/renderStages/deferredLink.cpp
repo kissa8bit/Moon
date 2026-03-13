@@ -73,10 +73,10 @@ void DeferredLink::createDescriptors(VkDevice device, const utils::vkDefault::Im
     }
 }
 
-void DeferredLink::draw(VkCommandBuffer commandBuffer, uint32_t imageNumber) const {
+void DeferredLink::draw(VkCommandBuffer commandBuffer, utils::ResourceIndex resourceIndex) const {
     vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(position), &position);
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets.at(imageNumber), 0, nullptr);
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets.at(resourceIndex.get()), 0, nullptr);
     vkCmdDraw(commandBuffer, 6, 1, 0, 0);
 }
 

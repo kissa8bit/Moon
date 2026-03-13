@@ -242,8 +242,8 @@ void DeferredGraphics::createStages()
     nodes.push_back(utils::PipelineNode(device->device(), std::move(copyStages), &nodes.back()));
 }
 
-utils::vkDefault::VkSemaphores DeferredGraphics::submit(const uint32_t frameIndex, const utils::vkDefault::VkSemaphores& externalSemaphore) {
-    return nodes.back().submit(frameIndex, externalSemaphore);
+utils::vkDefault::VkSemaphores DeferredGraphics::submit(utils::ResourceIndex resourceIndex, const utils::vkDefault::VkSemaphores& externalSemaphore) {
+    return nodes.back().submit(resourceIndex, externalSemaphore);
 }
 
 void DeferredGraphics::updateParameters() {
@@ -264,25 +264,26 @@ void DeferredGraphics::updateParameters() {
     }
 }
 
-void DeferredGraphics::update(uint32_t imageIndex) {
+void DeferredGraphics::update(utils::ResourceIndex resourceIndex) {
     updateParameters();
 
-    CHECK(copyCommandBuffers[imageIndex].reset());
-    CHECK(copyCommandBuffers[imageIndex].begin());
+    const auto index = resourceIndex.get();
+    CHECK(copyCommandBuffers[index].reset());
+    CHECK(copyCommandBuffers[index].begin());
     if (params.cameraObject) {
         params.cameraObject->setViewport(float(params.extent[0]), float(params.extent[1]));
-        params.cameraObject->update(imageIndex, copyCommandBuffers[imageIndex]);
+        params.cameraObject->update(resourceIndex, copyCommandBuffers[index]);
     }
     for (auto& object : objects) {
-        object->update(imageIndex, copyCommandBuffers[imageIndex]);
+        object->update(resourceIndex, copyCommandBuffers[index]);
     }
     for (auto& light : lights) {
-        light->update(imageIndex, copyCommandBuffers[imageIndex]);
+        light->update(resourceIndex, copyCommandBuffers[index]);
     }
-    CHECK(copyCommandBuffers[imageIndex].end());
+    CHECK(copyCommandBuffers[index].end());
 
     for (auto& [name, workflow] : workflows) {
-        workflow->update(imageIndex);
+        workflow->update(resourceIndex);
     }
 }
 
@@ -473,8 +474,8 @@ workflows::SSAOParameters& DeferredGraphics::ssaoWorkflowParams() {
     return SSAOParams;
 }
 
-void DeferredGraphics::draw(VkCommandBuffer commandBuffer, uint32_t imageNumber) const {
-    linkMember.draw(commandBuffer, imageNumber);
+void DeferredGraphics::draw(utils::ResourceIndex resourceIndex, VkCommandBuffer commandBuffer) const {
+    linkMember.draw(commandBuffer, resourceIndex);
 }
 
 } // moon::deferredGraphics

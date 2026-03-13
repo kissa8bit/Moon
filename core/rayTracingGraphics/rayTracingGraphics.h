@@ -40,7 +40,7 @@ private:
         void swap(ImageResource&) noexcept;
 
         void moveFromHostToHostDevice(VkExtent2D extent);
-        void copyToDevice(VkCommandBuffer commandBuffer, VkExtent2D extent, uint32_t imageIndex);
+        void copyToDevice(VkCommandBuffer commandBuffer, VkExtent2D extent, utils::ResourceIndex resourceIndex);
     };
 
     ImageResource color;
@@ -67,9 +67,9 @@ private:
 
     RayTracingLink linkMember;
 
-    void update(uint32_t imageIndex) override;
-    utils::vkDefault::VkSemaphores submit(uint32_t frameIndex, const utils::vkDefault::VkSemaphores& externalSemaphore = {}) override;
-    void draw(VkCommandBuffer commandBuffer, uint32_t imageNumber) const override;
+    void update(utils::ResourceIndex resourceIndex) override;
+    utils::vkDefault::VkSemaphores submit(utils::ResourceIndex resourceIndex, const utils::vkDefault::VkSemaphores& externalSemaphore = {}) override;
+    void draw(utils::ResourceIndex resourceIndex, VkCommandBuffer commandBuffer) const override;
 
 public:
     RayTracingGraphics(const std::filesystem::path& shadersPath, const std::filesystem::path& workflowsShadersPath, VkExtent2D extent);

@@ -46,8 +46,8 @@ private:
     utils::Texture texture;
 
     void create(const utils::PhysicalDevice& device, VkCommandPool commandPool, uint32_t imageCount) override;
-    void update(uint32_t frameNumber, VkCommandBuffer commandBuffer) override;
-    void render(uint32_t frameNumber, VkCommandBuffer commandBuffer, const utils::vkDefault::DescriptorSets& descriptorSet, VkPipelineLayout pipelineLayout, VkPipeline pipeline) override;
+    void update(utils::ResourceIndex resourceIndex, VkCommandBuffer commandBuffer) override;
+    void render(utils::ResourceIndex resourceIndex, VkCommandBuffer commandBuffer, const utils::vkDefault::DescriptorSets& descriptorSet, VkPipelineLayout pipelineLayout, VkPipeline pipeline) override;
     void createDescriptors(const utils::PhysicalDevice& device, uint32_t imageCount);
     utils::Buffers& buffers() override;
 };

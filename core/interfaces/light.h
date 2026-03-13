@@ -52,12 +52,12 @@ public:
 
     LightMask& lightMask();
     const LightMask& lightMask() const;
-    const VkDescriptorSet& getDescriptorSet(uint32_t i) const;
+    const VkDescriptorSet& getDescriptorSet(utils::ResourceIndex resourceIndex) const;
 
     virtual utils::Buffers& buffers() = 0;
     virtual void create(const utils::PhysicalDevice& device, VkCommandPool commandPool, uint32_t imageCount) = 0;
-    virtual void update(uint32_t frameNumber, VkCommandBuffer commandBuffer) = 0;
-    virtual void render(uint32_t frameNumber, VkCommandBuffer commandBuffer, const utils::vkDefault::DescriptorSets& descriptorSet, VkPipelineLayout pipelineLayout, VkPipeline pipeline) = 0;
+    virtual void update(utils::ResourceIndex resourceIndex, VkCommandBuffer commandBuffer) = 0;
+    virtual void render(utils::ResourceIndex resourceIndex, VkCommandBuffer commandBuffer, const utils::vkDefault::DescriptorSets& descriptorSet, VkPipelineLayout pipelineLayout, VkPipeline pipeline) = 0;
 
     virtual void setTransformation(const math::mat4& transformation) = 0;
 

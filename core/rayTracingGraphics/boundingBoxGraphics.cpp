@@ -147,9 +147,10 @@ void BoundingBoxGraphics::create(VkPhysicalDevice physicalDevice, VkDevice devic
     createDescriptors();
 }
 
-void BoundingBoxGraphics::update(uint32_t imageIndex){
+void BoundingBoxGraphics::update(moon::utils::ResourceIndex resourceIndex){
     if(!enable) return;
 
+    const auto imageIndex = resourceIndex.get();
     cuda::rayTracing::Camera hostCam = cuda::rayTracing::to_host(*camera);
     const float fov = 2.0f * std::atan(hostCam.matrixScale / hostCam.matrixOffset);
     const auto& u =  normal(hostCam.horizontal);
@@ -169,9 +170,10 @@ void BoundingBoxGraphics::update(uint32_t imageIndex){
     cameraBuffers[imageIndex].copy(&buffer);
 }
 
-void BoundingBoxGraphics::render(VkCommandBuffer commandBuffer, uint32_t imageIndex) const {
+void BoundingBoxGraphics::render(VkCommandBuffer commandBuffer, moon::utils::ResourceIndex resourceIndex) const {
     if(!enable) return;
 
+    const auto imageIndex = resourceIndex.get();
     std::vector<VkClearValue> clearValues = {frame.clearValue()};
 
     VkRenderPassBeginInfo renderPassInfo{};

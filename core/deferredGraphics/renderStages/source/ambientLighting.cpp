@@ -61,12 +61,12 @@ void Graphics::AmbientLighting::create(const workflows::ShaderNames& shadersName
     pipeline = utils::vkDefault::Pipeline(device, pipelineInfo);
 }
 
-void Graphics::AmbientLighting::render(uint32_t frameNumber, VkCommandBuffer commandBuffers) const {
+void Graphics::AmbientLighting::render(utils::ResourceIndex resourceIndex, VkCommandBuffer commandBuffers) const {
     LightPassPushConst pushConst{ parent.parameters.minAmbientFactor };
     vkCmdPushConstants(commandBuffers, pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(LightPassPushConst), &pushConst);
 
     vkCmdBindPipeline(commandBuffers, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-    vkCmdBindDescriptorSets(commandBuffers, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &parent.descriptorSets[frameNumber], 0, nullptr);
+    vkCmdBindDescriptorSets(commandBuffers, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &parent.descriptorSets[resourceIndex.get()], 0, nullptr);
     vkCmdDraw(commandBuffers, 6, 1, 0, 0);
 }
 

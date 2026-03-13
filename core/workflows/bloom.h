@@ -40,7 +40,7 @@ private:
         void create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass) override;
     }upsample;
 
-    void updateCommandBuffer(uint32_t frameNumber) override;
+    void updateCommandBuffer(utils::ResourceIndex resourceIndex) override;
 
 public:
     BloomGraphics() = default;

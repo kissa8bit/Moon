@@ -106,17 +106,17 @@ public:
 	virtual ~Object() = default;
 
 	Model* model();
-	uint32_t getInstanceNumber(uint32_t imageNumber) const;
+	uint32_t getInstanceNumber(utils::ResourceIndex resourceIndex) const;
 
 	ObjectMask& objectMask();
 	const ObjectMask& objectMask() const;
 	Range& primitiveRange();
 	bool comparePrimitive(uint32_t primitiveIndex) const;
-	const VkDescriptorSet& getDescriptorSet(uint32_t i) const;
+	const VkDescriptorSet& getDescriptorSet(utils::ResourceIndex resourceIndex) const;
 
 	virtual utils::Buffers& buffers() = 0;
 	virtual void create(const utils::PhysicalDevice& device, VkCommandPool commandPool, uint32_t imageCount) = 0;
-	virtual void update(uint32_t frameNumber, VkCommandBuffer commandBuffer) = 0;
+	virtual void update(utils::ResourceIndex resourceIndex, VkCommandBuffer commandBuffer) = 0;
 
 	virtual void setTransformation(const math::mat4& transformation) = 0;
 };

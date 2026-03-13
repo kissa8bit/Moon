@@ -45,7 +45,7 @@ protected:
     utils::vkDefault::Framebuffers framebuffers;
     utils::vkDefault::CommandBuffers commandBuffers;
 
-    virtual void updateCommandBuffer(uint32_t frameNumber) = 0;
+    virtual void updateCommandBuffer(utils::ResourceIndex resourceIndex) = 0;
 
 public:
     virtual ~Workflow(){};
@@ -55,7 +55,7 @@ public:
     virtual void create(const utils::vkDefault::CommandPool& commandPool, utils::AttachmentsDatabase& aDatabase) = 0;
     virtual void updateDescriptors(const utils::BuffersDatabase& bDatabase, const utils::AttachmentsDatabase& aDatabase) = 0;
 
-    void update(uint32_t frameNumber);
+    void update(utils::ResourceIndex resourceIndex);
     void raiseUpdateFlags();
 
     operator utils::vkDefault::CommandBuffers&();

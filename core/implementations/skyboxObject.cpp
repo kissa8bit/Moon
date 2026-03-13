@@ -39,8 +39,8 @@ void SkyboxObject::create(const utils::PhysicalDevice& device, VkCommandPool com
     createDescriptors(device, imageCount);
 }
 
-void SkyboxObject::update(uint32_t frameNumber, VkCommandBuffer commandBuffer) {
-    uniformBuffer.update(frameNumber, commandBuffer);
+void SkyboxObject::update(utils::ResourceIndex resourceIndex, VkCommandBuffer commandBuffer) {
+    uniformBuffer.update(resourceIndex, commandBuffer);
 }
 
 utils::Buffers& SkyboxObject::buffers() {

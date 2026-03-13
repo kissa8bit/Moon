@@ -89,10 +89,11 @@ void Graphics::OutliningExtension::create(interfaces::ObjectType type, const wor
     pipelineDesc.pipeline = utils::vkDefault::Pipeline(device, pipelineInfo);
 }
 
-void Graphics::OutliningExtension::render(uint32_t frameNumber, VkCommandBuffer commandBuffer) const
+void Graphics::OutliningExtension::render(utils::ResourceIndex resourceIndex, VkCommandBuffer commandBuffer) const
 {
     if (!parent.objects) return;
 
+    const auto frameNumber = resourceIndex.get();
     for(const auto& object: *parent.objects){
         if (!object) continue;
 
@@ -106,14 +107,14 @@ void Graphics::OutliningExtension::render(uint32_t frameNumber, VkCommandBuffer 
         if (!type.has_any(interfaces::ObjectType::Value::baseTypes)) continue;
         if (!type.has(interfaces::ObjectType::Value::outlining)) continue;
 
-        const utils::vkDefault::DescriptorSets descriptorSets = { parent.descriptorSets.at(frameNumber), object->getDescriptorSet(frameNumber) };
+        const utils::vkDefault::DescriptorSets descriptorSets = { parent.descriptorSets.at(frameNumber), object->getDescriptorSet(resourceIndex) };
 
         const auto& pipelineDesc = pipelineDescs.at(type);
 
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineDesc.pipeline);
 
         uint32_t primirives = 0;
-        model->render(object->getInstanceNumber(frameNumber), commandBuffer, pipelineDesc.pipelineLayout, descriptorSets, primirives);
+        model->render(object->getInstanceNumber(resourceIndex), commandBuffer, pipelineDesc.pipelineLayout, descriptorSets, primirives);
     }
 }
 

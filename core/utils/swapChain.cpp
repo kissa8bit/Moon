@@ -70,6 +70,8 @@ VkResult SwapChain::acquireNextImage(VkSemaphore semaphore, ImageIndex& imageInd
 }
 
 std::vector<uint32_t> SwapChain::makeScreenshot(ImageIndex imageIndex) const {
+    vkDeviceWaitIdle(device->device());
+
     std::vector<uint32_t> buffer(imageInfo.Extent.height * imageInfo.Extent.width, 0);
 
     Buffer cache(*device, device->device(), sizeof(uint32_t) * imageInfo.Extent.width * imageInfo.Extent.height, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);

@@ -12,8 +12,8 @@ Model* Object::model() {
     return pModel;
 }
 
-uint32_t Object::getInstanceNumber(uint32_t imageNumber) const {
-    return instance.range.count > 1 ? instance.range.first + imageNumber : instance.range.first;
+uint32_t Object::getInstanceNumber(utils::ResourceIndex resourceIndex) const {
+    return instance.range.count > 1 ? instance.range.first + resourceIndex.get() : instance.range.first;
 }
 
 ObjectMask& Object::objectMask() {
@@ -30,8 +30,8 @@ bool Object::comparePrimitive(uint32_t primitiveIndex) const {
     return !(primitiveIndex < primitive.range.first) && (primitiveIndex < primitive.range.last());
 }
 
-const VkDescriptorSet& Object::getDescriptorSet(uint32_t i) const {
-    return descriptors.at(i);
+const VkDescriptorSet& Object::getDescriptorSet(utils::ResourceIndex resourceIndex) const {
+    return descriptors.at(resourceIndex.get());
 }
 
 }

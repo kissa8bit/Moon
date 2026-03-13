@@ -6,6 +6,7 @@
 #include <vulkan.h>
 
 #include "vkdefault.h"
+#include "types.h"
 
 namespace moon::utils {
 
@@ -21,7 +22,7 @@ struct PipelineStage{
     VkQueue queue{VK_NULL_HANDLE};
 
     PipelineStage(const std::vector<const vkDefault::CommandBuffers*>& commandBuffers, VkPipelineStageFlags waitStagesMask, VkQueue queue);
-    VkResult submit(uint32_t frameIndex) const;
+    VkResult submit(ResourceIndex resourceIndex) const;
 };
 
 using PipelineStages = std::vector<PipelineStage>;
@@ -31,13 +32,13 @@ private:
     PipelineStages stages;
     PipelineNode* next{nullptr};
 
-    vkDefault::VkSemaphores semaphores(uint32_t frameIndex);
+    vkDefault::VkSemaphores semaphores(ResourceIndex resourceIndex);
 
 public:
     PipelineNode() = default;
     PipelineNode(VkDevice device, PipelineStages&& stages, PipelineNode* next = nullptr);
 
-    vkDefault::VkSemaphores submit(const uint32_t frameIndex, const vkDefault::VkSemaphores& externalSemaphore = {});
+    vkDefault::VkSemaphores submit(ResourceIndex resourceIndex, const vkDefault::VkSemaphores& externalSemaphore = {});
 };
 
 using PipelineNodes = std::vector<PipelineNode>;

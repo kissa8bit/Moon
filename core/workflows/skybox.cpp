@@ -131,12 +131,13 @@ void SkyboxGraphics::updateDescriptors(const utils::BuffersDatabase& bDatabase, 
 
     for (uint32_t i = 0; i < parameters.imageInfo.Count; i++){
         utils::descriptorSet::Writes writes;
-        WRITE_DESCRIPTOR(writes, skybox.descriptorSets[i], bDatabase.descriptorBufferInfo(parameters.in.camera, i));
+        WRITE_DESCRIPTOR(writes, skybox.descriptorSets[i], bDatabase.descriptorBufferInfo(parameters.in.camera, utils::ResourceIndex(i)));
         utils::descriptorSet::update(device, writes);
     }
 }
 
-void SkyboxGraphics::updateCommandBuffer(uint32_t frameNumber){
+void SkyboxGraphics::updateCommandBuffer(utils::ResourceIndex resourceIndex){
+    const auto frameNumber = resourceIndex.get();
     if (!created) return;
 
     std::vector<VkClearValue> clearValues = {frame.color.clearValue(), frame.bloom.clearValue()};
@@ -165,7 +166,7 @@ void SkyboxGraphics::updateCommandBuffer(uint32_t frameNumber){
             if (!property.has(interfaces::ObjectProperty::enable)) continue;
             if (!type.has(interfaces::ObjectType::Value::skybox)) continue;
 
-            utils::vkDefault::DescriptorSets descriptorSets = { skybox.descriptorSets[frameNumber], object->getDescriptorSet(frameNumber) };
+            utils::vkDefault::DescriptorSets descriptorSets = { skybox.descriptorSets[frameNumber], object->getDescriptorSet(resourceIndex) };
             vkCmdBindDescriptorSets(commandBuffers[frameNumber], VK_PIPELINE_BIND_POINT_GRAPHICS, skybox.pipelineLayout, 0, static_cast<uint32_t>(descriptorSets.size()), descriptorSets.data(), 0, NULL);
             vkCmdDraw(commandBuffers[frameNumber], 36, 1, 0, 0);
         }

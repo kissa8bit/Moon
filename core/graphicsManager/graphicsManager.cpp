@@ -156,18 +156,24 @@ VkResult GraphicsManager::createSyncObjects(){
 }
 
 VkResult GraphicsManager::checkNextFrame(){
-#define GM_CNF_RET(expr) if (auto result = CHECK(expr); result) return result;
-    GM_CNF_RET(vkWaitForFences(activeDevice->device(), 1, fences.at(resourceIndex.get()), VK_TRUE, UINT64_MAX))
-    GM_CNF_RET(vkResetFences(activeDevice->device(), 1, fences.at(resourceIndex.get())))
-    GM_CNF_RET(swapChainKHR.acquireNextImage(availableSemaphores.at(resourceIndex.get()), imageIndex))
-    return VK_SUCCESS;
-#undef GM_CNF_RET
+    if (auto result = CHECK(vkWaitForFences(activeDevice->device(), 1, fences.at(resourceIndex.get()), VK_TRUE, UINT64_MAX)); result)
+        return result;
+
+    VkResult acquireResult = swapChainKHR.acquireNextImage(availableSemaphores.at(resourceIndex.get()), imageIndex);
+    if (acquireResult == VK_ERROR_OUT_OF_DATE_KHR) {
+        return acquireResult;
+    } else if (acquireResult != VK_SUCCESS && acquireResult != VK_SUBOPTIMAL_KHR) {
+        return CHECK(acquireResult);
+    }
+
+    CHECK(vkResetFences(activeDevice->device(), 1, fences.at(resourceIndex.get())));
+    return acquireResult;
 }
 
 VkResult GraphicsManager::drawFrame(){
     for(auto graph : graphics){
         if (graph) {
-            graph->update(resourceIndex.get());
+            graph->update(resourceIndex);
         }
     }
     linker.update(resourceIndex, imageIndex);
@@ -175,7 +181,7 @@ VkResult GraphicsManager::drawFrame(){
     utils::vkDefault::VkSemaphores waitSemaphores = {availableSemaphores.at(resourceIndex.get()) };
     for(auto graph: graphics){
         if (graph) {
-            waitSemaphores = graph->submit(resourceIndex.get(), waitSemaphores);
+            waitSemaphores = graph->submit(resourceIndex, waitSemaphores);
         }
     }
 

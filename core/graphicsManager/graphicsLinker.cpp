@@ -97,7 +97,7 @@ void GraphicsLinker::update(utils::ResourceIndex resourceIndex, utils::ImageInde
     vkCmdBeginRenderPass(commandBuffers.at(imageIndex.get()), &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
     for(auto& graph: *graphics){
-        graph->draw(commandBuffers.at(imageIndex.get()), resourceIndex.get());
+        graph->draw(resourceIndex, commandBuffers.at(imageIndex.get()));
     }
 
     vkCmdEndRenderPass(commandBuffers.at(imageIndex.get()));
@@ -110,7 +110,7 @@ VkRenderPass GraphicsLinker::getRenderPass() const {
 }
 
 VkSemaphore GraphicsLinker::submit(utils::ImageIndex imageIndex, const utils::vkDefault::VkSemaphores& waitSemaphores, VkFence fence, VkQueue queue) const  {
-    VkPipelineStageFlags waitStages = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    std::vector<VkPipelineStageFlags> waitStages(waitSemaphores.size(), VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
     const VkCommandBuffer cb = commandBuffers.at(imageIndex.get());
     const VkSemaphore sig = signalSemaphores.at(imageIndex.get());
 
@@ -118,7 +118,7 @@ VkSemaphore GraphicsLinker::submit(utils::ImageIndex imageIndex, const utils::vk
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submitInfo.waitSemaphoreCount = static_cast<uint32_t>(waitSemaphores.size());
         submitInfo.pWaitSemaphores = submitInfo.waitSemaphoreCount > 0 ? waitSemaphores.data() : nullptr;
-        submitInfo.pWaitDstStageMask = &waitStages;
+        submitInfo.pWaitDstStageMask = waitStages.data();
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &cb;
         submitInfo.signalSemaphoreCount = 1;

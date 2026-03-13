@@ -56,7 +56,7 @@ private:
     void createRenderPass();
     void createFramebuffers();
 
-    void updateCommandBuffer(uint32_t frameNumber) override;
+    void updateCommandBuffer(utils::ResourceIndex resourceIndex) override;
 
 public:
     LayersCombiner(LayersCombinerParameters& parameters);
