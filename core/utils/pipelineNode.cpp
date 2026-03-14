@@ -8,6 +8,8 @@ namespace moon::utils {
 PipelineStage::PipelineStage(const std::vector<const vkDefault::CommandBuffers*>& commandBuffers, VkPipelineStageFlags waitStagesMask, VkQueue queue)
     : waitStagesMask(waitStagesMask), queue(queue)
 {
+    if (commandBuffers.size() == 0) return;
+
     std::unordered_set<size_t> sizes;
     for (const auto& fcb : commandBuffers) {
         sizes.insert(fcb->size());
@@ -23,6 +25,10 @@ PipelineStage::PipelineStage(const std::vector<const vkDefault::CommandBuffers*>
             frames[idx].commandBuffers.push_back((*fcb)[idx]);
         }
     }
+}
+
+bool PipelineStage::empty() const {
+    return frames.empty();
 }
 
 VkResult PipelineStage::submit(ResourceIndex resourceIndex) const {

@@ -121,7 +121,8 @@ namespace texture {
             VkImageLayout                   newLayout,
             uint32_t                        mipLevels,
             uint32_t                        baseArrayLayer,
-            uint32_t                        arrayLayers);
+            uint32_t                        arrayLayers,
+            VkImageAspectFlags              aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
 
     void copy(
             VkCommandBuffer                 commandBuffer,
@@ -242,7 +243,7 @@ namespace singleCommandBuffer {
         ~Scoped();
         Scoped(const Scoped&) = delete;
         Scoped& operator=(const Scoped&) = delete;
-        operator VkCommandBuffer();
+        operator VkCommandBuffer() const;
     };
 }
 

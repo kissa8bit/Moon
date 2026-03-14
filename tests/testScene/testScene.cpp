@@ -76,6 +76,17 @@ void testScene::create()
     deferredGraphicsParameters.workflowsShadersPath = ExternalPath / "core/workflows/spv";
     deferredGraphicsParameters.extent = window.sizes();
 	deferredGraphicsParameters.layersCount = 2;
+    deferredGraphicsParameters.workflowsToAllocate = {
+        moon::deferredGraphics::Names::Bloom::name,
+        moon::deferredGraphics::Names::Blur::name,
+        moon::deferredGraphics::Names::Skybox::name,
+        moon::deferredGraphics::Names::SSLR::name,
+        moon::deferredGraphics::Names::SSAO::name,
+        moon::deferredGraphics::Names::Shadow::name,
+        moon::deferredGraphics::Names::Scattering::name,
+        moon::deferredGraphics::Names::BoundingBox::name,
+        moon::deferredGraphics::Names::Selector::name
+    };
 #ifdef TEST_RESOURCE_USAGE
     deferredGraphicsParameters.layersCount = 1;
 #endif

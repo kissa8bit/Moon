@@ -185,7 +185,7 @@ void LayersCombiner::updateDescriptors(
         WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.skyboxBloom, i));
         WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.scattering, i));
         WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.sslr, i));
-        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.ssao, i));
+        WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.ssao, i, parameters.in.whiteTexture));
         utils::descriptorSet::update(device, writes);
     }
 }

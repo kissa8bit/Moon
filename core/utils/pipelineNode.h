@@ -23,6 +23,8 @@ struct PipelineStage{
 
     PipelineStage(const std::vector<const vkDefault::CommandBuffers*>& commandBuffers, VkPipelineStageFlags waitStagesMask, VkQueue queue);
     VkResult submit(ResourceIndex resourceIndex) const;
+
+	bool empty() const;
 };
 
 using PipelineStages = std::vector<PipelineStage>;

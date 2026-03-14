@@ -3,6 +3,7 @@
 
 #include <filesystem>
 #include <unordered_map>
+#include <unordered_set>
 #include <memory>
 
 #include <vulkan.h>
@@ -73,6 +74,8 @@ struct WorkflowNameTag {};
 
 using ParameterName = utils::Name<ParameterNameTag>;
 using WorkflowName = utils::Name<WorkflowNameTag>;
+
+using WorkflowNames = std::unordered_set<WorkflowName>;
 
 using ParametersMap = std::unordered_map<ParameterName, Parameters*>;
 using WorkflowsMap = std::unordered_map<WorkflowName, std::unique_ptr<workflows::Workflow>>;

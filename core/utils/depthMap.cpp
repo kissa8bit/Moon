@@ -17,11 +17,26 @@ DepthMap::Map::Map(const PhysicalDevice& device, const utils::vkDefault::ImageIn
     descriptorSets(descriptorPool.allocateDescriptorSets(descriptorSetLayout, imageInfo.Count))
 {}
 
-DepthMap::DepthMap(const PhysicalDevice& device, VkCommandPool commandPool, const utils::vkDefault::ImageInfo& imageInfo) : 
-    map(device, imageInfo), 
-    imageInfo(imageInfo), 
+DepthMap::DepthMap(const PhysicalDevice& device, VkCommandPool commandPool, const utils::vkDefault::ImageInfo& imageInfo) :
+    map(device, imageInfo),
+    imageInfo(imageInfo),
     device(device.device())
-{}
+{
+    const VkClearDepthStencilValue clearValue{ 1.0f, 0 };
+    const VkImageSubresourceRange range{ VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1 };
+
+    const auto commandBuffer = singleCommandBuffer::Scoped(device.device(), device.device()(0, 0), commandPool);
+    for (uint32_t i = 0; i < imageInfo.Count; i++) {
+        texture::transitionLayout(commandBuffer, map.attachments.image(i),
+            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            1, 0, 1, VK_IMAGE_ASPECT_DEPTH_BIT);
+        vkCmdClearDepthStencilImage(commandBuffer, map.attachments.image(i),
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clearValue, 1, &range);
+        texture::transitionLayout(commandBuffer, map.attachments.image(i),
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            1, 0, 1, VK_IMAGE_ASPECT_DEPTH_BIT);
+    }
+}
 
 const utils::vkDefault::DescriptorSets& DepthMap::descriptorSets() const{
     return map.descriptorSets;

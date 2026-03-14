@@ -24,6 +24,13 @@ DeferredGraphics::DeferredGraphics(const Parameters& parameters)
     (workflowsParameters[Names::Scattering::param] = &scatteringParams)->enable = false;
     (workflowsParameters[Names::BoundingBox::param] = &bbParams)->enable = false;
     (workflowsParameters[Names::Selector::param] = &selectorParams)->enable = false;
+
+    for (LayerIndex i{ 0 }; i < LayerIndex(params.layersCount); i++) {
+        const auto key = layerPrefix<workflows::WorkflowName>(i) + Names::MainGraphics::name;
+        params.workflowsToAllocate.insert(key);
+    }
+    params.workflowsToAllocate.insert(Names::LayersCombiner::name);
+    params.workflowsToAllocate.insert(Names::PostProcessing::name);
 }
 
 void DeferredGraphics::reset()
@@ -44,6 +51,7 @@ void DeferredGraphics::reset()
     if (depthMaps.find(Names::nullDepthMapKey) == depthMaps.end()) {
         const utils::vkDefault::ImageInfo shadowsInfo{ resourceCount, VK_FORMAT_D32_SFLOAT, {1,1}, VK_SAMPLE_COUNT_1_BIT };
         depthMaps[Names::nullDepthMapKey] = utils::DepthMap(*device, commandPool, shadowsInfo);
+        depthMaps[Names::nullDepthMapKey].update();
     }
 
     createGraphicsPasses();
@@ -122,6 +130,7 @@ void DeferredGraphics::createGraphicsPasses()
     layersCombinerParams.in.sslr = Names::SSLR::output;
     layersCombinerParams.in.ssao = Names::SSAO::output;
     layersCombinerParams.in.defaultDepthTexture = Names::whiteTexture;
+    layersCombinerParams.in.whiteTexture = Names::whiteTexture;
     layersCombinerParams.out.color = Names::LayersCombiner::color;
     layersCombinerParams.out.bloom = Names::LayersCombiner::bloom;
     layersCombinerParams.out.blur = Names::LayersCombiner::blur;
@@ -182,9 +191,11 @@ void DeferredGraphics::createGraphicsPasses()
     workflows[Names::BoundingBox::name] = std::make_unique<workflows::BoundingBoxGraphics>(bbParams, &objects);
     workflows[Names::Selector::name] = std::make_unique<workflows::SelectorGraphics>(selectorParams, &params.cursor);
 
-    for(auto& [_, workflow]: workflows){
+    for(auto& [name, workflow]: workflows){
         workflow->setDeviceProp(*device, device->device());
-        workflow->create(commandPool, aDatabase);
+        if (params.workflowsToAllocate.find(name) != params.workflowsToAllocate.end()) {
+            workflow->create(commandPool, aDatabase);
+        }
     }
 
     for (auto& [_, workflow] : workflows) {
@@ -206,39 +217,69 @@ void DeferredGraphics::createStages()
     nodes.clear();
     nodes.reserve(6);
 
+    auto getCommandBuffers = [&](const std::vector<workflows::WorkflowName>& names) -> std::vector<const utils::vkDefault::CommandBuffers*> {
+        std::vector<const utils::vkDefault::CommandBuffers*> res;
+        for (const auto& name : names) {
+            if (params.workflowsToAllocate.find(name) == params.workflowsToAllocate.end()) {
+                continue;
+            }
+            if (workflows.find(name) == workflows.end()) {
+                continue;
+            }
+            if (!CHECK_M(workflows[name].get(), std::string("[ DeferredGraphics::createStages ] workflows is nullptr"))) {
+                continue;
+            }
+            const utils::vkDefault::CommandBuffers* commandBuffers = *workflows[name];
+            if (!CHECK_M(commandBuffers, std::string("[ DeferredGraphics::createStages ] commandBuffers is nullptr"))) {
+                continue;
+            }
+            res.push_back(commandBuffers);
+        }
+        return res;
+	};
+
+    auto push = [&](utils::PipelineStages& stages, utils::PipelineStage&& stage) {
+        if (!stage.empty()) {
+			stages.push_back(std::move(stage));
+        }
+    };
+
     utils::PipelineStages postProcessingStages;
-    postProcessingStages.push_back(
-        utils::PipelineStage({*workflows[Names::Selector::name], *workflows[Names::Bloom::name], *workflows[Names::Blur::name], *workflows[Names::BoundingBox::name], *workflows[Names::PostProcessing::name]},
-        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-        device->device()(0,0)));
+    push(postProcessingStages, 
+        utils::PipelineStage(
+            getCommandBuffers({ Names::Selector::name, Names::Bloom::name, Names::Blur::name, Names::BoundingBox::name, Names::PostProcessing::name }),
+            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            device->device()(0, 0)
+        )
+    );
     nodes.push_back(utils::PipelineNode(device->device(), std::move(postProcessingStages), nullptr));
 
     utils::PipelineStages layersCombinerStages;
-    layersCombinerStages.push_back(utils::PipelineStage({ *workflows[Names::LayersCombiner::name] }, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, device->device()(0,0)));
+    push(layersCombinerStages, utils::PipelineStage(getCommandBuffers({ Names::LayersCombiner::name }), VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, device->device()(0, 0)));
     nodes.push_back(utils::PipelineNode(device->device(), std::move(layersCombinerStages), &nodes.back()));
 
     utils::PipelineStages preCombinedStages;
-    preCombinedStages.push_back(utils::PipelineStage({*workflows[Names::Scattering::name]}, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, device->device()(0,0)));
-    preCombinedStages.push_back(utils::PipelineStage({*workflows[Names::SSLR::name]}, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, device->device()(0,0)));
-    preCombinedStages.push_back(utils::PipelineStage({ *workflows[Names::SSAO::name] }, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, device->device()(0, 0)));
+    push(preCombinedStages, utils::PipelineStage(getCommandBuffers({ Names::Scattering::name }), VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, device->device()(0, 0)));
+    push(preCombinedStages, utils::PipelineStage(getCommandBuffers({ Names::SSLR::name }), VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, device->device()(0,0)));
+    push(preCombinedStages, utils::PipelineStage(getCommandBuffers({ Names::SSAO::name }), VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, device->device()(0, 0)));
     nodes.push_back(utils::PipelineNode(device->device(), std::move(preCombinedStages), &nodes.back()));
 
-    std::vector<const utils::vkDefault::CommandBuffers*> deferredStagesCommandBuffers;
+    std::vector<workflows::WorkflowName> deferredStagesNames;
     for (LayerIndex i{ 0 }; i < LayerIndex(params.layersCount); i++) {
         const auto key = layerPrefix<workflows::WorkflowName>(i) + Names::MainGraphics::name;
-        deferredStagesCommandBuffers.push_back(*workflows[key]);
+        deferredStagesNames.push_back(key);
     };
     utils::PipelineStages deferredStages;
-    deferredStages.push_back(utils::PipelineStage(deferredStagesCommandBuffers, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, device->device()(0,0)));
+    push(deferredStages, utils::PipelineStage(getCommandBuffers(deferredStagesNames), VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, device->device()(0,0)));
     nodes.push_back(utils::PipelineNode(device->device(), std::move(deferredStages), &nodes.back()));
 
     utils::PipelineStages prepareStages;
-    prepareStages.push_back(utils::PipelineStage({*workflows[Names::Shadow::name]}, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, device->device()(0,0)));
-    prepareStages.push_back(utils::PipelineStage({*workflows[Names::Skybox::name]}, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, device->device()(0,0)));
+    push(prepareStages, utils::PipelineStage(getCommandBuffers({Names::Shadow::name}), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, device->device()(0,0)));
+    push(prepareStages, utils::PipelineStage(getCommandBuffers({Names::Skybox::name}), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, device->device()(0,0)));
     nodes.push_back(utils::PipelineNode(device->device(), std::move(prepareStages), &nodes.back()));
 
     utils::PipelineStages copyStages;
-    copyStages.push_back(utils::PipelineStage({ &copyCommandBuffers }, VK_PIPELINE_STAGE_TRANSFER_BIT, device->device()(0,0)));
+    push(copyStages, utils::PipelineStage({ &copyCommandBuffers }, VK_PIPELINE_STAGE_TRANSFER_BIT, device->device()(0,0)));
     nodes.push_back(utils::PipelineNode(device->device(), std::move(copyStages), &nodes.back()));
 }
 

@@ -142,6 +142,7 @@ struct Parameters {
     utils::Cursor*              cursor{ nullptr };
     interfaces::Camera*         cameraObject{ nullptr };
     uint32_t                    layersCount{ 1 };
+    workflows::WorkflowNames    workflowsToAllocate;
 
     struct {
         utils::DirtyValue<float>    bloomThreshold{ 1.0f };

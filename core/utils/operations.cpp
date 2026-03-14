@@ -358,11 +358,11 @@ singleCommandBuffer::Scoped::~Scoped() {
     }
 }
 
-singleCommandBuffer::Scoped::operator VkCommandBuffer() {
+singleCommandBuffer::Scoped::operator VkCommandBuffer() const {
     return commandBuffer;
 }
 
-void texture::transitionLayout(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint32_t baseArrayLayer, uint32_t arrayLayers){
+void texture::transitionLayout(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint32_t baseArrayLayer, uint32_t arrayLayers, VkImageAspectFlags aspectMask){
     std::unordered_map<VkImageLayout,std::pair<VkAccessFlags,VkPipelineStageFlags>> layoutDescription = {
         {VK_IMAGE_LAYOUT_UNDEFINED, {0,VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT}},
         {VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, {VK_ACCESS_TRANSFER_WRITE_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT}},
@@ -388,7 +388,7 @@ void texture::transitionLayout(VkCommandBuffer commandBuffer, VkImage image, VkI
     barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.image = image;
-    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.aspectMask = aspectMask;
     barrier.subresourceRange.baseMipLevel = 0;
     barrier.subresourceRange.levelCount = mipLevels;
     barrier.subresourceRange.baseArrayLayer = baseArrayLayer;

@@ -29,6 +29,7 @@ struct LayersCombinerParameters : workflows::Parameters {
         utils::AttachmentName sslr;
         utils::AttachmentName ssao;
         utils::ImageName defaultDepthTexture;
+        utils::ImageName whiteTexture;
     }in;
     struct{
         utils::AttachmentName color;
