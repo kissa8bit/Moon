@@ -104,9 +104,9 @@ struct MorphWeights {
     static constexpr uint32_t maxTargets = 256u;
     utils::Buffer deviceBuffer;
     struct Buffer {
-        float weights[maxTargets]{};
         uint32_t count{0};
         uint32_t _pad[3]{};
+        float weights[maxTargets]{};
     } hostBuffer;
     VkDescriptorSet descriptorSet{VK_NULL_HANDLE};
 
@@ -115,6 +115,7 @@ struct MorphWeights {
 };
 
 struct MorphDeltas {
+    struct Header { uint32_t morphTargetCount, vertexCount, vertexStart, _pad; };
     utils::Buffer deviceBuffer;
     VkDescriptorSet descriptorSet{VK_NULL_HANDLE};
 

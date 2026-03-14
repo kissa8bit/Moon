@@ -14,8 +14,9 @@ namespace moon::models {
 struct GltfMorphWeight : public interfaces::MorphWeights {
     GltfMorphWeight() = default;
     GltfMorphWeight(const utils::PhysicalDevice& device, uint32_t morphTargetCount) {
+        const size_t bufferSize = sizeof(uint32_t) * 4 + sizeof(float) * morphTargetCount;
         deviceBuffer = utils::vkDefault::Buffer(
-            device, device.device(), sizeof(Buffer),
+            device, device.device(), bufferSize,
             VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
         moon::utils::Memory::instance().nameMemory(deviceBuffer,
@@ -33,7 +34,6 @@ struct GltfMorphWeight : public interfaces::MorphWeights {
     }
 };
 
-using GltfMorphWeightsMap = std::unordered_map<Node::Id, GltfMorphWeight>;
 
 } // moon::models
 

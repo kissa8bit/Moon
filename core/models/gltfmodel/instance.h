@@ -3,17 +3,14 @@
 
 #include <vector>
 
-#include "node.h"
-#include "gltfskeleton.h"
-#include "gltfmorph.h"
+#include "gltfnodedata.h"
 #include "animation.h"
 
 namespace moon::models {
 
 struct Instance {
     Nodes nodes;
-    GltfSkeletons skeletons;
-    GltfMorphWeightsMap morphWeights;
+    GltfNodeDataMap meshNodes;
     GltfAnimations animations;
 
     Instance() = default;
@@ -26,8 +23,7 @@ struct Instance {
     }
     void swap(Instance& other) noexcept {
         std::swap(nodes, other.nodes);
-        std::swap(skeletons, other.skeletons);
-        std::swap(morphWeights, other.morphWeights);
+        std::swap(meshNodes, other.meshNodes);
         std::swap(animations, other.animations);
     }
 
@@ -42,21 +38,15 @@ struct Instance {
 
 using Instances = std::vector<Instance>;
 
-inline void updateNodes(Nodes& nodes, GltfSkeletons& skeletons, GltfMorphWeightsMap* morphWeights = nullptr, bool recursive = true) {
+inline void updateNodes(Nodes& nodes, GltfNodeDataMap& meshNodes, bool recursive = true) {
     for (auto& [_, node] : nodes) {
         if (node.parent == nullptr) {
             node.updateMatrix(recursive);
         }
     }
-    for (auto& [rootNode, skeleton] : skeletons) {
-        skeleton.update(nodes, rootNode);
-    }
-    if (morphWeights) {
-        for (auto& [nodeId, morphWeight] : *morphWeights) {
-            if (nodes.count(nodeId)) {
-                morphWeight.update(nodes.at(nodeId));
-            }
-        }
+    for (auto& [nodeId, nodeData] : meshNodes) {
+        nodeData.skeleton.update(nodes, nodeId);
+        nodeData.morphWeight.update(nodes.at(nodeId));
     }
 }
 

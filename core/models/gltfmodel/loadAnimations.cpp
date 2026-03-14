@@ -233,13 +233,13 @@ void GltfModel::loadAnimations(const tinygltf::Model& gltfModel){
                     channels.push_back(GltfAnimation::Channel{ pathIt->second, source.sampler, &node });
                 }
             }
-            instance.animations.push_back(GltfAnimation(&instance.nodes, &instance.skeletons, &instance.morphWeights, channels, samplers, duration));
+            instance.animations.push_back(GltfAnimation(&instance.nodes, &instance.meshNodes, channels, samplers, duration));
         }
     }
 }
 
-GltfAnimation::GltfAnimation(Nodes* nodeMap, GltfSkeletons* skeletons, GltfMorphWeightsMap* morphWeights, const GltfAnimation::Channels& channels, const GltfAnimation::Samplers& samplers, float duration)
-    : nodeMap(nodeMap), skeletons(skeletons), morphWeights(morphWeights), channels(channels), samplers(samplers), totalTime(duration)
+GltfAnimation::GltfAnimation(Nodes* nodeMap, GltfNodeDataMap* meshNodes, const GltfAnimation::Channels& channels, const GltfAnimation::Samplers& samplers, float duration)
+    : nodeMap(nodeMap), meshNodes(meshNodes), channels(channels), samplers(samplers), totalTime(duration)
 {
     for (const auto& channel : this->channels) {
         if (channel.node) animatedNodes.insert(channel.node);
@@ -371,7 +371,7 @@ bool GltfAnimation::applyChannels(float time){
 }
 
 void GltfAnimation::updateNodes() {
-    moon::models::updateNodes(*nodeMap, *skeletons, morphWeights);
+    moon::models::updateNodes(*nodeMap, *meshNodes);
 }
 
 bool GltfAnimation::update(float time){

@@ -61,7 +61,7 @@ void Mesh::render(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout
 
         auto descriptors = descriptorSets;
         descriptors.push_back(material.descriptorSet);
-        if (primitive.morphDeltas.descriptorSet) descriptors.push_back(primitive.morphDeltas.descriptorSet);
+        descriptors.push_back(primitive.morphDeltas.descriptorSet);
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, static_cast<uint32_t>(descriptors.size()), descriptors.data(), 0, nullptr);
 
         const auto buffer = material.buffer(primitiveCount++);

@@ -31,7 +31,6 @@ struct GltfSkeleton : public interfaces::Skeleton {
     }
 };
 
-using GltfSkeletons = std::unordered_map<Node::Id, GltfSkeleton>;
 
 } // moon::models
 

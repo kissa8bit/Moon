@@ -163,7 +163,7 @@ std::vector<std::vector<uint8_t>> loadMorphDeltasForMesh(
 
         const uint32_t morphTargetCount = static_cast<uint32_t>(primitive.targets.size());
 
-        struct Header { uint32_t morphTargetCount, vertexCount, vertexStart, pad; };
+        using Header = interfaces::MorphDeltas::Header;
 
         if (morphTargetCount == 0 || vertexCount == 0) {
             std::vector<uint8_t> buf(sizeof(Header), 0);
@@ -180,7 +180,7 @@ std::vector<std::vector<uint8_t>> loadMorphDeltasForMesh(
         header.morphTargetCount = morphTargetCount;
         header.vertexCount = vertexCount;
         header.vertexStart = primitiveVertexStart;
-        header.pad = 0;
+        header._pad = 0;
 
         math::vec4* posDeltas  = reinterpret_cast<math::vec4*>(buf.data() + sizeof(Header));
         math::vec4* normDeltas = posDeltas + deltaCount;

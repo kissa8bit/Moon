@@ -23,8 +23,8 @@ layout (set = 2, binding = 0) uniform UBONode
 
 layout (set = 3, binding = 0) uniform MorphWeightsBuffer
 {
-    vec4 weights[64];
     uint count;
+    vec4 weights[64];
 } morphWeights;
 
 layout (set = 5, binding = 0) readonly buffer MorphDeltasBuffer

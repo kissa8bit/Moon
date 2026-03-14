@@ -128,8 +128,12 @@ bool PlyModel::loadFromFile(const utils::PhysicalDevice& physicalDevice, VkComma
     utils::Memory::instance().nameMemory(dummy.skeleton.deviceBuffer, std::string(__FILE__) + " in line " + std::to_string(__LINE__) + ", plyModel::loadFromFile, uniformBuffer");
     dummy.skeleton.deviceBuffer.copy(&dummy.skeleton.hostBuffer);
 
-    dummy.morphWeights.deviceBuffer = utils::vkDefault::Buffer(physicalDevice, device, sizeof(interfaces::MorphWeights::Buffer), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    dummy.morphWeights.deviceBuffer = utils::vkDefault::Buffer(physicalDevice, device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     dummy.morphWeights.deviceBuffer.copy(&dummy.morphWeights.hostBuffer);
+
+    interfaces::MorphDeltas::Header morphDeltasHeader{};
+    mesh.primitives.back().morphDeltas.deviceBuffer = utils::vkDefault::Buffer(physicalDevice, device, sizeof(interfaces::MorphDeltas::Header), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    mesh.primitives.back().morphDeltas.deviceBuffer.copy(&morphDeltasHeader);
 
     return true;
 }
@@ -138,11 +142,13 @@ void PlyModel::createDescriptors(VkDevice device) {
     skeletonDescriptorSetLayout = interfaces::Skeleton::descriptorSetLayout(device);
     materialDescriptorSetLayout = interfaces::Material::descriptorSetLayout(device);
     morphWeightsDescriptorSetLayout = interfaces::MorphWeights::descriptorSetLayout(device);
-    descriptorPool = utils::vkDefault::DescriptorPool(device, { &materialDescriptorSetLayout, &skeletonDescriptorSetLayout, &morphWeightsDescriptorSetLayout }, 1);
+    morphDeltasDescriptorSetLayout = interfaces::MorphDeltas::descriptorSetLayout(device);
+    descriptorPool = utils::vkDefault::DescriptorPool(device, { &materialDescriptorSetLayout, &skeletonDescriptorSetLayout, &morphWeightsDescriptorSetLayout, &morphDeltasDescriptorSetLayout }, 1);
 
     dummy.skeleton.createDescriptorSet(device, descriptorPool, skeletonDescriptorSetLayout);
     dummy.morphWeights.createDescriptorSet(device, descriptorPool, morphWeightsDescriptorSetLayout);
     material().createDescriptorSet(device, descriptorPool, materialDescriptorSetLayout);
+    mesh.primitives.back().morphDeltas.createDescriptorSet(device, descriptorPool, morphDeltasDescriptorSetLayout);
 }
 
 void PlyModel::create(const utils::PhysicalDevice& device, VkCommandPool commandPool)
