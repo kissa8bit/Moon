@@ -102,14 +102,19 @@ void ShadowGraphics::create(const utils::vkDefault::CommandPool& commandPool, ut
         const workflows::ShaderNames shaderNames = {
             {workflows::ShaderType::Vertex, "shadow/shadowMapVert.spv"}
         };
-        shadow.create(interfaces::ObjectType::base, shaderNames, device, renderPass);
-        shadow.create(interfaces::ObjectType::base | interfaces::ObjectType::outlining, shaderNames, device, renderPass);
+        shadow.create(interfaces::ObjectType::animated, shaderNames, device, renderPass);
+        shadow.create(interfaces::ObjectType::animated | interfaces::ObjectType::outlining, shaderNames, device, renderPass);
 
         const workflows::ShaderNames shaderSimpleNames = {
             {workflows::ShaderType::Vertex, "shadow/shadowMapSimpleVert.spv"}
         };
-        shadow.create(interfaces::ObjectType::baseSimple, shaderSimpleNames, device, renderPass);
-        shadow.create(interfaces::ObjectType::baseSimple | interfaces::ObjectType::outlining, shaderSimpleNames, device, renderPass);
+        shadow.create(interfaces::ObjectType::simple, shaderSimpleNames, device, renderPass);
+        shadow.create(interfaces::ObjectType::simple | interfaces::ObjectType::outlining, shaderSimpleNames, device, renderPass);
+        const workflows::ShaderNames shaderPBRNames = {
+            {workflows::ShaderType::Vertex, "shadow/shadowMapPBRVert.spv"}
+        };
+        shadow.create(interfaces::ObjectType::pbr, shaderPBRNames, device, renderPass);
+        shadow.create(interfaces::ObjectType::pbr | interfaces::ObjectType::outlining, shaderPBRNames, device, renderPass);
 
         created = true;
     }

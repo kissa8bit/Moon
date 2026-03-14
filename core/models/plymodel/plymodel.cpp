@@ -24,7 +24,7 @@ PlyModel::PlyModel(
     const interfaces::Material::PbrWorkflow workflow) :
     filename(filename)
 {
-    type = interfaces::Model::VertexType::baseSimple;
+    type = interfaces::Model::VertexType::simple;
 
     auto& mat = materials.emplace_back();
     mat.baseColor.factor = baseColorFactor;

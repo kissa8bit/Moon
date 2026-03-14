@@ -199,9 +199,9 @@ public:
     enum VertexType : uint32_t
     {
         non = 0ul,
-        baseSimple = 1ul << 0,
-        basePBR = 1ul << 1,
-        base = 1ul << 2,
+        simple = 1ul << 0,
+        pbr = 1ul << 1,
+        animated = 1ul << 2,
     };
 
     virtual ~Model() = default;

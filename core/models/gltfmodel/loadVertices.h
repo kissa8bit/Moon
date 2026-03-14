@@ -67,7 +67,8 @@ void pushBackIndex(const type* data, size_t count, uint32_t vertexStart, interfa
     }
 }
 
-void calculateTangent(uint32_t indexOffset, interfaces::Vertices& vertices, interfaces::Indices& indices) {
+template<typename VerticesT>
+void calculateTangent(uint32_t indexOffset, VerticesT& vertices, interfaces::Indices& indices) {
     for (uint32_t i = indexOffset; i < indices.size(); i += 3) {
         const auto& v0 = vertices[indices[i + 0]], & v1 = vertices[indices[i + 1]], & v2 = vertices[indices[i + 2]];
 
@@ -204,6 +205,43 @@ std::vector<std::vector<uint8_t>> loadMorphDeltasForMesh(
     }
 
     return result;
+}
+
+void loadPBRVertices(const tinygltf::Model& gltfModel, const tinygltf::Mesh& mesh, interfaces::Indices& indices, interfaces::PBRVertices& vertices) {
+    for (const tinygltf::Primitive& primitive: mesh.primitives) {
+        const auto pos  = LoadBuffer<float>(primitive, gltfModel, "POSITION",   TINYGLTF_TYPE_VEC3);
+        const auto norm = LoadBuffer<float>(primitive, gltfModel, "NORMAL",     TINYGLTF_TYPE_VEC3);
+        const auto tex0 = LoadBuffer<float>(primitive, gltfModel, "TEXCOORD_0", TINYGLTF_TYPE_VEC2);
+        const auto tex1 = LoadBuffer<float>(primitive, gltfModel, "TEXCOORD_1", TINYGLTF_TYPE_VEC2);
+
+        uint32_t vertexStart = static_cast<uint32_t>(vertices.size());
+        uint32_t vertexCount = pos.accessor ? static_cast<uint32_t>(pos.accessor->count) : 0;
+        for (uint32_t index = 0; index < vertexCount; index++) {
+            interfaces::PBRVertex vert{};
+            if (pos.buffer)  vert.pos    = pos.loadVec3(index);
+            if (norm.buffer) vert.normal = math::normalized(norm.loadVec3(index));
+            if (tex0.buffer) vert.uv0    = tex0.loadVec2(index);
+            if (tex1.buffer) vert.uv1    = tex1.loadVec2(index);
+            vertices.push_back(vert);
+        }
+
+        if (isInvalid(primitive.indices)) continue;
+        const GltfBufferExtractor indicesExtract(gltfModel, primitive.indices);
+
+        uint32_t indexOffset = static_cast<uint32_t>(indices.size());
+#define GLTFMODEL_LOADPBRVERTEXBUFFER_INDEX_CASE(ComponentType, type)                                       \
+    case ComponentType:                                                                                     \
+        pushBackIndex((const type*)indicesExtract.data, indicesExtract.count, vertexStart, indices);        \
+        break;
+
+        switch (indicesExtract.componentType) {
+            GLTFMODEL_LOADPBRVERTEXBUFFER_INDEX_CASE(TINYGLTF_PARAMETER_TYPE_UNSIGNED_INT, uint32_t)
+            GLTFMODEL_LOADPBRVERTEXBUFFER_INDEX_CASE(TINYGLTF_PARAMETER_TYPE_UNSIGNED_SHORT, uint16_t)
+            GLTFMODEL_LOADPBRVERTEXBUFFER_INDEX_CASE(TINYGLTF_PARAMETER_TYPE_UNSIGNED_BYTE, uint8_t)
+        }
+#undef GLTFMODEL_LOADPBRVERTEXBUFFER_INDEX_CASE
+        calculateTangent(indexOffset, vertices, indices);
+    }
 }
 
 void loadVertices(const tinygltf::Model& gltfModel, const tinygltf::Mesh& mesh, interfaces::Indices& indices, interfaces::Vertices& vertices) {

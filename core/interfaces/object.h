@@ -18,10 +18,10 @@ namespace moon::interfaces {
 #define ObjectType_Value							\
 	enum Value : uint32_t {							\
 		non = 0x0,									\
-		baseSimple = 1ul << 0,						\
-		basePBR = 1ul << 1,							\
-		base = 1ul << 2,							\
-		baseTypes = baseSimple | basePBR | base,	\
+		simple = 1ul << 0,							\
+		pbr = 1ul << 1,								\
+		animated = 1ul << 2,						\
+		baseTypes = simple | pbr | animated,		\
 		skybox = 1ul << 3,							\
 		outlining = 1ul << 4,						\
 	};
@@ -43,27 +43,27 @@ inline ObjectType objectTypeFromVertexType(Model::VertexType type)
 {
 	switch (type)
 	{
-	case Model::VertexType::baseSimple:
-		return ObjectType::baseSimple;
-	case Model::VertexType::basePBR:
-		return ObjectType::basePBR;
-	case Model::VertexType::base:
-		return ObjectType::base;
+	case Model::VertexType::simple:
+		return ObjectType::simple;
+	case Model::VertexType::pbr:
+		return ObjectType::pbr;
+	case Model::VertexType::animated:
+		return ObjectType::animated;
 	}
 	return ObjectType::non;
 }
 
 inline VkVertexInputBindingDescription VertexInputBindingDescriptionFromObjectType(ObjectType type)
 {
-	if (type.has(ObjectType::baseSimple))
+	if (type.has(ObjectType::simple))
 	{
 		return SimpleVertex::getBindingDescription();
 	}
-	if (type.has(ObjectType::basePBR))
+	if (type.has(ObjectType::pbr))
 	{
 		return PBRVertex::getBindingDescription();
 	}
-	if (type.has(ObjectType::base))
+	if (type.has(ObjectType::animated))
 	{
 		return Vertex::getBindingDescription();
 	}
@@ -72,15 +72,15 @@ inline VkVertexInputBindingDescription VertexInputBindingDescriptionFromObjectTy
 
 inline std::vector<VkVertexInputAttributeDescription> AttributeDescriptionsFromObjectType(ObjectType type)
 {
-	if (type.has(ObjectType::baseSimple))
+	if (type.has(ObjectType::simple))
 	{
 		return SimpleVertex::getAttributeDescriptions();
 	}
-	if (type.has(ObjectType::basePBR))
+	if (type.has(ObjectType::pbr))
 	{
 		return PBRVertex::getAttributeDescriptions();
 	}
-	if (type.has(ObjectType::base))
+	if (type.has(ObjectType::animated))
 	{
 		return Vertex::getAttributeDescriptions();
 	}

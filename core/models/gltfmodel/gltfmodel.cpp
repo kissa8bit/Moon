@@ -20,7 +20,7 @@ namespace moon::models {
 GltfModel::GltfModel(std::filesystem::path filename, uint32_t instanceCount) :
     filename(filename)
 {
-    type = interfaces::Model::VertexType::base;
+    type = interfaces::Model::VertexType::animated;
 
     instances.resize(instanceCount);
 }
@@ -41,10 +41,13 @@ bool GltfModel::loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffe
 
     loadMaterials(gltfModel, device, commandBuffer);
 
-    struct {
-        interfaces::Indices indices;
-        interfaces::Vertices vertices;
-    } host;
+    type = (gltfModel.animations.empty() && gltfModel.skins.empty())
+        ? interfaces::Model::VertexType::pbr
+        : interfaces::Model::VertexType::animated;
+
+    interfaces::Indices hostIndices;
+    interfaces::Vertices hostVertices;
+    interfaces::PBRVertices hostPBRVertices;
 
     uint32_t indexStart = 0;
     for (Node::Id nodeId = 0; nodeId < gltfModel.nodes.size(); nodeId++) {
@@ -59,12 +62,18 @@ bool GltfModel::loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffe
         if (!isValid(node.mesh)) continue;
 
         const auto& gltfMesh = gltfModel.meshes[node.mesh];
-        const uint32_t meshVertexStart = static_cast<uint32_t>(host.vertices.size());
+        const uint32_t meshVertexStart = type == interfaces::Model::VertexType::pbr
+            ? static_cast<uint32_t>(hostPBRVertices.size())
+            : static_cast<uint32_t>(hostVertices.size());
         const uint32_t morphTargetCount = gltfMesh.primitives.empty() ? 0 : static_cast<uint32_t>(gltfMesh.primitives[0].targets.size());
         const bool isSkinValid = isValid(node.skin);
 
         meshes[nodeId] = GltfMesh(gltfModel, gltfMesh, materials, indexStart);
-        loadVertices(gltfModel, gltfMesh, host.indices, host.vertices);
+        if (type == interfaces::Model::VertexType::pbr) {
+            loadPBRVertices(gltfModel, gltfMesh, hostIndices, hostPBRVertices);
+        } else {
+            loadVertices(gltfModel, gltfMesh, hostIndices, hostVertices);
+        }
 
         auto morphDeltaBuffers = loadMorphDeltasForMesh(gltfModel, gltfMesh, meshVertexStart);
         auto& mesh = meshes.at(nodeId);
@@ -77,7 +86,7 @@ bool GltfModel::loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffe
 
         if (isSkinValid) {
             skins[nodeId] = Skin(gltfModel, gltfModel.skins[node.skin]);
-            mesh.calculateNodeBoxes(host.vertices, host.indices, skins.at(nodeId));
+            mesh.calculateNodeBoxes(hostVertices, hostIndices, skins.at(nodeId));
         }
 
         for (auto& instance : instances) {
@@ -99,9 +108,13 @@ bool GltfModel::loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffe
         }
     }
 
-    utils::createDeviceBuffer(device, device.device(), commandBuffer, host.vertices.size() * sizeof(interfaces::Vertex), host.vertices.data(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, cache.vertices, vertices);
-    if (!host.indices.empty()) {
-        utils::createDeviceBuffer(device, device.device(), commandBuffer, host.indices.size() * sizeof(uint32_t), host.indices.data(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, cache.indices, indices);
+    if (type == interfaces::Model::VertexType::pbr) {
+        utils::createDeviceBuffer(device, device.device(), commandBuffer, hostPBRVertices.size() * sizeof(interfaces::PBRVertex), hostPBRVertices.data(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, cache.vertices, vertices);
+    } else {
+        utils::createDeviceBuffer(device, device.device(), commandBuffer, hostVertices.size() * sizeof(interfaces::Vertex), hostVertices.data(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, cache.vertices, vertices);
+    }
+    if (!hostIndices.empty()) {
+        utils::createDeviceBuffer(device, device.device(), commandBuffer, hostIndices.size() * sizeof(uint32_t), hostIndices.data(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, cache.indices, indices);
     }
 
     loadAnimations(gltfModel);
