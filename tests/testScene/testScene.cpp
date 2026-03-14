@@ -233,6 +233,21 @@ void testScene::makeGui() {
                 pl->setDrop(pointLightDrop);
             }
         }
+
+        ImGui::Separator();
+        ImGui::Text("volume center");
+        ImGui::SetNextItemWidth(150.0f); ImGui::SliderFloat("center X##pl", &pointLightCx, -60.0f, 60.0f);
+        ImGui::SetNextItemWidth(150.0f); ImGui::SliderFloat("center Y##pl", &pointLightCy, -30.0f, 30.0f);
+        ImGui::SetNextItemWidth(150.0f); ImGui::SliderFloat("center Z##pl", &pointLightCz,   0.0f, 50.0f);
+        ImGui::Text("volume extents");
+        ImGui::SetNextItemWidth(150.0f); ImGui::SliderFloat("extent X##pl", &pointLightHx, 0.5f, 40.0f);
+        ImGui::SetNextItemWidth(150.0f); ImGui::SliderFloat("extent Y##pl", &pointLightHy, 0.5f, 40.0f);
+        ImGui::SetNextItemWidth(150.0f); ImGui::SliderFloat("extent Z##pl", &pointLightHz, 0.5f, 40.0f);
+        ImGui::SetNextItemWidth(150.0f); ImGui::SliderInt("count##pl", &pointLightCount, 1, 1000);
+        if (ImGui::Button("Regenerate##pl")) {
+            recreatePointLights();
+        }
+
         ImGui::TreePop();
     }
 
@@ -651,54 +666,77 @@ void testScene::createLight()
         }
     }
 
-    {
-        std::mt19937 rng(42);
-        std::uniform_real_distribution<float> hueDist(0.0f, 1.0f);
+    spawnPointLights();
+}
 
-        auto hsvToRgb = [](float h, float s, float v) -> moon::math::vec4 {
-            int i = static_cast<int>(h * 6.0f) % 6;
-            float f = h * 6.0f - static_cast<int>(h * 6.0f);
-            float p = v * (1.0f - s);
-            float q = v * (1.0f - f * s);
-            float t = v * (1.0f - (1.0f - f) * s);
-            switch (i) {
-                case 0: return {v, t, p, 1.0f};
-                case 1: return {q, v, p, 1.0f};
-                case 2: return {p, v, t, 1.0f};
-                case 3: return {p, q, v, 1.0f};
-                case 4: return {t, p, v, 1.0f};
-                default: return {v, p, q, 1.0f};
-            }
-        };
+void testScene::spawnPointLights()
+{
+    std::mt19937 rng(42);
+    std::uniform_real_distribution<float> hueDist(0.0f, 1.0f);
 
-        std::uniform_real_distribution<float> xDist(-32.0f, -22.0f);
-        std::uniform_real_distribution<float> yDist(-12.0f, -5.0f);
-        std::uniform_real_distribution<float> zDist(10.0f, 20.0f);
+    auto hsvToRgb = [](float h, float s, float v) -> moon::math::vec4 {
+        int i = static_cast<int>(h * 6.0f) % 6;
+        float f = h * 6.0f - static_cast<int>(h * 6.0f);
+        float p = v * (1.0f - s);
+        float q = v * (1.0f - f * s);
+        float t = v * (1.0f - (1.0f - f) * s);
+        switch (i) {
+            case 0: return {v, t, p, 1.0f};
+            case 1: return {q, v, p, 1.0f};
+            case 2: return {p, v, t, 1.0f};
+            case 3: return {p, q, v, 1.0f};
+            case 4: return {t, p, v, 1.0f};
+            default: return {v, p, q, 1.0f};
+        }
+    };
 
-        constexpr int kCount = 30;
-        for (int i = 0; i < kCount; ++i) {
-            const float x = xDist(rng);
-            const float y = yDist(rng);
-            const float z = zDist(rng);
-            const moon::math::vec4 color = hsvToRgb(hueDist(rng), 1.0f, 1.0f);
+    std::uniform_real_distribution<float> xDist(pointLightCx - pointLightHx, pointLightCx + pointLightHx);
+    std::uniform_real_distribution<float> yDist(pointLightCy - pointLightHy, pointLightCy + pointLightHy);
+    std::uniform_real_distribution<float> zDist(pointLightCz - pointLightHz, pointLightCz + pointLightHz);
 
-            auto light = std::make_shared<moon::entities::PointLight>(
-                moon::entities::PointLight::Props{ color, pointLightRadius, 15.0f, 1.0f });
-            light->translate({ x, y, z });
-            pointLightPtrs.push_back(light.get());
-            lightSources.push_back(light);
+    for (int i = 0; i < pointLightCount; ++i) {
+        const float x = xDist(rng);
+        const float y = yDist(rng);
+        const float z = zDist(rng);
+        const moon::math::vec4 color = hsvToRgb(hueDist(rng), 1.0f, 1.0f);
 
-            const auto cubeKey = "plight_cube_" + std::to_string(i);
-            objects[cubeKey] = std::make_shared<moon::entities::BaseObject>(models["cube"].get());
-            objects[cubeKey]->translate({ x, y, z }).scale({ 0.05f, 0.05f, 0.05f });
-            static_cast<moon::entities::BaseObject*>(objects[cubeKey].get())->setBloom(color);
+        auto light = std::make_shared<moon::entities::PointLight>(
+            moon::entities::PointLight::Props{ color, pointLightRadius, 15.0f, pointLightDrop });
+        light->translate({ x, y, z });
+        pointLightPtrs.push_back(light.get());
+        lightSources.push_back(light);
 
-            for (auto& [_, graph] : graphics) {
-                graph->bind(light->light());
-                graph->bind(objects[cubeKey]->object());
-            }
+        const auto cubeKey = "plight_cube_" + std::to_string(i);
+        objects[cubeKey] = std::make_shared<moon::entities::BaseObject>(models["cube"].get());
+        objects[cubeKey]->translate({ x, y, z }).scale({ 0.05f, 0.05f, 0.05f });
+        static_cast<moon::entities::BaseObject*>(objects[cubeKey].get())->setBloom(color);
+
+        for (auto& [_, graph] : graphics) {
+            graph->bind(light->light());
+            graph->bind(objects[cubeKey]->object());
         }
     }
+}
+
+void testScene::recreatePointLights()
+{
+    if (app.deviceWaitIdle() != VK_SUCCESS) return;
+
+    const int oldCount = static_cast<int>(pointLightPtrs.size());
+    const int baseIdx  = static_cast<int>(lightSources.size()) - oldCount;
+
+    for (int i = 0; i < oldCount; ++i) {
+        const auto cubeKey = "plight_cube_" + std::to_string(i);
+        for (auto& [_, graph] : graphics) {
+            graph->remove(lightSources[baseIdx + i]->light());
+            graph->remove(objects[cubeKey]->object());
+        }
+        objects.erase(cubeKey);
+    }
+    lightSources.resize(baseIdx);
+    pointLightPtrs.clear();
+
+    spawnPointLights();
 }
 
 void testScene::mouseEvent()

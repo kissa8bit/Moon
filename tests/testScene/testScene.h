@@ -58,6 +58,11 @@ private:
     float pointLightRadius{ 5.0f };
     float pointLightDrop{ 1.0f };
 
+    // Point light volume (center + half-extents)
+    float pointLightCx{ -27.0f }, pointLightCy{ -8.5f }, pointLightCz{ 15.0f };
+    float pointLightHx{   5.0f }, pointLightHy{  3.5f }, pointLightHz{  5.0f };
+    int   pointLightCount{ 30 };
+
     moon::tests::ControledObject controledObject;
 
     void mouseEvent();
@@ -67,6 +72,8 @@ private:
     void createModels();
     void createLight();
     void createObjects();
+    void spawnPointLights();
+    void recreatePointLights();
     void requestUpdate();
 #ifdef IMGUI_GRAPHICS
     void makeGui();
