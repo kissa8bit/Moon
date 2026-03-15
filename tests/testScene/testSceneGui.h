@@ -10,6 +10,7 @@
 #include <entities/baseCamera.h>
 #include <entities/baseObject.h>
 #include <entities/spotLight.h>
+#include <entities/directionalLight.h>
 #include <transformationals/cameras.h>
 #include <transformationals/objects.h>
 #include <deferredGraphics/deferredGraphics.h>
@@ -244,6 +245,42 @@ inline void bloomProps(std::shared_ptr<moon::deferredGraphics::DeferredGraphics>
     }
 }
 
+
+inline bool directionalLightSliders(moon::entities::DirectionalLight& light, float width = 150.0f) {
+    bool res = false;
+
+    moon::math::vec4 color = light.getColor();
+    ImGui::SetNextItemWidth(width);
+    if (ImGui::ColorEdit4("color##sun", (float*)&color, ImGuiColorEditFlags_NoDragDrop)) light.setColor(color);
+
+    float power = light.getPower();
+    ImGui::SetNextItemWidth(width);
+    if (ImGui::SliderFloat("power##sun", &power, 0.0f, 20.0f)) light.setPower(power);
+
+    float drop = light.getDrop();
+    ImGui::SetNextItemWidth(width);
+    if (ImGui::SliderFloat("drop##sun", &drop, 0.0f, 1.0f)) light.setDrop(drop);
+
+    bool shadow = light.getEnableShadow();
+    if (ImGui::RadioButton("shadow##sun", shadow)) {
+        light.setEnableShadow(!shadow);
+        res = true;
+    }
+
+    float w = light.getWidth();
+    ImGui::SetNextItemWidth(width);
+    if (ImGui::SliderFloat("width##sun", &w, 10.0f, 1000.0f)) light.setWidth(w);
+
+    float h = light.getHeight();
+    ImGui::SetNextItemWidth(width);
+    if (ImGui::SliderFloat("height##sun", &h, 10.0f, 1000.0f)) light.setHeight(h);
+
+    float f = light.getFar();
+    ImGui::SetNextItemWidth(width);
+    if (ImGui::SliderFloat("far##sun", &f, 10.0f, 2000.0f)) light.setFar(f);
+
+    return res;
+}
 
 inline void blurProps(std::shared_ptr<moon::deferredGraphics::DeferredGraphics> graphics, float width = 150.0f) {
     if(!graphics) return;

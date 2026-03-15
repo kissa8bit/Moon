@@ -21,6 +21,7 @@ namespace moon::interfaces {
         spotCircle = 1ul << 0,          \
         spotSquare = 1ul << 1,          \
         pointLight = 1ul << 2,          \
+        directional = 1ul << 3,         \
 	};
 FLAG_GENERATOR(LightType, LightType_Value)
 #undef LightType_Value

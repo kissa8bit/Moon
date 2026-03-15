@@ -19,6 +19,7 @@
 #include <entities/baseCamera.h>
 #include <entities/spotLight.h>
 #include <entities/pointLight.h>
+#include <entities/directionalLight.h>
 #include <entities/baseObject.h>
 #include <entities/skyboxObject.h>
 
@@ -258,6 +259,40 @@ void testScene::makeGui() {
         if (ImGui::Button("Regenerate##pl")) {
             recreatePointLights();
         }
+
+        ImGui::TreePop();
+    }
+
+    if (sunLight && ImGui::TreeNodeEx("Sun Light", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen)) {
+        auto requestLightUpdate = [this]() {
+            auto& g = *graphics["base"];
+            g.requestUpdate(moon::deferredGraphics::Names::Shadow::name);
+            g.requestUpdate(moon::deferredGraphics::Names::MainGraphics::name);
+        };
+
+        bool sunEnabled = sunLight->isEnable();
+        if (ImGui::RadioButton("enabled##sun", sunEnabled)) {
+            sunLight->setEnable(!sunEnabled);
+            static_cast<moon::entities::BaseObject*>(objects["sunIndicator"].get())->setEnable(!sunEnabled);
+            requestLightUpdate();
+        }
+
+        ImGui::BeginGroup();
+            ImGui::Text("color & params : "); ImGui::SameLine(); ImGui::Separator();
+            if (moon::tests::gui::directionalLightSliders(*sunLight)) requestLightUpdate();
+        ImGui::EndGroup();
+
+        ImGui::BeginGroup();
+            ImGui::Text("translation : "); ImGui::SameLine(); ImGui::Separator();
+            moon::tests::gui::transManipulator<0>(*groups["sun"], "x##sun");
+            moon::tests::gui::transManipulator<1>(*groups["sun"], "y##sun");
+            moon::tests::gui::transManipulator<2>(*groups["sun"], "z##sun");
+        ImGui::EndGroup();
+
+        ImGui::BeginGroup();
+            ImGui::Text("rotation : "); ImGui::SameLine(); ImGui::Separator();
+            moon::tests::gui::rotationmManipulator(*groups["sun"], dynamic_cast<moon::entities::BaseCamera*>(cameras["base"].get()));
+        ImGui::EndGroup();
 
         ImGui::TreePop();
     }
@@ -626,6 +661,10 @@ void testScene::createObjects()
     groups["ufo2"]->translate({ 10.0f,0.0f,5.0f });
     groups["ufo3"]->translate({ -10.0f,0.0f,5.0f });
 
+    objects["sunIndicator"] = std::make_shared<moon::entities::BaseObject>(models["cube"].get());
+    static_cast<moon::entities::BaseObject*>(objects["sunIndicator"].get())
+        ->setBloom(moon::math::vec4(1.0f, 0.85f, 0.1f, 1.0f));
+
     for(auto& [_,graph]: graphics){
         for(auto& [_,object]: objects){
             graph->bind(object->object());
@@ -668,6 +707,17 @@ void testScene::createLight()
     addGroupLight("ufo_light_3", std::make_shared<SpotLight>(moon::math::vec4(0.90f, 0.30f, 0.40f, 1.00f), SpotLight::Props{  true,  true, 0.2f, 10.0f, 0.3f }));
     addGroupLight("ufo_light_4", std::make_shared<SpotLight>(moon::math::vec4(0.20f, 0.50f, 0.95f, 1.00f), SpotLight::Props{  true,  true, 0.2f, 10.0f, 0.3f }));
 
+    sunLight = std::make_shared<moon::entities::DirectionalLight>(
+        moon::math::vec4(1.0f, 0.95f, 0.85f, 1.0f),
+        moon::entities::DirectionalLight::Props{ true, 3.0f, 0.0f, 300.0f, 300.0f, 500.0f });
+
+    objects["sunIndicator"]->scale(moon::math::vec3(10.0f, 10.0f, 1.0f));
+
+    groups["sun"] = std::make_shared<moon::transformational::Group>();
+    groups["sun"]->add(sunLight.get());
+    groups["sun"]->add(objects["sunIndicator"].get());
+    groups["sun"]->translate(moon::math::vec3(0.0f, 0.0f, 100.0f));
+
     for (auto& [_, graph] : graphics) {
         for (const auto& light : lightPoints["lightBox"]->getLights()) {
             graph->bind(light);
@@ -675,6 +725,7 @@ void testScene::createLight()
         for(auto& source: lightSources) {
             graph->bind(source->light());
         }
+        graph->bind(sunLight->light());
     }
 
     spawnPointLights();

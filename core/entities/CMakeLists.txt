@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.14)
 set(SOURCES
     spotLight.cpp
     pointLight.cpp
+    directionalLight.cpp
     baseCamera.cpp
     baseObject.cpp
     skyboxObject.cpp
@@ -11,6 +12,7 @@ set(SOURCES
 set(HEADERS
     spotLight.h
     pointLight.h
+    directionalLight.h
     baseCamera.h
     baseObject.h
     skyboxObject.h

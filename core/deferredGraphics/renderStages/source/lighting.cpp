@@ -51,6 +51,13 @@ void Graphics::Lighting::create(VkDevice device, VkRenderPass renderPass) {
         };
         createPipeline(interfaces::LightType::pointLight, shaderNames, device, renderPass);
     }
+    {
+        const workflows::ShaderNames shaderNames = {
+            {workflows::ShaderType::Vertex, "directionalLightingPass/directionalLightingVert.spv"},
+            {workflows::ShaderType::Fragment, "directionalLightingPass/directionalLightingFrag.spv"}
+        };
+        createPipeline(interfaces::LightType::directional, shaderNames, device, renderPass);
+    }
 
     descriptorPool = utils::vkDefault::DescriptorPool(device, { &descriptorSetLayout }, parameters.imageInfo.Count);
     descriptorSets = descriptorPool.allocateDescriptorSets(descriptorSetLayout, parameters.imageInfo.Count);
