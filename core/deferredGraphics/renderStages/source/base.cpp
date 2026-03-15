@@ -147,7 +147,13 @@ void Graphics::Base::render(utils::ResourceIndex resourceIndex, VkCommandBuffer 
     if (!objects) return;
 
     const auto frameNumber = resourceIndex.get();
-    uint32_t primitiveCount = 0;
+
+	// We start from 1 because 0 is reserved, because we clear texure with 0, 
+    // and this value reserved for empty areas in the screen, 
+    // so we can't use it for real objects
+    constexpr uint32_t firstPrimitiveIndex = 1;
+    uint32_t primitiveCount = firstPrimitiveIndex;
+
     for(const auto& object: *objects){
         if(!object) continue;
 
@@ -167,7 +173,7 @@ void Graphics::Base::render(utils::ResourceIndex resourceIndex, VkCommandBuffer 
         const utils::vkDefault::DescriptorSets descriptors = {descriptorSets.at(frameNumber), object->getDescriptorSet(resourceIndex)};
 
         object->primitiveRange().first = primitiveCount;
-        model->render(object->getInstanceNumber(resourceIndex), commandBuffers, pipelineDesc.pipelineLayout, descriptors, primitiveCount);
+        model->render(object->getInstanceNumber(resourceIndex), commandBuffers, pipelineDesc.pipelineLayout, descriptors, &primitiveCount);
         object->primitiveRange().setLast(primitiveCount);
     }
 }

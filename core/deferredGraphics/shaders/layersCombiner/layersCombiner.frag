@@ -68,4 +68,7 @@ void main() {
 
     outColor += vec4(texture(scatteringMap, fragTexCoord.xy).xyz, 0.0);
     outBlur = outColor;
+
+    ivec2 texSize = textureSize(normalMap[0], 0);
+    ivec2 texel = ivec2(int(fragTexCoord.x * float(texSize.x)), int(fragTexCoord.y * float(texSize.y)));
 }

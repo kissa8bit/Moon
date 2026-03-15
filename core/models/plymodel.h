@@ -47,7 +47,7 @@ public:
     std::vector<interfaces::Animation*> animations(uint32_t instanceNumber) override;
 
     void create(const utils::PhysicalDevice& device, VkCommandPool commandPool) override;
-    void render(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t& primitiveCount) const override;
+    void render(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t* primitiveCount = nullptr) const override;
     void renderBB(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets) const override;
 };
 

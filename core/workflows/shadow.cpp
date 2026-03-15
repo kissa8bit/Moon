@@ -191,9 +191,8 @@ void ShadowGraphics::render(utils::ResourceIndex resourceIndex, VkCommandBuffer 
 
             vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineDesc.pipeline);
 
-            uint32_t primitives = 0;
             utils::vkDefault::DescriptorSets descriptorSets = { lightSource->getDescriptorSet(resourceIndex), object->getDescriptorSet(resourceIndex) };
-            model->render(object->getInstanceNumber(resourceIndex), commandBuffer, pipelineDesc.pipelineLayout, descriptorSets, primitives);
+            model->render(object->getInstanceNumber(resourceIndex), commandBuffer, pipelineDesc.pipelineLayout, descriptorSets);
         }
     }
 

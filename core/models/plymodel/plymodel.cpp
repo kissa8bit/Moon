@@ -166,7 +166,7 @@ void PlyModel::create(const utils::PhysicalDevice& device, VkCommandPool command
     destroyCache();
 }
 
-void PlyModel::render(uint32_t, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t& primitiveCount) const {
+void PlyModel::render(uint32_t, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t* primitiveCount) const {
     VkDeviceSize offsets = 0;
     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertices, &offsets);
     if (VkBuffer(indices) != VK_NULL_HANDLE) {

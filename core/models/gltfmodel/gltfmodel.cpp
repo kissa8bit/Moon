@@ -179,7 +179,7 @@ void GltfModel::create(const utils::PhysicalDevice& device, VkCommandPool comman
     destroyCache();
 }
 
-void GltfModel::render(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t &primitiveCount) const {
+void GltfModel::render(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t* primitiveCount) const {
     VkDeviceSize offsets = 0;
     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertices, &offsets);
     if (VkBuffer(indices) != VK_NULL_HANDLE) {

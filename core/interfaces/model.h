@@ -31,9 +31,9 @@ struct Material {
         float       roughnessFactor{ 0.0f };
         float       alphaMask{ 0.0f };
         float       alphaMaskCutoff{ 0.0f };
-        uint32_t    primitive{ 0 };
+		uint32_t    primitive{ std::numeric_limits<uint32_t>::max() };
 
-        Buffer(const Material& material, uint32_t primitive);
+        Buffer(const Material& material, uint32_t primitive = std::numeric_limits<uint32_t>::max());
     };
 
     enum AlphaMode{ ALPHAMODE_OPAQUE, ALPHAMODE_MASK, ALPHAMODE_BLEND };
@@ -72,6 +72,7 @@ struct Material {
     Material(const utils::Texture* empty);
     void createDescriptorSet(VkDevice device, utils::vkDefault::DescriptorPool& descriptorPool, const utils::vkDefault::DescriptorSetLayout& descriptorSetLayout);
     Buffer buffer(uint32_t primitive) const;
+    Buffer buffer() const;
 
     static utils::vkDefault::DescriptorSetLayout descriptorSetLayout(VkDevice device);
 };
@@ -139,8 +140,16 @@ struct Primitive {
 struct Mesh {
     std::vector<Primitive> primitives;
 
-    void render(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t& primitiveCount) const;
-    void renderBB(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets) const;
+    void render(
+        VkCommandBuffer                             commandBuffer, 
+        VkPipelineLayout                            pipelineLayout, 
+        const utils::vkDefault::DescriptorSets&     descriptorSets, 
+        uint32_t*                                   primitiveCount = nullptr) const;
+    
+    void renderBB(
+        VkCommandBuffer                             commandBuffer, 
+        VkPipelineLayout                            pipelineLayout, 
+        const utils::vkDefault::DescriptorSets&     descriptorSets) const;
 };
 
 using Indices = std::vector<uint32_t>;
@@ -209,9 +218,22 @@ public:
     virtual std::vector<Animation*> animations(uint32_t instanceNumber) = 0;
     virtual std::vector<std::string> animationNames() const { return {}; }
 
-    virtual void create(const utils::PhysicalDevice& device, VkCommandPool commandPool) = 0;
-    virtual void render(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t& primitiveCount) const = 0;
-    virtual void renderBB(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets) const = 0;
+    virtual void create(
+        const utils::PhysicalDevice&                device, 
+        VkCommandPool                               commandPool) = 0;
+
+    virtual void render(
+        uint32_t                                    instanceNumber, 
+        VkCommandBuffer                             commandBuffer, 
+        VkPipelineLayout                            pipelineLayout, 
+        const utils::vkDefault::DescriptorSets&     descriptorSets, 
+        uint32_t*                                   primitiveCounter = nullptr) const = 0;
+    
+    virtual void renderBB(
+        uint32_t                                    instanceNumber, 
+        VkCommandBuffer                             commandBuffer, 
+        VkPipelineLayout                            pipelineLayout, 
+        const utils::vkDefault::DescriptorSets&     descriptorSets) const = 0;
 
     VertexType vertexType() const { return type; }
 

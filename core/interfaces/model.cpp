@@ -54,7 +54,7 @@ void Mesh::renderBB(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayo
     }
 }
 
-void Mesh::render(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t& primitiveCount) const {
+void Mesh::render(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t* primitiveCount) const {
     for (const auto& primitive : primitives) {
         if (!CHECK_M(primitive.material, std::string("[ Mesh::render ] material is nullptr"))) continue;
         const auto& material = *primitive.material;
@@ -64,7 +64,7 @@ void Mesh::render(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout
         descriptors.push_back(primitive.morphDeltas.descriptorSet);
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, static_cast<uint32_t>(descriptors.size()), descriptors.data(), 0, nullptr);
 
-        const auto buffer = material.buffer(primitiveCount++);
+        const auto buffer = primitiveCount ? material.buffer((*primitiveCount)++) : material.buffer();
         vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(buffer), &buffer);
 
         if (primitive.index.range.count > 0) {
@@ -184,7 +184,9 @@ utils::vkDefault::DescriptorSetLayout Material::descriptorSetLayout(VkDevice dev
     return utils::vkDefault::DescriptorSetLayout(device, binding);
 }
 
-Material::Buffer::Buffer(const Material& material, uint32_t primitive) : primitive(primitive) {
+Material::Buffer::Buffer(const Material& material, uint32_t primitive) 
+    : primitive(primitive) 
+{
     emissiveFactor = material.emissive.factor;
     colorTextureSet = material.baseColor.coordSet;
     normalTextureSet = material.normal.coordSet;
@@ -196,24 +198,28 @@ Material::Buffer::Buffer(const Material& material, uint32_t primitive) : primiti
 
     switch (material.pbrWorkflows)
     {
-    case interfaces::Material::PbrWorkflow::METALLIC_ROUGHNESS: {
-        baseColorFactor = material.baseColor.factor;
-        metallicFactor = material.metallicRoughness.factor[Material::metallicIndex];
-        roughnessFactor = material.metallicRoughness.factor[Material::roughnessIndex];
-        physicalDescriptorTextureSet = material.metallicRoughness.coordSet;
-        break;
-    }
-    case interfaces::Material::PbrWorkflow::SPECULAR_GLOSSINESS: {
-        physicalDescriptorTextureSet = material.extensions.specularGlossiness.coordSet;
-        diffuseFactor = material.extensions.diffuse.factor;
-        specularFactor = material.extensions.specularGlossiness.factor;
-        break;
-    }
+        case interfaces::Material::PbrWorkflow::METALLIC_ROUGHNESS: {
+            baseColorFactor = material.baseColor.factor;
+            metallicFactor = material.metallicRoughness.factor[Material::metallicIndex];
+            roughnessFactor = material.metallicRoughness.factor[Material::roughnessIndex];
+            physicalDescriptorTextureSet = material.metallicRoughness.coordSet;
+            break;
+        }
+        case interfaces::Material::PbrWorkflow::SPECULAR_GLOSSINESS: {
+            physicalDescriptorTextureSet = material.extensions.specularGlossiness.coordSet;
+            diffuseFactor = material.extensions.diffuse.factor;
+            specularFactor = material.extensions.specularGlossiness.factor;
+            break;
+        }
     }
 }
 
 Material::Buffer Material::buffer(uint32_t primitive) const {
     return Buffer(*this, primitive);
+}
+
+Material::Buffer Material::buffer() const {
+    return Buffer(*this);
 }
 
 }

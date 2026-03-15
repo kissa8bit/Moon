@@ -113,8 +113,7 @@ void Graphics::OutliningExtension::render(utils::ResourceIndex resourceIndex, Vk
 
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineDesc.pipeline);
 
-        uint32_t primirives = 0;
-        model->render(object->getInstanceNumber(resourceIndex), commandBuffer, pipelineDesc.pipelineLayout, descriptorSets, primirives);
+        model->render(object->getInstanceNumber(resourceIndex), commandBuffer, pipelineDesc.pipelineLayout, descriptorSets);
     }
 }
 
