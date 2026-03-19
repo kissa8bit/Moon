@@ -26,7 +26,7 @@ bool BaseObject::isEnable() const {
 }
 
 BaseObject& BaseObject::setEnable(const bool enable) {
-    m_object.objectMask().property().set(interfaces::ObjectProperty::enable, enable);
+    m_object.objectMask().set(interfaces::ObjectProperty::enable, enable);
     return *this;
 }
 
