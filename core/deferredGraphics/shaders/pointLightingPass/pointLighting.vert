@@ -3,14 +3,14 @@
 #include "../../../workflows/shaders/__methods__/defines.glsl"
 #include "../../../workflows/shaders/__methods__/geometricFunctions.glsl"
 
-layout(set = 0, binding = 4) uniform GlobalUniformBuffer {
+layout(set = 0, binding = 0) uniform GlobalUniformBuffer {
     mat4 view;
     mat4 proj;
     mat4 invViewProj;
     vec2 viewport;
 } global;
 
-layout(set = 2, binding = 0) uniform LightBufferObject {
+layout(set = 3, binding = 0) uniform LightBufferObject {
     vec4 position;
     vec4 color;
     vec4 prop;  // x=radius, y=powerFactor, z=dropFactor, w=unused

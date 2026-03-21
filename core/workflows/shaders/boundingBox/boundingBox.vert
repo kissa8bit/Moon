@@ -9,7 +9,7 @@ layout(set = 0, binding = 0) uniform GlobalUniformBuffer
     mat4 proj;
 } global;
 
-layout (set = 1, binding = 0) uniform LocalUniformBuffer
+layout (set = 2, binding = 0) uniform LocalUniformBuffer
 {
     mat4 matrix;
     vec4 constColor;
@@ -18,7 +18,7 @@ layout (set = 1, binding = 0) uniform LocalUniformBuffer
     vec4 bloomFactor;
 } local;
 
-layout (set = 2, binding = 0) uniform UBONode
+layout (set = 3, binding = 0) uniform UBONode
 {
     mat4 matrix;
     mat4 jointMatrix[MAX_NUM_JOINTS];

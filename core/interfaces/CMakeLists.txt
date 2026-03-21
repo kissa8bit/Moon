@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.14)
 
 set(SOURCES
+    camera.cpp
     light.cpp
     model.cpp
     object.cpp

@@ -3,13 +3,14 @@
 
 #include "workflow.h"
 
+#include <interfaces/camera.h>
 #include <interfaces/light.h>
 
 namespace moon::workflows {
 
 struct ScatteringParameters : workflows::Parameters{
     struct{
-        utils::BufferName camera;
+        interfaces::Camera** camera{nullptr};
         utils::AttachmentName depth;
     }in;
     struct{
@@ -38,6 +39,7 @@ private:
         using PipelineDescs = std::unordered_map<interfaces::LightType, PipelineDesc, interfaces::LightType::Hasher>;
 
         PipelineDescs                             pipelineDescs;
+        utils::vkDefault::DescriptorSetLayout     cameraDescriptorSetLayout;
         utils::vkDefault::DescriptorSetLayout     shadowDescriptorSetLayout;
 
         Lighting(const ScatteringParameters& parameters, const interfaces::Lights* lightSources, const interfaces::DepthMaps* depthMaps)

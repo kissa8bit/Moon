@@ -1,5 +1,7 @@
 #include "baseCamera.h"
 
+#include <utils/operations.h>
+
 namespace moon::implementations {
 
 BaseCamera::BaseCamera()
@@ -13,6 +15,19 @@ void BaseCamera::update(utils::ResourceIndex resourceIndex, VkCommandBuffer comm
 
 void BaseCamera::create(const utils::PhysicalDevice& device, uint32_t imageCount) {
     uniformBuffer = utils::UniformBuffer(device, imageCount, uniformBuffer.host, uniformBuffer.size);
+    createDescriptors(device, imageCount);
+}
+
+void BaseCamera::createDescriptors(const utils::PhysicalDevice& device, uint32_t imageCount) {
+    descriptorSetLayout = interfaces::Camera::createDescriptorSetLayout(device.device());
+    descriptorPool = utils::vkDefault::DescriptorPool(device.device(), { &descriptorSetLayout }, imageCount);
+    descriptorSets = descriptorPool.allocateDescriptorSets(descriptorSetLayout, imageCount);
+
+    for (size_t i = 0; i < imageCount; i++) {
+        utils::descriptorSet::Writes writes;
+        WRITE_DESCRIPTOR(writes, descriptorSets.at(i), uniformBuffer.device.at(i).descriptorBufferInfo());
+        utils::descriptorSet::update(device.device(), writes);
+    }
 }
 
 utils::Buffers& BaseCamera::buffers() {

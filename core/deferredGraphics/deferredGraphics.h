@@ -206,6 +206,7 @@ public:
     bool getEnable(const workflows::ParameterName& name);
     DeferredGraphics& setEnable(const workflows::ParameterName& name, bool enable);
     DeferredGraphics& requestUpdate(const workflows::WorkflowName& name);
+    DeferredGraphics& requestUpdate();
 
     Parameters& parameters();
     workflows::BloomParameters& bloomWorkflowParams();

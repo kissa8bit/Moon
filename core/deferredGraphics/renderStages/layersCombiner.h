@@ -3,6 +3,8 @@
 
 #include <workflows/workflow.h>
 
+#include <interfaces/camera.h>
+
 #include "layerIndex.h"
 
 namespace moon::deferredGraphics {
@@ -18,7 +20,7 @@ struct LayersCombinerAttachments{
 
 struct LayersCombinerParameters : workflows::Parameters {
     struct{
-        utils::BufferName camera;
+        interfaces::Camera** camera{nullptr};
         utils::AttachmentName color;
         utils::AttachmentName bloom;
         utils::AttachmentName normal;
@@ -49,6 +51,7 @@ private:
 
     struct Combiner : public workflows::Workbody {
         const LayersCombinerParameters& parameters;
+        utils::vkDefault::DescriptorSetLayout cameraDescriptorSetLayout;
         Combiner(const LayersCombinerParameters& parameters) : parameters(parameters){};
         void create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass) override;
     } combiner;

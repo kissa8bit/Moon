@@ -60,6 +60,7 @@ void Graphics::OutliningExtension::create(interfaces::ObjectType type, const wor
         pushConstantRange.back().offset = 0;
         pushConstantRange.back().size = sizeof(interfaces::Material::Buffer);
     std::vector<VkDescriptorSetLayout> descriptorSetLayout = {
+        parent.cameraDescriptorSetLayout,
         parent.descriptorSetLayout,
         parent.objectDescriptorSetLayout,
         parent.skeletonDescriptorSetLayout,
@@ -107,7 +108,7 @@ void Graphics::OutliningExtension::render(utils::ResourceIndex resourceIndex, Vk
         if (!type.has_any(interfaces::ObjectType::Value::baseTypes)) continue;
         if (!type.has(interfaces::ObjectType::Value::outlining)) continue;
 
-        const utils::vkDefault::DescriptorSets descriptorSets = { parent.descriptorSets.at(frameNumber), object->getDescriptorSet(resourceIndex) };
+        const utils::vkDefault::DescriptorSets descriptorSets = { (*parent.parameters.in.camera)->getDescriptorSet(resourceIndex), parent.descriptorSets.at(frameNumber), object->getDescriptorSet(resourceIndex) };
 
         const auto& pipelineDesc = pipelineDescs.at(type);
 

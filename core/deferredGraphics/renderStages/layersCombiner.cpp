@@ -1,5 +1,6 @@
 #include "layersCombiner.h"
 
+#include <interfaces/camera.h>
 #include <utils/operations.h>
 #include <utils/vkdefault.h>
 
@@ -65,7 +66,6 @@ void LayersCombiner::Combiner::create(const workflows::ShaderNames& shadersNames
 {
 	const uint32_t layersCount = parameters.layersCount.get();
     std::vector<VkDescriptorSetLayoutBinding> bindings;
-        bindings.push_back(utils::vkDefault::bufferFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
         bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), layersCount));
         bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), layersCount));
         bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), layersCount));
@@ -111,7 +111,7 @@ void LayersCombiner::Combiner::create(const workflows::ShaderNames& shadersNames
         pushConstantRange.back().offset = 0;
         pushConstantRange.back().size = sizeof(float);
 
-    std::vector<VkDescriptorSetLayout> descriptorSetLayouts = { descriptorSetLayout };
+    std::vector<VkDescriptorSetLayout> descriptorSetLayouts = { cameraDescriptorSetLayout = interfaces::Camera::createDescriptorSetLayout(device), descriptorSetLayout };
     pipelineLayout = utils::vkDefault::PipelineLayout(device, descriptorSetLayouts, pushConstantRange);
 
     std::vector<VkGraphicsPipelineCreateInfo> pipelineInfo;
@@ -176,7 +176,6 @@ void LayersCombiner::updateDescriptors(
         auto descriptorSet = combiner.descriptorSets.at(i);
 
         utils::descriptorSet::Writes writes;
-        WRITE_DESCRIPTOR(writes, descriptorSet, bDatabase.descriptorBufferInfo(parameters.in.camera, utils::ResourceIndex(i)));
         utils::descriptorSet::write(writes, descriptorSet, colorLayersImageInfos);
         utils::descriptorSet::write(writes, descriptorSet, bloomLayersImageInfos);
         utils::descriptorSet::write(writes, descriptorSet, normalLayersImageInfos);
@@ -192,6 +191,7 @@ void LayersCombiner::updateDescriptors(
 
 void LayersCombiner::updateCommandBuffer(utils::ResourceIndex resourceIndex){
     if (!created) return;
+    if (!parameters.in.camera || !*parameters.in.camera) return;
 
     const auto frameNumber = resourceIndex.get();
     std::vector<VkClearValue> clearValues = { frame.color.clearValue(), frame.bloom.clearValue(), frame.blur.clearValue() };
@@ -209,7 +209,8 @@ void LayersCombiner::updateCommandBuffer(utils::ResourceIndex resourceIndex){
 
     if (parameters.enable) {
         vkCmdBindPipeline(commandBuffers.at(frameNumber), VK_PIPELINE_BIND_POINT_GRAPHICS, combiner.pipeline);
-        vkCmdBindDescriptorSets(commandBuffers.at(frameNumber), VK_PIPELINE_BIND_POINT_GRAPHICS, combiner.pipelineLayout, 0, 1, &combiner.descriptorSets.at(frameNumber), 0, nullptr);
+        utils::vkDefault::DescriptorSets descriptors = {(*parameters.in.camera)->getDescriptorSet(resourceIndex), combiner.descriptorSets.at(frameNumber)};
+        vkCmdBindDescriptorSets(commandBuffers.at(frameNumber), VK_PIPELINE_BIND_POINT_GRAPHICS, combiner.pipelineLayout, 0, descriptors.size(), descriptors.data(), 0, nullptr);
         vkCmdPushConstants(commandBuffers.at(frameNumber), combiner.pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(float), &parameters.bloomThreshold);
         vkCmdDraw(commandBuffers.at(frameNumber), 6, 1, 0, 0);
     }

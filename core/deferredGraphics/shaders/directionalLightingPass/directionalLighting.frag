@@ -9,21 +9,21 @@
 
 layout(location = 0) in vec4 eyePosition;
 
-layout(input_attachment_index = 0, binding = 0) uniform subpassInput inNormalTexture;
-layout(input_attachment_index = 1, binding = 1) uniform subpassInput inBaseColorTexture;
-layout(input_attachment_index = 2, binding = 2) uniform subpassInput inEmissiveColorTexture;
-layout(input_attachment_index = 3, binding = 3) uniform subpassInput inDepthTexture;
+layout(set = 1, input_attachment_index = 0, binding = 0) uniform subpassInput inNormalTexture;
+layout(set = 1, input_attachment_index = 1, binding = 1) uniform subpassInput inBaseColorTexture;
+layout(set = 1, input_attachment_index = 2, binding = 2) uniform subpassInput inEmissiveColorTexture;
+layout(set = 1, input_attachment_index = 3, binding = 3) uniform subpassInput inDepthTexture;
 
-layout(set = 0, binding = 4) uniform GlobalUniformBuffer {
+layout(set = 0, binding = 0) uniform GlobalUniformBuffer {
     mat4 view;
     mat4 proj;
     mat4 invViewProj;
     vec2 viewport;
 } global;
 
-layout(set = 1, binding = 0) uniform sampler2D shadowMap;
+layout(set = 2, binding = 0) uniform sampler2D shadowMap;
 
-layout(set = 2, binding = 0) uniform LightBufferObject {
+layout(set = 3, binding = 0) uniform LightBufferObject {
     mat4 proj;
     mat4 view;
     vec4 color;

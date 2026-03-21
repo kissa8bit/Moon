@@ -10,9 +10,9 @@ layout(set = 0, binding = 0) uniform GlobalUniformBuffer {
     vec2 viewport;
 } global;
 
-layout(set = 0, binding = 1) uniform sampler2D normal;
-layout(set = 0, binding = 2) uniform sampler2D color;
-layout(set = 0, binding = 3) uniform sampler2D depth;
+layout(set = 1, binding = 0) uniform sampler2D normal;
+layout(set = 1, binding = 1) uniform sampler2D color;
+layout(set = 1, binding = 2) uniform sampler2D depth;
 
 layout(push_constant) uniform PC {
     int   kernelSize;

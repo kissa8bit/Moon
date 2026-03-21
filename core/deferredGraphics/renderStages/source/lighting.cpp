@@ -3,6 +3,7 @@
 #include <utils/vkdefault.h>
 #include <utils/depthMap.h>
 #include <utils/operations.h>
+#include <interfaces/camera.h>
 
 #include "deferredAttachments.h"
 
@@ -18,14 +19,6 @@ void Graphics::Lighting::create(VkDevice device, VkRenderPass renderPass) {
         bindings.push_back(utils::vkDefault::inAttachmentFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
         bindings.push_back(utils::vkDefault::inAttachmentFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
         bindings.push_back(utils::vkDefault::inAttachmentFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
-        {
-            VkDescriptorSetLayoutBinding cameraBinding{};
-            cameraBinding.binding = static_cast<uint32_t>(bindings.size());
-            cameraBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            cameraBinding.descriptorCount = 1;
-            cameraBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-            bindings.push_back(cameraBinding);
-        }
 
     descriptorSetLayout = utils::vkDefault::DescriptorSetLayout(device, bindings);
     shadowDescriptorSetLayout = utils::DepthMap::createDescriptorSetLayout(device);
@@ -77,7 +70,6 @@ void Graphics::Lighting::update(VkDevice device, const utils::BuffersDatabase& b
         auto depthInfo = aDatabase.descriptorImageInfo(pref + parameters.out.depth, i);
         depthInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
         WRITE_DESCRIPTOR_T(writes, descriptorSet, depthInfo, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
-        WRITE_DESCRIPTOR(writes, descriptorSet, bDatabase.descriptorBufferInfo(parameters.in.camera, utils::ResourceIndex(i)));
         utils::descriptorSet::update(device, writes);
     }
 }
@@ -86,6 +78,7 @@ void Graphics::Lighting::render(utils::ResourceIndex resourceIndex, VkCommandBuf
 {
     if (!lightSources) return;
     if (!depthMaps) return;
+    if (!parameters.in.camera || !*parameters.in.camera) return;
 
     const auto frameNumber = resourceIndex.get();
     for(const auto& lightSource: *lightSources){
@@ -98,7 +91,7 @@ void Graphics::Lighting::render(utils::ResourceIndex resourceIndex, VkCommandBuf
 
         const auto& pipelineDesc = pipelineDescs.at(type);
 
-        const utils::vkDefault::DescriptorSets descriptors = { descriptorSets.at(frameNumber), depthMap.descriptorSets().at(frameNumber) };
+        const utils::vkDefault::DescriptorSets descriptors = { (*parameters.in.camera)->getDescriptorSet(resourceIndex), descriptorSets.at(frameNumber), depthMap.descriptorSets().at(frameNumber) };
         lightSource->render(resourceIndex, commandBuffer, descriptors, pipelineDesc.pipelineLayout, pipelineDesc.pipeline);
     }
 }

@@ -3,11 +3,13 @@
 
 #include "workflow.h"
 
+namespace moon::interfaces { class Camera; }
+
 namespace moon::workflows {
 
 struct SSLRParameters : workflows::Parameters{
     struct{
-        utils::BufferName camera;
+        interfaces::Camera** camera{nullptr};
         utils::AttachmentName normal;
         utils::AttachmentName depth;
         utils::AttachmentName color;
@@ -25,6 +27,7 @@ private:
 
     struct SSLR : public Workbody{
         const SSLRParameters& parameters;
+        utils::vkDefault::DescriptorSetLayout cameraDescriptorSetLayout;
         SSLR(const SSLRParameters& parameters) : parameters(parameters) {};
         void create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass) override;
     } sslr;

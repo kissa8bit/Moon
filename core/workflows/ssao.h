@@ -3,11 +3,13 @@
 
 #include "workflow.h"
 
+namespace moon::interfaces { class Camera; }
+
 namespace moon::workflows {
 
 struct SSAOParameters : workflows::Parameters{
     struct{
-        utils::BufferName camera;
+        interfaces::Camera** camera{nullptr};
         utils::AttachmentName normal;
         utils::AttachmentName color;
         utils::AttachmentName depth;
@@ -31,6 +33,7 @@ private:
 
     struct SSAO : public Workbody{
         const SSAOParameters& parameters;
+        utils::vkDefault::DescriptorSetLayout cameraDescriptorSetLayout;
         SSAO(const SSAOParameters& parameters) : parameters(parameters) {};
         void create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass) override;
     } ssao;

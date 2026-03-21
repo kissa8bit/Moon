@@ -3,6 +3,7 @@
 #include <utils/operations.h>
 #include <utils/vkdefault.h>
 
+#include <interfaces/camera.h>
 #include <implementations/skyboxObject.h>
 
 namespace moon::workflows {
@@ -60,10 +61,6 @@ void SkyboxGraphics::createFramebuffers()
 }
 
 void SkyboxGraphics::Skybox::create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass) {
-    std::vector<VkDescriptorSetLayoutBinding> bindings;
-        bindings.push_back(utils::vkDefault::bufferVertexLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
-    descriptorSetLayout = utils::vkDefault::DescriptorSetLayout(device, bindings);
-
     const auto vertShader = utils::vkDefault::VertrxShaderModule(device, parameters.shadersPath / shadersNames.at(workflows::ShaderType::Vertex));
     const auto fragShader = utils::vkDefault::FragmentShaderModule(device, parameters.shadersPath / shadersNames.at(workflows::ShaderType::Fragment));
     const std::vector<VkPipelineShaderStageCreateInfo> shaderStages = { vertShader, fragShader };
@@ -83,7 +80,7 @@ void SkyboxGraphics::Skybox::create(const workflows::ShaderNames& shadersNames, 
     VkPipelineColorBlendStateCreateInfo colorBlending = utils::vkDefault::colorBlendState(static_cast<uint32_t>(colorBlendAttachment.size()),colorBlendAttachment.data());
 
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts = {
-        descriptorSetLayout,
+        cameraDescriptorSetLayout = interfaces::Camera::createDescriptorSetLayout(device),
         objectDescriptorSetLayout = implementations::SkyboxObject::createDescriptorSetLayout(device)
     };
     pipelineLayout = utils::vkDefault::PipelineLayout(device, descriptorSetLayouts);
@@ -106,9 +103,6 @@ void SkyboxGraphics::Skybox::create(const workflows::ShaderNames& shadersNames, 
         pipelineInfo.back().basePipelineHandle = VK_NULL_HANDLE;
         pipelineInfo.back().pDepthStencilState = &depthStencil;
     pipeline = utils::vkDefault::Pipeline(device, pipelineInfo);
-
-    descriptorPool = utils::vkDefault::DescriptorPool(device, { &descriptorSetLayout }, parameters.imageInfo.Count);
-    descriptorSets = descriptorPool.allocateDescriptorSets(descriptorSetLayout, parameters.imageInfo.Count);
 }
 
 void SkyboxGraphics::create(const utils::vkDefault::CommandPool& commandPool, utils::AttachmentsDatabase& aDatabase) {
@@ -126,17 +120,12 @@ void SkyboxGraphics::create(const utils::vkDefault::CommandPool& commandPool, ut
     }
 }
 
-void SkyboxGraphics::updateDescriptors(const utils::BuffersDatabase& bDatabase, const utils::AttachmentsDatabase&) {
+void SkyboxGraphics::updateDescriptors(const utils::BuffersDatabase&, const utils::AttachmentsDatabase&) {
     if (!created) return;
-
-    for (uint32_t i = 0; i < parameters.imageInfo.Count; i++){
-        utils::descriptorSet::Writes writes;
-        WRITE_DESCRIPTOR(writes, skybox.descriptorSets[i], bDatabase.descriptorBufferInfo(parameters.in.camera, utils::ResourceIndex(i)));
-        utils::descriptorSet::update(device, writes);
-    }
 }
 
 void SkyboxGraphics::updateCommandBuffer(utils::ResourceIndex resourceIndex){
+    if (!parameters.in.camera || !*parameters.in.camera) return;
     const auto frameNumber = resourceIndex.get();
     if (!created) return;
 
@@ -166,7 +155,7 @@ void SkyboxGraphics::updateCommandBuffer(utils::ResourceIndex resourceIndex){
             if (!property.has(interfaces::ObjectProperty::enable)) continue;
             if (!type.has(interfaces::ObjectType::Value::skybox)) continue;
 
-            utils::vkDefault::DescriptorSets descriptorSets = { skybox.descriptorSets[frameNumber], object->getDescriptorSet(resourceIndex) };
+            utils::vkDefault::DescriptorSets descriptorSets = { (*parameters.in.camera)->getDescriptorSet(resourceIndex), object->getDescriptorSet(resourceIndex) };
             vkCmdBindDescriptorSets(commandBuffers[frameNumber], VK_PIPELINE_BIND_POINT_GRAPHICS, skybox.pipelineLayout, 0, static_cast<uint32_t>(descriptorSets.size()), descriptorSets.data(), 0, NULL);
             vkCmdDraw(commandBuffers[frameNumber], 36, 1, 0, 0);
         }

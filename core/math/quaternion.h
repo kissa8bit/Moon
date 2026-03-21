@@ -92,10 +92,27 @@ QUAT_TEMP std::ostream& operator<< (std::ostream& out, const QUAT& q) {
     return out << q.vec4();
 }
 
-QUAT_TEMP QUAT convert(const MAT_3& O3) {
-    const type s = std::sqrt(type(1) + O3[0][0] + O3[1][1] + O3[2][2]) / type(2), s4 = type(4) * s;
-    auto diff = [&O3, &s4](uint32_t i, uint32_t j){return (O3[i][j] - O3[j][i]) / s4;};
-    return QUAT(s, diff(2, 1), diff(0, 2), diff(1, 0));
+QUAT_TEMP QUAT convert(const MAT_3& m) {
+    // Shepperd method: numerically stable for all rotation angles.
+    // Picks the branch with the largest denominator to avoid division by ~0.
+    const type trace = m[0][0] + m[1][1] + m[2][2];
+    if (trace > type(0)) {
+        const type t = std::sqrt(trace + type(1)) * type(2);
+        return QUAT(type(0.25) * t, (m[2][1] - m[1][2]) / t,
+                     (m[0][2] - m[2][0]) / t, (m[1][0] - m[0][1]) / t);
+    } else if (m[0][0] > m[1][1] && m[0][0] > m[2][2]) {
+        const type t = std::sqrt(type(1) + m[0][0] - m[1][1] - m[2][2]) * type(2);
+        return QUAT((m[2][1] - m[1][2]) / t, type(0.25) * t,
+                     (m[0][1] + m[1][0]) / t, (m[0][2] + m[2][0]) / t);
+    } else if (m[1][1] > m[2][2]) {
+        const type t = std::sqrt(type(1) - m[0][0] + m[1][1] - m[2][2]) * type(2);
+        return QUAT((m[0][2] - m[2][0]) / t, (m[0][1] + m[1][0]) / t,
+                     type(0.25) * t, (m[1][2] + m[2][1]) / t);
+    } else {
+        const type t = std::sqrt(type(1) - m[0][0] - m[1][1] + m[2][2]) * type(2);
+        return QUAT((m[1][0] - m[0][1]) / t, (m[0][2] + m[2][0]) / t,
+                     (m[1][2] + m[2][1]) / t, type(0.25) * t);
+    }
 }
 
 QUAT_TEMP MAT_3 convert(const QUAT& q) {

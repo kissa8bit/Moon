@@ -4,6 +4,7 @@
 #include <utils/vkdefault.h>
 #include <utils/texture.h>
 
+#include <interfaces/camera.h>
 #include <interfaces/model.h>
 #include <interfaces/object.h>
 #include <implementations/baseObject.h>
@@ -16,7 +17,6 @@ Graphics::Base::Base(const GraphicsParameters& parameters, LayerIndex layerIndex
 
 void Graphics::Base::create(interfaces::ObjectType type, const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass) {
     std::vector<VkDescriptorSetLayoutBinding> bindings;
-    bindings.push_back(utils::vkDefault::bufferVertexLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
     bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
     bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
     bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
@@ -69,12 +69,13 @@ void Graphics::Base::create(interfaces::ObjectType type, const workflows::Shader
         pushConstantRange.back().offset = 0;
         pushConstantRange.back().size = sizeof(interfaces::Material::Buffer);
     const std::vector<VkDescriptorSetLayout> descriptorSetLayouts = {
-        descriptorSetLayout = utils::vkDefault::DescriptorSetLayout(device, bindings),
-        objectDescriptorSetLayout = implementations::BaseObject::createDescriptorSetLayout(device),
-        skeletonDescriptorSetLayout = interfaces::Skeleton::descriptorSetLayout(device),         // set=2
-        morphWeightsDescriptorSetLayout = interfaces::MorphWeights::descriptorSetLayout(device), // set=3
-        materialDescriptorSetLayout = interfaces::Material::descriptorSetLayout(device),         // set=4
-        morphDeltasDescriptorSetLayout = interfaces::MorphDeltas::descriptorSetLayout(device)    // set=5
+        cameraDescriptorSetLayout = interfaces::Camera::createDescriptorSetLayout(device),       // set=0
+        descriptorSetLayout = utils::vkDefault::DescriptorSetLayout(device, bindings),           // set=1
+        objectDescriptorSetLayout = implementations::BaseObject::createDescriptorSetLayout(device), // set=2
+        skeletonDescriptorSetLayout = interfaces::Skeleton::descriptorSetLayout(device),         // set=3
+        morphWeightsDescriptorSetLayout = interfaces::MorphWeights::descriptorSetLayout(device), // set=4
+        materialDescriptorSetLayout = interfaces::Material::descriptorSetLayout(device),         // set=5
+        morphDeltasDescriptorSetLayout = interfaces::MorphDeltas::descriptorSetLayout(device)    // set=6
     };
     pipelineDesc.pipelineLayout = utils::vkDefault::PipelineLayout(device, descriptorSetLayouts, pushConstantRange);
 
@@ -134,7 +135,6 @@ void Graphics::Base::update(VkDevice device, const utils::BuffersDatabase& bData
         const auto colorId = needPrevLayer ? layerPrefix(layerIndex - 1) + parameters.out.color : utils::AttachmentName("");
 
         utils::descriptorSet::Writes writes;
-        WRITE_DESCRIPTOR(writes, descriptorSet, bDatabase.descriptorBufferInfo(parameters.in.camera, utils::ResourceIndex(i)));
         WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorEmptyInfo());
         WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(depthId, i));
         WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(colorId, i));
@@ -145,6 +145,7 @@ void Graphics::Base::update(VkDevice device, const utils::BuffersDatabase& bData
 void Graphics::Base::render(utils::ResourceIndex resourceIndex, VkCommandBuffer commandBuffers) const
 {
     if (!objects) return;
+    if (!parameters.in.camera || !*parameters.in.camera) return;
 
     const auto frameNumber = resourceIndex.get();
 
@@ -170,7 +171,7 @@ void Graphics::Base::render(utils::ResourceIndex resourceIndex, VkCommandBuffer 
 
         vkCmdBindPipeline(commandBuffers, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineDesc.pipeline);
 
-        const utils::vkDefault::DescriptorSets descriptors = {descriptorSets.at(frameNumber), object->getDescriptorSet(resourceIndex)};
+        const utils::vkDefault::DescriptorSets descriptors = {(*parameters.in.camera)->getDescriptorSet(resourceIndex), descriptorSets.at(frameNumber), object->getDescriptorSet(resourceIndex)};
 
         object->primitiveRange().first = primitiveCount;
         model->render(object->getInstanceNumber(resourceIndex), commandBuffers, pipelineDesc.pipelineLayout, descriptors, &primitiveCount);

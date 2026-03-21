@@ -6,7 +6,7 @@
 #ifndef POINT_LIGHTING_BASE
 #define POINT_LIGHTING_BASE
 
-layout(set = 2, binding = 0) uniform LightBufferObject {
+layout(set = 3, binding = 0) uniform LightBufferObject {
     vec4 position;
     vec4 color;
     vec4 prop;  // x=radius, y=powerFactor, z=dropFactor, w=unused

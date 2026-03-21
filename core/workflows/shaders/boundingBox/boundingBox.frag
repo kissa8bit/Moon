@@ -2,7 +2,7 @@
 
 #include "../__methods__/defines.glsl"
 
-layout(set = 0, binding = 1) uniform sampler2D depthSampler;
+layout(set = 1, binding = 0) uniform sampler2D depthSampler;
 
 layout(location = 0) out vec4 outColor;
 

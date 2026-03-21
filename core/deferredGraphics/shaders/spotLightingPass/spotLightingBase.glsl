@@ -7,7 +7,7 @@
 #ifndef SPOT_LIGHTING_BASE
 #define SPOT_LIGHTING_BASE
 
-layout(set = 2, binding = 0) uniform LightBufferObject {
+layout(set = 3, binding = 0) uniform LightBufferObject {
     mat4 proj;
     mat4 view;
     vec4 color;

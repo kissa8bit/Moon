@@ -33,6 +33,7 @@ private:
     utils::UniformBuffer uniformBuffer;
 
     void create(const utils::PhysicalDevice& device, uint32_t imageCount) override;
+    void createDescriptors(const utils::PhysicalDevice& device, uint32_t imageCount);
     void update(utils::ResourceIndex resourceIndex, VkCommandBuffer commandBuffer) override;
     utils::Buffers& buffers() override;
 };

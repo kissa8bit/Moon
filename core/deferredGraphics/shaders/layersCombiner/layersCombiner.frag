@@ -13,15 +13,15 @@ layout(set = 0, binding = 0) uniform GlobalUniformBuffer {
     vec2 viewport;
 } global;
 
-layout(set = 0, binding = 1) uniform sampler2D colorMap[layersCount];
-layout(set = 0, binding = 2) uniform sampler2D bloomMap[layersCount];
-layout(set = 0, binding = 3) uniform sampler2D normalMap[layersCount];
-layout(set = 0, binding = 4) uniform sampler2D depthMap[layersCount];
-layout(set = 0, binding = 5) uniform sampler2D skyboxMap;
-layout(set = 0, binding = 6) uniform sampler2D skyboxBloomMap;
-layout(set = 0, binding = 7) uniform sampler2D scatteringMap;
-layout(set = 0, binding = 8) uniform sampler2D sslrMap;
-layout(set = 0, binding = 9) uniform sampler2D ssaoMap;
+layout(set = 1, binding = 0) uniform sampler2D colorMap[layersCount];
+layout(set = 1, binding = 1) uniform sampler2D bloomMap[layersCount];
+layout(set = 1, binding = 2) uniform sampler2D normalMap[layersCount];
+layout(set = 1, binding = 3) uniform sampler2D depthMap[layersCount];
+layout(set = 1, binding = 4) uniform sampler2D skyboxMap;
+layout(set = 1, binding = 5) uniform sampler2D skyboxBloomMap;
+layout(set = 1, binding = 6) uniform sampler2D scatteringMap;
+layout(set = 1, binding = 7) uniform sampler2D sslrMap;
+layout(set = 1, binding = 8) uniform sampler2D ssaoMap;
 
 layout(push_constant) uniform PC {
     float bloomThreshold;

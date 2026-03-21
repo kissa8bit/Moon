@@ -3,6 +3,7 @@
 
 #include "workflow.h"
 
+#include <interfaces/camera.h>
 #include <interfaces/object.h>
 
 namespace moon::workflows {
@@ -22,7 +23,7 @@ struct SkyboxAttachments
 
 struct SkyboxParameters : workflows::Parameters {
     struct{
-        utils::BufferName camera;
+        interfaces::Camera** camera{nullptr};
     }in;
     struct{
         utils::AttachmentName baseColor;
@@ -38,6 +39,7 @@ private:
 
     struct Skybox : public Workbody{
         const SkyboxParameters& parameters;
+        utils::vkDefault::DescriptorSetLayout cameraDescriptorSetLayout;
         utils::vkDefault::DescriptorSetLayout objectDescriptorSetLayout;
         const interfaces::Objects* objects{nullptr};
 

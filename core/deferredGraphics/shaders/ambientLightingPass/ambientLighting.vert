@@ -2,7 +2,7 @@
 
 #include "../../../workflows/shaders/__methods__/defines.glsl"
 
-layout(set = 0, binding = 4) uniform GlobalUniformBuffer
+layout(set = 0, binding = 0) uniform GlobalUniformBuffer
 {
     mat4 view;
     mat4 proj;

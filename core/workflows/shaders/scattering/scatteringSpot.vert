@@ -9,7 +9,7 @@ layout(set = 0, binding = 0) uniform GlobalUniformBuffer
     mat4 proj;
 } global;
 
-layout(set = 2, binding = 0) uniform LightBufferObject
+layout(set = 3, binding = 0) uniform LightBufferObject
 {
     mat4 proj;
     mat4 view;

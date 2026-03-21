@@ -1,6 +1,7 @@
 #include "graphics.h"
 
 #include <utils/operations.h>
+#include <interfaces/camera.h>
 
 namespace moon::deferredGraphics {
 
@@ -38,7 +39,7 @@ void Graphics::AmbientLighting::create(const workflows::ShaderNames& shadersName
         pushConstantRange.back().stageFlags = VK_SHADER_STAGE_ALL;
         pushConstantRange.back().offset = 0;
         pushConstantRange.back().size = sizeof(LightPassPushConst);
-    std::vector<VkDescriptorSetLayout> descriptorSetLayout = {parent.descriptorSetLayout};
+    std::vector<VkDescriptorSetLayout> descriptorSetLayout = {cameraDescriptorSetLayout = interfaces::Camera::createDescriptorSetLayout(device), parent.descriptorSetLayout};
     pipelineLayout = utils::vkDefault::PipelineLayout(device, descriptorSetLayout, pushConstantRange);
 
     std::vector<VkGraphicsPipelineCreateInfo> pipelineInfo;
@@ -66,7 +67,8 @@ void Graphics::AmbientLighting::render(utils::ResourceIndex resourceIndex, VkCom
     vkCmdPushConstants(commandBuffers, pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(LightPassPushConst), &pushConst);
 
     vkCmdBindPipeline(commandBuffers, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-    vkCmdBindDescriptorSets(commandBuffers, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &parent.descriptorSets[resourceIndex.get()], 0, nullptr);
+    const utils::vkDefault::DescriptorSets descriptors = { (*parent.parameters.in.camera)->getDescriptorSet(resourceIndex), parent.descriptorSets[resourceIndex.get()] };
+    vkCmdBindDescriptorSets(commandBuffers, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, static_cast<uint32_t>(descriptors.size()), descriptors.data(), 0, nullptr);
     vkCmdDraw(commandBuffers, 6, 1, 0, 0);
 }
 

@@ -8,7 +8,7 @@ layout(set = 0, binding = 0) uniform GlobalBuffer
     mat4 proj;
 } global;
 
-layout (set = 1, binding = 0) uniform ObjectBuffer
+layout (set = 2, binding = 0) uniform ObjectBuffer
 {
     mat4 matrix;
     vec4 constColor;
@@ -19,19 +19,19 @@ layout (set = 1, binding = 0) uniform ObjectBuffer
     float width;
 } object;
 
-layout (set = 2, binding = 0) uniform NodeBuffer
+layout (set = 3, binding = 0) uniform NodeBuffer
 {
     mat4 matrix;
     mat4 jointMatrix[MAX_NUM_JOINTS];
 } node;
 
-layout (set = 3, binding = 0) uniform MorphWeightsBuffer
+layout (set = 4, binding = 0) uniform MorphWeightsBuffer
 {
     uint count;
     vec4 weights[64];
 } morphWeights;
 
-layout (set = 5, binding = 0) readonly buffer MorphDeltasBuffer
+layout (set = 6, binding = 0) readonly buffer MorphDeltasBuffer
 {
     uint morphTargetCount;
     uint vertexCount;

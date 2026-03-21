@@ -77,7 +77,7 @@ void DeferredGraphics::createGraphicsPasses()
         shadowsInfo.Extent = VkExtent2D{ params.shadowsExtent[0], params.shadowsExtent[1] };
         shadowsInfo.Samples = VK_SAMPLE_COUNT_1_BIT;
 
-    graphicsParams.in.camera = Names::camera;
+    graphicsParams.in.camera = &params.cameraObject;
     graphicsParams.in.nullDepthMapKey = Names::nullDepthMapKey;
     graphicsParams.out.image = Names::MainGraphics::image;
     graphicsParams.out.bloom = Names::MainGraphics::bloom;
@@ -90,19 +90,19 @@ void DeferredGraphics::createGraphicsPasses()
 
 	const auto l0 = layerPrefix(LayerIndex(0));
 
-    skyboxParams.in.camera = Names::camera;
+    skyboxParams.in.camera = &params.cameraObject;
     skyboxParams.out.baseColor = Names::Skybox::color;
     skyboxParams.out.bloom = Names::Skybox::bloom;
     skyboxParams.shadersPath = params.workflowsShadersPath;
     skyboxParams.imageInfo = imageInfo;
 
-    scatteringParams.in.camera = Names::camera;
+    scatteringParams.in.camera = &params.cameraObject;
     scatteringParams.in.depth = l0 + Names::MainGraphics::GBuffer::depth;
     scatteringParams.out.scattering = Names::Scattering::output;
     scatteringParams.shadersPath = params.workflowsShadersPath;
     scatteringParams.imageInfo = imageInfo;
 
-    SSLRParams.in.camera = Names::camera;
+    SSLRParams.in.camera = &params.cameraObject;
     SSLRParams.in.normal = l0 + Names::MainGraphics::GBuffer::normal;
     SSLRParams.in.depth = l0 + Names::MainGraphics::GBuffer::depth;
     SSLRParams.in.color = l0 + Names::MainGraphics::image;
@@ -110,7 +110,7 @@ void DeferredGraphics::createGraphicsPasses()
     SSLRParams.shadersPath = params.workflowsShadersPath;
     SSLRParams.imageInfo = imageInfo;
 
-    SSAOParams.in.camera = Names::camera;
+    SSAOParams.in.camera = &params.cameraObject;
     SSAOParams.in.normal = l0 + Names::MainGraphics::GBuffer::normal;
     SSAOParams.in.color = l0 + Names::MainGraphics::GBuffer::color;
     SSAOParams.in.depth = l0 + Names::MainGraphics::GBuffer::depth;
@@ -119,7 +119,7 @@ void DeferredGraphics::createGraphicsPasses()
     SSAOParams.shadersPath = params.workflowsShadersPath;
     SSAOParams.imageInfo = imageInfo;
 
-    layersCombinerParams.in.camera = Names::camera;
+    layersCombinerParams.in.camera = &params.cameraObject;
     layersCombinerParams.in.color = Names::MainGraphics::image;
     layersCombinerParams.in.bloom = Names::MainGraphics::bloom;
     layersCombinerParams.in.normal = Names::MainGraphics::GBuffer::normal;
@@ -149,7 +149,7 @@ void DeferredGraphics::createGraphicsPasses()
     blurParams.shadersPath = params.workflowsShadersPath;
     blurParams.imageInfo = imageInfo;
 
-    bbParams.in.camera = Names::camera;
+    bbParams.in.camera = &params.cameraObject;
     bbParams.in.depth = l0 + Names::MainGraphics::GBuffer::depth;
     bbParams.in.defaultDepthTexture = Names::whiteTexture;
     bbParams.out.boundingBox = Names::BoundingBox::output;
@@ -345,7 +345,6 @@ void DeferredGraphics::bind(interfaces::Camera* cameraObject){
 
     params.cameraObject = cameraObject;
     cameraObject->create(*device, resourceCount);
-    bDatabase.add(Names::camera, &cameraObject->buffers());
 }
 
 bool DeferredGraphics::remove(interfaces::Camera* cameraObject){
@@ -357,7 +356,6 @@ bool DeferredGraphics::remove(interfaces::Camera* cameraObject){
     bool res = params.cameraObject == cameraObject;
     if(res){
         params.cameraObject = nullptr;
-        bDatabase.remove(Names::camera);
     }
     return res;
 }
@@ -475,6 +473,13 @@ DeferredGraphics& DeferredGraphics::requestUpdate(const workflows::WorkflowName&
     }
     else {
         raiseUpdateFlags(name);
+    }
+    return *this;
+}
+
+DeferredGraphics& DeferredGraphics::requestUpdate() {
+    for (auto& [_, workflow] : workflows) {
+        workflow->raiseUpdateFlags();
     }
     return *this;
 }

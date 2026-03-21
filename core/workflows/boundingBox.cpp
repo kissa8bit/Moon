@@ -3,6 +3,7 @@
 #include <utils/vkdefault.h>
 #include <utils/operations.h>
 
+#include <interfaces/camera.h>
 #include <implementations/BaseObject.h>
 
 namespace moon::workflows {
@@ -52,7 +53,6 @@ void BoundingBoxGraphics::createFramebuffers(){
 
 void BoundingBoxGraphics::BoundingBox::create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass){
     std::vector<VkDescriptorSetLayoutBinding> bindings;
-    bindings.push_back(utils::vkDefault::bufferVertexLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
     bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
 
     descriptorSetLayout = utils::vkDefault::DescriptorSetLayout(device, bindings);
@@ -88,6 +88,7 @@ void BoundingBoxGraphics::BoundingBox::create(const workflows::ShaderNames& shad
         pushConstantRange.back().offset = 0;
         pushConstantRange.back().size = sizeof(math::box);
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts = {
+        cameraDescriptorSetLayout = interfaces::Camera::createDescriptorSetLayout(device),
         descriptorSetLayout,
         objectDescriptorSetLayout,
         skeletonDescriptorSetLayout
@@ -136,7 +137,6 @@ void BoundingBoxGraphics::updateDescriptors(const utils::BuffersDatabase& bDatab
 
     for (uint32_t i = 0; i < parameters.imageInfo.Count; i++) {
         utils::descriptorSet::Writes writes;
-        WRITE_DESCRIPTOR(writes, box.descriptorSets[i], bDatabase.descriptorBufferInfo(parameters.in.camera, utils::ResourceIndex(i)));
         WRITE_DESCRIPTOR(writes, box.descriptorSets[i], aDatabase.descriptorImageInfo(parameters.in.depth, i, parameters.in.defaultDepthTexture));
         utils::descriptorSet::update(device, writes);
     }
@@ -169,6 +169,7 @@ void BoundingBoxGraphics::updateCommandBuffer(utils::ResourceIndex resourceIndex
 void BoundingBoxGraphics::BoundingBox::render(utils::ResourceIndex resourceIndex, VkCommandBuffer commandBuffers){
     const auto frameNumber = resourceIndex.get();
     if (!objects) return;
+    if (!parameters.in.camera || !*parameters.in.camera) return;
 
     vkCmdBindPipeline(commandBuffers, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
     for(const auto& object: *objects){
@@ -181,7 +182,7 @@ void BoundingBoxGraphics::BoundingBox::render(utils::ResourceIndex resourceIndex
         if (!property.has(interfaces::ObjectProperty::enable)) continue;
         if (!model) continue;
 
-        utils::vkDefault::DescriptorSets descriptors = { descriptorSets[frameNumber], object->getDescriptorSet(resourceIndex) };
+        utils::vkDefault::DescriptorSets descriptors = { (*parameters.in.camera)->getDescriptorSet(resourceIndex), descriptorSets[frameNumber], object->getDescriptorSet(resourceIndex) };
         model->renderBB(object->getInstanceNumber(resourceIndex), commandBuffers, pipelineLayout, descriptors);
     }
 }

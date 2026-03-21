@@ -8,19 +8,19 @@
 
 layout(constant_id = 0) const int layerIndex = 0;
 
-layout(set = 0, binding = 1) uniform samplerCube samplerCubeMap;
-layout(set = 0, binding = 2) uniform sampler2D prevLayerDepthMap;
-layout(set = 0, binding = 3) uniform sampler2D prevLayerColorMap;
+layout(set = 1, binding = 0) uniform samplerCube samplerCubeMap;
+layout(set = 1, binding = 1) uniform sampler2D prevLayerDepthMap;
+layout(set = 1, binding = 2) uniform sampler2D prevLayerColorMap;
 
 layout (push_constant) uniform PC{
     Material material;
 } pc;
 
-layout(set = 4, binding = 0) uniform sampler2D baseColorTexture;
-layout(set = 4, binding = 1) uniform sampler2D metallicRoughnessTexture;
-layout(set = 4, binding = 2) uniform sampler2D normalTexture;
-layout(set = 4, binding = 3) uniform sampler2D occlusionTexture;
-layout(set = 4, binding = 4) uniform sampler2D emissiveTexture;
+layout(set = 5, binding = 0) uniform sampler2D baseColorTexture;
+layout(set = 5, binding = 1) uniform sampler2D metallicRoughnessTexture;
+layout(set = 5, binding = 2) uniform sampler2D normalTexture;
+layout(set = 5, binding = 3) uniform sampler2D occlusionTexture;
+layout(set = 5, binding = 4) uniform sampler2D emissiveTexture;
 
 layout(location = 0)	in vec4 position;
 layout(location = 1)	in vec3 normal;
@@ -29,7 +29,7 @@ layout(location = 3)	in vec2 UV1;
 layout(location = 4)	in vec3 tangent;
 layout(location = 5)	in vec3 bitangent;
 
-layout (set = 1, binding = 0) uniform LocalUniformBuffer
+layout (set = 2, binding = 0) uniform LocalUniformBuffer
 {
     mat4 matrix;
     vec4 constColor;

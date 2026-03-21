@@ -2,6 +2,7 @@
 
 #include <utils/operations.h>
 #include <utils/vkdefault.h>
+#include <interfaces/camera.h>
 
 namespace moon::deferredGraphics {
 
@@ -31,6 +32,7 @@ void Graphics::Lighting::createPipeline(interfaces::LightType type, const workfl
     auto& pipelineDesc = pipelineDescs[type];
 
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts = {
+        cameraDescriptorSetLayout = interfaces::Camera::createDescriptorSetLayout(device),
         descriptorSetLayout,
         shadowDescriptorSetLayout,
         pipelineDesc.descriptorSetLayout = interfaces::Light::createDescriptorSetLayout(device)

@@ -9,6 +9,7 @@
 #include <utils/vkdefault.h>
 #include <utils/texture.h>
 
+#include <interfaces/camera.h>
 #include <interfaces/object.h>
 #include <interfaces/light.h>
 
@@ -19,7 +20,7 @@ namespace moon::deferredGraphics {
 
 struct GraphicsParameters : workflows::Parameters {
     struct{
-        utils::BufferName camera;
+        interfaces::Camera** camera{nullptr};
 		const interfaces::Light* nullDepthMapKey = nullptr;
     }in;
     struct{
@@ -54,6 +55,7 @@ private:
         const interfaces::Objects* objects{ nullptr };
 
         PipelineDescs                           pipelineDescs;
+        utils::vkDefault::DescriptorSetLayout   cameraDescriptorSetLayout;
         utils::vkDefault::DescriptorSetLayout   descriptorSetLayout;
         utils::vkDefault::DescriptorSetLayout   objectDescriptorSetLayout;
         utils::vkDefault::DescriptorSetLayout   skeletonDescriptorSetLayout;
@@ -95,6 +97,7 @@ private:
         using PipelineDescs = std::unordered_map<interfaces::LightType, PipelineDesc, interfaces::LightType::Hasher>;
 
         PipelineDescs                               pipelineDescs;
+        utils::vkDefault::DescriptorSetLayout       cameraDescriptorSetLayout;
         utils::vkDefault::DescriptorSetLayout       descriptorSetLayout;
         utils::vkDefault::DescriptorSetLayout       shadowDescriptorSetLayout;
         utils::vkDefault::DescriptorPool            descriptorPool;
@@ -111,6 +114,7 @@ private:
     struct AmbientLighting {
         const Lighting& parent;
 
+        utils::vkDefault::DescriptorSetLayout cameraDescriptorSetLayout;
         utils::vkDefault::PipelineLayout  pipelineLayout;
         utils::vkDefault::Pipeline        pipeline;
 

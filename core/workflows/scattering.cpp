@@ -1,5 +1,6 @@
 #include "scattering.h"
 
+#include <interfaces/camera.h>
 #include <utils/operations.h>
 #include <utils/depthMap.h>
 
@@ -91,6 +92,7 @@ void Scattering::Lighting::createPipeline(interfaces::LightType type, const work
         pushConstantRange.back().offset = 0;
         pushConstantRange.back().size = sizeof(ScatteringPushConst);
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts = {
+        cameraDescriptorSetLayout = interfaces::Camera::createDescriptorSetLayout(device),
         descriptorSetLayout,
         shadowDescriptorSetLayout,
         pipelineDesc.descriptorSetLayout = interfaces::Light::createDescriptorSetLayout(device)
@@ -126,7 +128,6 @@ void Scattering::create(const utils::vkDefault::CommandPool& commandPool, utils:
     createFramebuffers();
 
     std::vector<VkDescriptorSetLayoutBinding> bindings;
-        bindings.push_back(utils::vkDefault::bufferVertexLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
         bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
     lighting.descriptorSetLayout = utils::vkDefault::DescriptorSetLayout(device, bindings);
     lighting.shadowDescriptorSetLayout = utils::DepthMap::createDescriptorSetLayout(device);
@@ -160,13 +161,13 @@ void Scattering::updateDescriptors(const utils::BuffersDatabase& bDatabase, cons
         auto descriptorSet = lighting.descriptorSets[i];
 
         utils::descriptorSet::Writes writes;
-        WRITE_DESCRIPTOR(writes, descriptorSet, bDatabase.descriptorBufferInfo(parameters.in.camera, utils::ResourceIndex(i)));
         WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.depth, i));
         utils::descriptorSet::update(device, writes);
     }
 }
 
 void Scattering::updateCommandBuffer(utils::ResourceIndex resourceIndex){
+    if (!parameters.in.camera || !*parameters.in.camera) return;
     const auto frameNumber = resourceIndex.get();
     if (!created) return;
 
@@ -201,7 +202,7 @@ void Scattering::updateCommandBuffer(utils::ResourceIndex resourceIndex){
             ScatteringPushConst pushConst{ parameters.imageInfo.Extent.width, parameters.imageInfo.Extent.height, parameters.density, parameters.steps };
             vkCmdPushConstants(commandBuffers[frameNumber], pipelineDesc.pipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(ScatteringPushConst), &pushConst);
 
-            const utils::vkDefault::DescriptorSets descriptors = { lighting.descriptorSets.at(frameNumber), depthMap.descriptorSets().at(frameNumber) };
+            const utils::vkDefault::DescriptorSets descriptors = { (*parameters.in.camera)->getDescriptorSet(resourceIndex), lighting.descriptorSets.at(frameNumber), depthMap.descriptorSets().at(frameNumber) };
             lightSource->render(resourceIndex, commandBuffers.at(frameNumber), descriptors, pipelineDesc.pipelineLayout, pipelineDesc.pipeline);
         }
     }

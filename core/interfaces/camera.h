@@ -3,6 +3,7 @@
 
 #include <vulkan.h>
 
+#include <utils/vkdefault.h>
 #include <utils/buffer.h>
 #include <utils/device.h>
 #include <utils/types.h>
@@ -33,16 +34,23 @@ class Camera{
 protected:
     CameraMask mask{};
 
+    utils::vkDefault::DescriptorSetLayout descriptorSetLayout;
+    utils::vkDefault::DescriptorPool descriptorPool;
+    utils::vkDefault::DescriptorSets descriptorSets;
+
 public:
     virtual ~Camera(){};
 
     CameraMask& cameraMask() { return mask; }
+    const VkDescriptorSet& getDescriptorSet(utils::ResourceIndex resourceIndex) const;
     virtual utils::Buffers& buffers() = 0;
     virtual void create(const utils::PhysicalDevice& device, uint32_t imageCount) = 0;
     virtual void update(utils::ResourceIndex resourceIndex, VkCommandBuffer commandBuffer) = 0;
 
     virtual void setTransformation(const math::mat4& transformation) = 0;
     virtual void setViewport(float width, float height) = 0;
+
+    static utils::vkDefault::DescriptorSetLayout createDescriptorSetLayout(VkDevice device);
 };
 
 } // moon::interfaces

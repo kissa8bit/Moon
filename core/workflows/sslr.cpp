@@ -1,5 +1,6 @@
 #include "sslr.h"
 
+#include <interfaces/camera.h>
 #include <utils/operations.h>
 #include <utils/vkdefault.h>
 
@@ -53,7 +54,6 @@ void SSLRGraphics::createFramebuffers()
 
 void SSLRGraphics::SSLR::create(const workflows::ShaderNames& shadersNames, VkDevice device, VkRenderPass renderPass) {
     std::vector<VkDescriptorSetLayoutBinding> bindings;
-        bindings.push_back(utils::vkDefault::bufferFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
         bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
         bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
         bindings.push_back(utils::vkDefault::imageFragmentLayoutBinding(static_cast<uint32_t>(bindings.size()), 1));
@@ -75,7 +75,7 @@ void SSLRGraphics::SSLR::create(const workflows::ShaderNames& shadersNames, VkDe
     std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachment = {utils::vkDefault::colorBlendAttachmentState(VK_FALSE)};
     VkPipelineColorBlendStateCreateInfo colorBlending = utils::vkDefault::colorBlendState(static_cast<uint32_t>(colorBlendAttachment.size()),colorBlendAttachment.data());
 
-    std::vector<VkDescriptorSetLayout> descriptorSetLayouts = { descriptorSetLayout };
+    std::vector<VkDescriptorSetLayout> descriptorSetLayouts = { cameraDescriptorSetLayout = interfaces::Camera::createDescriptorSetLayout(device), descriptorSetLayout };
     pipelineLayout = utils::vkDefault::PipelineLayout(device, descriptorSetLayouts);
 
     std::vector<VkGraphicsPipelineCreateInfo> pipelineInfo;
@@ -123,7 +123,6 @@ void SSLRGraphics::updateDescriptors(const utils::BuffersDatabase& bDatabase, co
         auto descriptorSet = sslr.descriptorSets[i];
 
         utils::descriptorSet::Writes writes;
-        WRITE_DESCRIPTOR(writes, descriptorSet, bDatabase.descriptorBufferInfo(parameters.in.camera, utils::ResourceIndex(i)));
         WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.normal, i));
         WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.depth, i));
         WRITE_DESCRIPTOR(writes, descriptorSet, aDatabase.descriptorImageInfo(parameters.in.color, i));
@@ -132,6 +131,7 @@ void SSLRGraphics::updateDescriptors(const utils::BuffersDatabase& bDatabase, co
 }
 
 void SSLRGraphics::updateCommandBuffer(utils::ResourceIndex resourceIndex){
+    if (!parameters.in.camera || !*parameters.in.camera) return;
     const auto frameNumber = resourceIndex.get();
     if (!created) return;
 
@@ -150,7 +150,8 @@ void SSLRGraphics::updateCommandBuffer(utils::ResourceIndex resourceIndex){
 
     if (parameters.enable) {
         vkCmdBindPipeline(commandBuffers[frameNumber], VK_PIPELINE_BIND_POINT_GRAPHICS, sslr.pipeline);
-        vkCmdBindDescriptorSets(commandBuffers[frameNumber], VK_PIPELINE_BIND_POINT_GRAPHICS, sslr.pipelineLayout, 0, 1, &sslr.descriptorSets[frameNumber], 0, nullptr);
+        utils::vkDefault::DescriptorSets descriptorSets = { (*parameters.in.camera)->getDescriptorSet(resourceIndex), sslr.descriptorSets[frameNumber] };
+        vkCmdBindDescriptorSets(commandBuffers[frameNumber], VK_PIPELINE_BIND_POINT_GRAPHICS, sslr.pipelineLayout, 0, static_cast<uint32_t>(descriptorSets.size()), descriptorSets.data(), 0, nullptr);
         vkCmdDraw(commandBuffers[frameNumber], 6, 1, 0, 0);
     }
 

@@ -12,7 +12,7 @@ struct Outlining{
     float width;
 };
 
-layout(set = 1, binding = 0) uniform LocalUniformBuffer {
+layout(set = 2, binding = 0) uniform LocalUniformBuffer {
     mat4 matrix;
     vec4 constColor;
     vec4 colorFactor;
@@ -21,7 +21,7 @@ layout(set = 1, binding = 0) uniform LocalUniformBuffer {
     Outlining outlining;
 } object;
 
-layout(set = 2, binding = 0) uniform UBONode {
+layout(set = 3, binding = 0) uniform UBONode {
     mat4 matrix;
     mat4 jointMatrix[MAX_NUM_JOINTS];
 } node;

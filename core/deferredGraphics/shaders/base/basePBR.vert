@@ -8,7 +8,7 @@ layout(set = 0, binding = 0) uniform GlobalBuffer
     mat4 proj;
 } global;
 
-layout (set = 1, binding = 0) uniform ObjectBuffer
+layout (set = 2, binding = 0) uniform ObjectBuffer
 {
     mat4 matrix;
     vec4 constColor;
@@ -19,7 +19,7 @@ layout (set = 1, binding = 0) uniform ObjectBuffer
     float width;
 } object;
 
-layout (set = 2, binding = 0) uniform NodeBuffer
+layout (set = 3, binding = 0) uniform NodeBuffer
 {
     mat4 matrix;
     mat4 jointMatrix[MAX_NUM_JOINTS];

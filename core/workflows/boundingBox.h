@@ -3,13 +3,14 @@
 
 #include "workflow.h"
 
+#include <interfaces/camera.h>
 #include <interfaces/object.h>
 
 namespace moon::workflows {
 
 struct BoundingBoxParameters : workflows::Parameters {
     struct{
-        utils::BufferName camera;
+        interfaces::Camera** camera{nullptr};
         utils::AttachmentName depth;
         utils::ImageName defaultDepthTexture;
     }in;
@@ -26,6 +27,7 @@ private:
 
     struct BoundingBox : public Workbody{
         const BoundingBoxParameters& parameters;
+        utils::vkDefault::DescriptorSetLayout cameraDescriptorSetLayout;
         utils::vkDefault::DescriptorSetLayout objectDescriptorSetLayout;
         utils::vkDefault::DescriptorSetLayout skeletonDescriptorSetLayout;
         const interfaces::Objects* objects;
