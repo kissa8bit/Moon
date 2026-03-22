@@ -41,6 +41,12 @@ public:
     BaseObject& setColor(std::optional<math::vec4> constant = std::nullopt, std::optional<math::vec4> factor = std::nullopt);
     BaseObject& setBloom(std::optional<math::vec4> constant = std::nullopt, std::optional<math::vec4> factor = std::nullopt);
 
+    // Morph targets
+    uint32_t morphTargetCount() const;
+    std::vector<std::string> morphTargetNames() const;
+    float getMorphWeight(uint32_t targetIndex) const;
+    void setMorphWeight(uint32_t targetIndex, float weight);
+
     // Called by the rendering system each frame, not part of the user-facing animation API
     bool updateAnimation(size_t frameNumber, float dtime);
 

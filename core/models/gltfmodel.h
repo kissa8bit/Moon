@@ -27,6 +27,7 @@ private:
     GltfMeshes meshes;
     Skins skins;
     std::vector<std::string> m_animationNames;
+    std::vector<std::string> m_morphTargetNames;
 
     struct Cache {
         utils::Buffer vertices;
@@ -46,6 +47,13 @@ public:
 
     std::vector<interfaces::Animation*> animations(uint32_t instanceNumber) override;
     std::vector<std::string> animationNames() const override;
+
+    math::box boundingBox() const override;
+
+    uint32_t morphTargetCount() const override;
+    std::vector<std::string> morphTargetNames() const override;
+    float getMorphWeight(uint32_t instanceNumber, uint32_t targetIndex) const override;
+    void setMorphWeight(uint32_t instanceNumber, uint32_t targetIndex, float weight) override;
 
     void create(const utils::PhysicalDevice& device, VkCommandPool commandPool) override;
     void render(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t* primitiveCount = nullptr) const override;

@@ -237,6 +237,13 @@ public:
 
     VertexType vertexType() const { return type; }
 
+    virtual math::box boundingBox() const { return {}; }
+
+    virtual uint32_t morphTargetCount() const { return 0; }
+    virtual std::vector<std::string> morphTargetNames() const { return {}; }
+    virtual float getMorphWeight(uint32_t instanceNumber, uint32_t targetIndex) const { return 0.0f; }
+    virtual void setMorphWeight(uint32_t instanceNumber, uint32_t targetIndex, float weight) {}
+
 protected:
     VertexType type{};
 

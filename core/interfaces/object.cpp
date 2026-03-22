@@ -12,8 +12,16 @@ Model* Object::model() {
     return pModel;
 }
 
+const Model* Object::model() const {
+    return pModel;
+}
+
 uint32_t Object::getInstanceNumber(utils::ResourceIndex resourceIndex) const {
     return instance.range.count > 1 ? instance.range.first + resourceIndex.get() : instance.range.first;
+}
+
+uint32_t Object::instanceCount() const {
+    return instance.range.count;
 }
 
 ObjectMask& Object::objectMask() {

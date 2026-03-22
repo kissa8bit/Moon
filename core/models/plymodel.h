@@ -42,7 +42,7 @@ public:
 
     interfaces::Material& material();
     const interfaces::Material& material() const;
-    math::box boundingBox() const;
+    math::box boundingBox() const override;
 
     std::vector<interfaces::Animation*> animations(uint32_t instanceNumber) override;
 

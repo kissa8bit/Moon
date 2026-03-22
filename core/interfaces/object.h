@@ -106,7 +106,9 @@ public:
 	virtual ~Object() = default;
 
 	Model* model();
+	const Model* model() const;
 	uint32_t getInstanceNumber(utils::ResourceIndex resourceIndex) const;
+	uint32_t instanceCount() const;
 
 	ObjectMask& objectMask();
 	const ObjectMask& objectMask() const;

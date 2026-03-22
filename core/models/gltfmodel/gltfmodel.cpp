@@ -41,7 +41,15 @@ bool GltfModel::loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffe
 
     loadMaterials(gltfModel, device, commandBuffer);
 
-    type = (gltfModel.animations.empty() && gltfModel.skins.empty())
+    bool hasMorphTargets = false;
+    for (const auto& mesh : gltfModel.meshes) {
+        for (const auto& prim : mesh.primitives) {
+            if (!prim.targets.empty()) { hasMorphTargets = true; break; }
+        }
+        if (hasMorphTargets) break;
+    }
+
+    type = (gltfModel.animations.empty() && gltfModel.skins.empty() && !hasMorphTargets)
         ? interfaces::Model::VertexType::pbr
         : interfaces::Model::VertexType::animated;
 
@@ -66,6 +74,13 @@ bool GltfModel::loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffe
             ? static_cast<uint32_t>(hostPBRVertices.size())
             : static_cast<uint32_t>(hostVertices.size());
         const uint32_t morphTargetCount = gltfMesh.primitives.empty() ? 0 : static_cast<uint32_t>(gltfMesh.primitives[0].targets.size());
+        if (m_morphTargetNames.empty() && morphTargetCount > 0 && gltfMesh.extras.Has("targetNames")) {
+            const auto& names = gltfMesh.extras.Get("targetNames");
+            if (names.IsArray()) {
+                for (size_t i = 0; i < names.ArrayLen(); i++)
+                    m_morphTargetNames.push_back(names.Get(static_cast<int>(i)).Get<std::string>());
+            }
+        }
         const bool isSkinValid = isValid(node.skin);
 
         meshes[nodeId] = GltfMesh(gltfModel, gltfMesh, materials, indexStart);
@@ -107,6 +122,11 @@ bool GltfModel::loadFromFile(const utils::PhysicalDevice& device, VkCommandBuffe
             }
         }
     }
+
+    const bool hasVertices = type == interfaces::Model::VertexType::pbr
+        ? !hostPBRVertices.empty() : !hostVertices.empty();
+
+    if (!hasVertices) return false;
 
     if (type == interfaces::Model::VertexType::pbr) {
         utils::createDeviceBuffer(device, device.device(), commandBuffer, hostPBRVertices.size() * sizeof(interfaces::PBRVertex), hostPBRVertices.data(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, cache.vertices, vertices);
@@ -165,6 +185,48 @@ void GltfModel::createDescriptors(const utils::PhysicalDevice& device) {
     }
 }
 
+math::box GltfModel::boundingBox() const {
+    math::box result;
+    for (const auto& [nodeId, mesh] : meshes) {
+        for (const auto& prim : mesh.primitives) {
+            result.min = math::min(result.min, prim.bb.min);
+            result.max = math::max(result.max, prim.bb.max);
+        }
+    }
+    return result;
+}
+
+uint32_t GltfModel::morphTargetCount() const {
+    if (instances.empty()) return 0;
+    for (const auto& [nodeId, node] : instances[0].nodes) {
+        if (!node.weights.empty()) return static_cast<uint32_t>(node.weights.size());
+    }
+    return 0;
+}
+
+std::vector<std::string> GltfModel::morphTargetNames() const {
+    return m_morphTargetNames;
+}
+
+float GltfModel::getMorphWeight(uint32_t instanceNumber, uint32_t targetIndex) const {
+    if (instanceNumber >= instances.size()) return 0.0f;
+    for (const auto& [nodeId, node] : instances[instanceNumber].nodes) {
+        if (targetIndex < node.weights.size()) return node.weights[targetIndex];
+    }
+    return 0.0f;
+}
+
+void GltfModel::setMorphWeight(uint32_t instanceNumber, uint32_t targetIndex, float weight) {
+    if (instanceNumber >= instances.size()) return;
+    auto& instance = instances[instanceNumber];
+    for (auto& [nodeId, node] : instance.nodes) {
+        if (targetIndex < node.weights.size()) {
+            node.weights[targetIndex] = weight;
+        }
+    }
+    updateNodes(instance.nodes, instance.meshNodes, false);
+}
+
 void GltfModel::create(const utils::PhysicalDevice& device, VkCommandPool commandPool) {
     if(
         CHECK_M(VkPhysicalDevice(device), "[ GltfModel::create ] VkPhysicalDevice is VK_NULL_HANDLE") &&
@@ -174,12 +236,17 @@ void GltfModel::create(const utils::PhysicalDevice& device, VkCommandPool comman
         utils::singleCommandBuffer::Scoped commandBuffer(device.device(), device.device()(0, 0), commandPool);
         if (loadFromFile(device, commandBuffer)) {
             createDescriptors(device);
+        } else {
+            destroyCache();
+            CHECK_M(false, "[ GltfModel::create ] failed to load model: " + filename.string());
+            return;
         }
     }
     destroyCache();
 }
 
 void GltfModel::render(uint32_t instanceNumber, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, const utils::vkDefault::DescriptorSets& descriptorSets, uint32_t* primitiveCount) const {
+    if (VkBuffer(vertices) == VK_NULL_HANDLE) return;
     VkDeviceSize offsets = 0;
     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertices, &offsets);
     if (VkBuffer(indices) != VK_NULL_HANDLE) {

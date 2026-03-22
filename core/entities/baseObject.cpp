@@ -49,6 +49,34 @@ BaseObject& BaseObject::setOutlining(const bool enable, const float width, const
     return *this;
 }
 
+// --- Morph targets ---
+
+uint32_t BaseObject::morphTargetCount() const {
+    const auto* mdl = static_cast<const interfaces::Object&>(m_object).model();
+    return mdl ? mdl->morphTargetCount() : 0;
+}
+
+std::vector<std::string> BaseObject::morphTargetNames() const {
+    const auto* mdl = static_cast<const interfaces::Object&>(m_object).model();
+    return mdl ? mdl->morphTargetNames() : std::vector<std::string>{};
+}
+
+float BaseObject::getMorphWeight(uint32_t targetIndex) const {
+    const auto* mdl = static_cast<const interfaces::Object&>(m_object).model();
+    if (!mdl) return 0.0f;
+    uint32_t inst = m_object.getInstanceNumber(utils::ResourceIndex(0));
+    return mdl->getMorphWeight(inst, targetIndex);
+}
+
+void BaseObject::setMorphWeight(uint32_t targetIndex, float weight) {
+    auto* obj = object();
+    auto* mdl = obj->model();
+    if (!mdl) return;
+    for (uint32_t i = 0; i < obj->instanceCount(); i++) {
+        mdl->setMorphWeight(obj->getInstanceNumber(utils::ResourceIndex(i)), targetIndex, weight);
+    }
+}
+
 bool BaseObject::updateAnimation(size_t frameNumber, float dtime) {
     return animation.update(frameNumber, dtime);
 }
