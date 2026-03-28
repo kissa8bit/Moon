@@ -27,3 +27,8 @@ set(RENDERSTAGES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/renderStages)
 add_library(deferredGraphics STATIC ${SOURCES} ${HEADERS})
 target_include_directories(deferredGraphics PUBLIC ${ROOT_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${RENDERSTAGES_DIR})
 target_link_libraries(deferredGraphics PUBLIC graphicsManager workflows implementations interfaces utils)
+
+moon_compile_shaders(deferredGraphics
+    "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
+    "deferredGraphics"
+)

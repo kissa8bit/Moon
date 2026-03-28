@@ -11,7 +11,7 @@
 #if defined(TESTCUDA)
     #include "testCuda.h"
 #else
-    #include "testScene.h"
+    #error "No test scene defined. Use sceneEditor target or define TESTCUDA."
 #endif
 
 VkPhysicalDeviceFeatures physicalDeviceFeatures(){
@@ -53,8 +53,6 @@ int main()
 
 #if defined(TESTCUDA)
     testCuda testScene(app, window, ExternalPath);
-#else
-    testScene testScene(app, window, ExternalPath);
 #endif
 
 #ifndef DEBUG_PRINT_DISABLE

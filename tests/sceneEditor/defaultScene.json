@@ -1,0 +1,876 @@
+{
+    "camera": {
+        "fov": 45.0,
+        "position": [
+            14.802783966064453,
+            -9.058935165405273,
+            13.833833694458008
+        ],
+        "rotation": [
+            0.5148712396621704,
+            0.48448464274406433,
+            0.482770711183548,
+            0.5130473971366882
+        ]
+    },
+    "lights": [
+        {
+            "color": [
+                0.30380770564079285,
+                0.504967987537384,
+                0.6864522695541382,
+                1.0
+            ],
+            "drop": 0.6230000257492065,
+            "markerSize": 0.07999999821186066,
+            "name": "Point_1",
+            "position": [
+                -24.25,
+                -1.5800000429153442,
+                17.0
+            ],
+            "power": 15.0,
+            "radius": 15.302000045776367,
+            "type": "point"
+        },
+        {
+            "color": [
+                1.0,
+                0.949999988079071,
+                0.8500000238418579,
+                1.0
+            ],
+            "drop": 0.0,
+            "far": 500.0,
+            "height": 300.0,
+            "markerSize": 0.15000000596046448,
+            "name": "sun",
+            "position": [
+                0.0,
+                0.0,
+                100.0
+            ],
+            "power": 3.0,
+            "shadow": true,
+            "type": "directional",
+            "width": 300.0
+        },
+        {
+            "color": [
+                1.0,
+                0.8500000238418579,
+                0.6000000238418579,
+                1.0
+            ],
+            "drop": 0.20000000298023224,
+            "exponent": 4.0,
+            "innerFraction": 0.30000001192092896,
+            "markerSize": 0.07999999821186066,
+            "name": "ufoLight",
+            "parent": "ufo",
+            "power": 10.0,
+            "scattering": true,
+            "shadow": true,
+            "type": "spot"
+        },
+        {
+            "color": [
+                0.906862735748291,
+                0.8748296499252319,
+                0.6890378594398499,
+                1.0
+            ],
+            "drop": 0.26100000739097595,
+            "exponent": 4.0,
+            "innerFraction": 1.0,
+            "markerSize": 0.07999999821186066,
+            "name": "helmet_spot",
+            "position": [
+                24.09000015258789,
+                -2.75,
+                17.5
+            ],
+            "power": 16.66699981689453,
+            "rotation": [
+                0.8959252834320068,
+                -0.3966929316520691,
+                -0.19680970907211304,
+                0.03587403893470764
+            ],
+            "scattering": false,
+            "shadow": true,
+            "type": "spot"
+        },
+        {
+            "color": [
+                0.17142441868782043,
+                0.592361330986023,
+                0.8529411554336548,
+                1.0
+            ],
+            "drop": 0.7170000076293945,
+            "exponent": 4.058000087738037,
+            "innerFraction": 0.6740000247955322,
+            "markerSize": 0.07999999821186066,
+            "name": "Spot_1",
+            "position": [
+                -29.579999923706055,
+                2.940000057220459,
+                18.65999984741211
+            ],
+            "power": 72.46399688720703,
+            "rotation": [
+                0.7130281925201416,
+                0.3249031603336334,
+                0.293815553188324,
+                -0.5474036931991577
+            ],
+            "scattering": true,
+            "shadow": true,
+            "type": "spot"
+        },
+        {
+            "color": [
+                0.843137264251709,
+                0.16945403814315796,
+                0.16945403814315796,
+                1.0
+            ],
+            "drop": 0.5649999976158142,
+            "exponent": 7.043000221252441,
+            "innerFraction": 0.32600000500679016,
+            "markerSize": 0.07999999821186066,
+            "name": "Spot_2",
+            "position": [
+                -20.914283752441406,
+                12.952332496643066,
+                18.399999618530273
+            ],
+            "power": 59.275001525878906,
+            "rotation": [
+                0.8734863996505737,
+                -0.0660783052444458,
+                0.4778722822666168,
+                -0.0654686987400055
+            ],
+            "scattering": true,
+            "shadow": true,
+            "type": "spot"
+        },
+        {
+            "color": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "drop": 0.7329999804496765,
+            "markerSize": 0.07999999821186066,
+            "name": "Point_0",
+            "position": [
+                -24.25,
+                3.299999952316284,
+                17.0
+            ],
+            "power": 15.217000007629395,
+            "radius": 10.958999633789063,
+            "type": "point"
+        },
+        {
+            "color": [
+                0.6830497980117798,
+                0.5221891403198242,
+                0.6259227395057678,
+                1.0
+            ],
+            "drop": 0.5360000133514404,
+            "markerSize": 0.07999999821186066,
+            "name": "Point_2",
+            "position": [
+                -29.0,
+                -5.0,
+                17.0
+            ],
+            "power": 12.826000213623047,
+            "radius": 19.645000457763672,
+            "rotation": [
+                1.0,
+                2.9802322387695313e-08,
+                -1.4901161193847656e-08,
+                -1.4901161193847656e-08
+            ],
+            "type": "point"
+        },
+        {
+            "color": [
+                0.9411764740943909,
+                0.7635524868965149,
+                0.07843135297298431,
+                1.0
+            ],
+            "drop": 0.4490000009536743,
+            "markerSize": 0.07999999821186066,
+            "name": "Point_3",
+            "position": [
+                -19.31999969482422,
+                -8.899999618530273,
+                5.019999980926514
+            ],
+            "power": 23.695999145507813,
+            "radius": 34.847999572753906,
+            "type": "point"
+        },
+        {
+            "color": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "drop": 0.296999990940094,
+            "exponent": 4.0,
+            "innerFraction": 0.0,
+            "markerSize": 0.07999999821186066,
+            "name": "Spot_3",
+            "position": [
+                -20.850000381469727,
+                -10.420000076293945,
+                19.200000762939453
+            ],
+            "power": 42.61000061035156,
+            "rotation": [
+                0.893825888633728,
+                0.11421047896146774,
+                0.4333729147911072,
+                0.013154655694961548
+            ],
+            "scattering": true,
+            "shadow": true,
+            "type": "spot"
+        },
+        {
+            "color": [
+                0.33332058787345886,
+                0.8652196526527405,
+                0.4189322590827942,
+                1.0
+            ],
+            "drop": 0.4350000023841858,
+            "markerSize": 0.07999999821186066,
+            "name": "Point_4",
+            "position": [
+                -29.0,
+                6.0,
+                17.0
+            ],
+            "power": 22.246000289916992,
+            "radius": 18.922000885009766,
+            "type": "point"
+        },
+        {
+            "color": [
+                0.3108380436897278,
+                0.4236551523208618,
+                0.947059690952301,
+                1.0
+            ],
+            "drop": 0.6449999809265137,
+            "markerSize": 0.07999999821186066,
+            "name": "Point_5",
+            "position": [
+                -10.1899995803833,
+                -6.25,
+                16.979999542236328
+            ],
+            "power": 5.579999923706055,
+            "radius": 15.23900032043457,
+            "type": "point"
+        },
+        {
+            "color": [
+                0.977509081363678,
+                0.8103668689727783,
+                0.43479955196380615,
+                1.0
+            ],
+            "drop": 0.8550000190734863,
+            "markerSize": 0.07999999821186066,
+            "name": "Point_6",
+            "position": [
+                -1.0343708992004395,
+                -6.760000228881836,
+                17.170000076293945
+            ],
+            "power": 15.0,
+            "radius": 41.29999923706055,
+            "type": "point"
+        }
+    ],
+    "locked": [
+        "sponza",
+        "stars",
+        "sun"
+    ],
+    "objects": [
+        {
+            "animated": false,
+            "name": "sponza",
+            "path": "dependences/model/glTF-Sample-Models/2.0/Sponza/glTF/Sponza.gltf",
+            "position": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.7071067690849304,
+                0.7071067690849304,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                3.0,
+                3.0,
+                3.0
+            ]
+        },
+        {
+            "animated": false,
+            "group": {
+                "name": "ufo",
+                "position": [
+                    -0.800000011920929,
+                    3.5,
+                    7.900000095367432
+                ],
+                "rotation": [
+                    0.931381106376648,
+                    -0.17269620299339294,
+                    0.0471174418926239,
+                    0.31715765595436096
+                ]
+            },
+            "name": "ufo",
+            "path": "dependences/model/glb/RetroUFO.glb",
+            "position": [
+                0.0,
+                0.0,
+                -0.10000000149011612
+            ],
+            "rotation": [
+                0.69484943151474,
+                0.6941201090812683,
+                0.14164713025093079,
+                0.12336283922195435
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "animated": false,
+            "name": "Lantern_dyn_1",
+            "path": "dependences/model/glTF-Sample-Models/2.0/Lantern/glTF-Binary/Lantern.glb",
+            "position": [
+                -19.09000015258789,
+                -11.850000381469727,
+                -0.05000000074505806
+            ],
+            "rotation": [
+                0.4993506669998169,
+                0.4866332411766052,
+                0.5034046173095703,
+                0.5102134943008423
+            ],
+            "scale": [
+                0.30000001192092896,
+                0.30000001192092896,
+                0.30000001192092896
+            ]
+        },
+        {
+            "animated": true,
+            "name": "robot",
+            "path": "dependences/model/glb/Robot.glb",
+            "playAnimation": 1,
+            "position": [
+                -28.350000381469727,
+                11.899999618530273,
+                10.0
+            ],
+            "rotation": [
+                0.6688679456710815,
+                0.6851922869682312,
+                0.22483210265636444,
+                0.1805066615343094
+            ],
+            "scale": [
+                25.0,
+                25.0,
+                25.0
+            ]
+        },
+        {
+            "animated": true,
+            "name": "bee",
+            "path": "dependences/model/glb/Bee.glb",
+            "playAnimation": 0,
+            "position": [
+                1.850000023841858,
+                1.100000023841858,
+                -0.05000000074505806
+            ],
+            "rotation": [
+                0.7097771167755127,
+                0.7039204239845276,
+                0.011239244602620602,
+                0.014104533940553665
+            ],
+            "scale": [
+                0.20000000298023224,
+                0.20000000298023224,
+                0.20000000298023224
+            ]
+        },
+        {
+            "animated": true,
+            "name": "butterfly",
+            "path": "dependences/model/glb/butterfly.glb",
+            "playAnimation": 0,
+            "position": [
+                -3.5,
+                0.6000000238418579,
+                0.0
+            ],
+            "rotation": [
+                0.7071067690849304,
+                0.7071067690849304,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                20.0,
+                20.0,
+                20.0
+            ]
+        },
+        {
+            "animated": false,
+            "name": "helmet",
+            "path": "dependences/model/glTF-Sample-Models/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb",
+            "position": [
+                27.950000762939453,
+                -9.199999809265137,
+                15.0
+            ],
+            "rotation": [
+                0.5,
+                0.5,
+                -0.5,
+                -0.5
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "animated": true,
+            "name": "skeleton_dyn_1",
+            "path": "dependences/model/glb/skeleton.glb",
+            "playAnimation": 0,
+            "position": [
+                -31.84000015258789,
+                8.079999923706055,
+                10.0
+            ],
+            "rotation": [
+                0.520546555519104,
+                0.5325971841812134,
+                0.45386195182800293,
+                0.4890989661216736
+            ],
+            "scale": [
+                3.5,
+                3.5,
+                3.5
+            ]
+        },
+        {
+            "animated": true,
+            "name": "octopus_dyn_2",
+            "path": "dependences/model/glb/octopus.glb",
+            "playAnimation": 0,
+            "position": [
+                -24.68000030517578,
+                3.009999990463257,
+                12.239999771118164
+            ],
+            "rotation": [
+                0.5362995862960815,
+                0.5475878715515137,
+                -0.456040620803833,
+                -0.45235303044319153
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "animated": true,
+            "name": "MorphStressTest_dyn_1",
+            "path": "dependences/model/glTF-Sample-Models/2.0/MorphStressTest/glTF-Binary/MorphStressTest.glb",
+            "playAnimation": 1,
+            "position": [
+                -24.59000015258789,
+                -1.1399999856948853,
+                12.270000457763672
+            ],
+            "rotation": [
+                -0.49934157729148865,
+                -0.5108372569084167,
+                0.5012596845626831,
+                0.48852136731147766
+            ],
+            "scale": [
+                0.5899999737739563,
+                0.5899999737739563,
+                0.5899999737739563
+            ]
+        },
+        {
+            "animated": false,
+            "name": "SuzanneMorphSparse_dyn_3",
+            "path": "dependences/model/glTF-Sample-Models/2.0/SuzanneMorphSparse/glTF-Binary/SuzanneMorphSparse.glb",
+            "position": [
+                -24.610000610351563,
+                -2.809999942779541,
+                13.109999656677246
+            ],
+            "rotation": [
+                0.4974442422389984,
+                0.5106587409973145,
+                -0.5046364665031433,
+                -0.4868447780609131
+            ],
+            "scale": [
+                0.36571428179740906,
+                0.36571428179740906,
+                0.36571428179740906
+            ]
+        },
+        {
+            "animated": true,
+            "name": "BrainStem_dyn_4",
+            "path": "dependences/model/glTF-Sample-Models/2.0/BrainStem/glTF-Binary/BrainStem.glb",
+            "playAnimation": 0,
+            "position": [
+                -30.209999084472656,
+                -9.449999809265137,
+                9.979999542236328
+            ],
+            "rotation": [
+                0.4760902523994446,
+                -0.4594250023365021,
+                -0.539630115032196,
+                0.5204822421073914
+            ],
+            "scale": [
+                3.0,
+                3.0,
+                3.0
+            ]
+        },
+        {
+            "animated": true,
+            "name": "InterpolationTest_dyn_5",
+            "path": "dependences/model/glTF-Sample-Models/2.0/InterpolationTest/glTF-Binary/InterpolationTest.glb",
+            "playAnimation": 2,
+            "position": [
+                -33.0099983215332,
+                0.8999999761581421,
+                13.369999885559082
+            ],
+            "rotation": [
+                0.506757378578186,
+                0.5037190318107605,
+                0.49184873700141907,
+                0.497361958026886
+            ],
+            "scale": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        {
+            "animated": false,
+            "name": "AlphaBlendModeTest_dyn_6",
+            "path": "dependences/model/glTF-Sample-Models/2.0/AlphaBlendModeTest/glTF-Binary/AlphaBlendModeTest.glb",
+            "position": [
+                -12.4399995803833,
+                -5.239999771118164,
+                12.350000381469727
+            ],
+            "rotation": [
+                0.6913177371025085,
+                0.7226019501686096,
+                -0.009465483017265797,
+                -0.0060458555817604065
+            ],
+            "scale": [
+                0.30000001192092896,
+                0.30000001192092896,
+                0.30000001192092896
+            ]
+        },
+        {
+            "animated": false,
+            "name": "BoomBoxWithAxes_dyn_7",
+            "path": "dependences/model/glTF-Sample-Models/2.0/BoomBoxWithAxes/glTF/BoomBoxWithAxes.gltf",
+            "position": [
+                -16.700199127197266,
+                -5.239999771118164,
+                12.550000190734863
+            ],
+            "rotation": [
+                0.7094879150390625,
+                0.7037525177001953,
+                -0.011110790073871613,
+                0.03655406832695007
+            ],
+            "scale": [
+                30.0,
+                30.0,
+                30.0
+            ]
+        },
+        {
+            "animated": false,
+            "name": "Duck_dyn_9",
+            "path": "dependences/model/glTF-Sample-Models/2.0/Duck/glTF-Binary/Duck.glb",
+            "position": [
+                -8.579999923706055,
+                -4.909999847412109,
+                12.210000038146973
+            ],
+            "rotation": [
+                0.6206299066543579,
+                0.6646165251731873,
+                -0.2837376296520233,
+                -0.30451473593711853
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "animated": false,
+            "name": "OrientationTest_dyn_8",
+            "path": "dependences/model/glTF-Sample-Models/2.0/OrientationTest/glTF-Binary/OrientationTest.glb",
+            "position": [
+                -17.950000762939453,
+                -5.039999961853027,
+                12.739999771118164
+            ],
+            "rotation": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                0.09379716962575912,
+                0.09379716962575912,
+                0.09379716962575912
+            ]
+        },
+        {
+            "animated": false,
+            "name": "NormalTangentTest_dyn_10",
+            "path": "dependences/model/glTF-Sample-Models/2.0/NormalTangentTest/glTF-Binary/NormalTangentTest.glb",
+            "position": [
+                -10.449999809265137,
+                -13.65999984741211,
+                12.359999656677246
+            ],
+            "rotation": [
+                -0.003921431489288807,
+                -0.0005042646080255508,
+                0.7075392007827759,
+                0.706591010093689
+            ],
+            "scale": [
+                1.7000000476837158,
+                1.7000000476837158,
+                1.7000000476837158
+            ]
+        },
+        {
+            "animated": false,
+            "name": "NormalTangentMirrorTest_dyn_11",
+            "path": "dependences/model/glTF-Sample-Models/2.0/NormalTangentMirrorTest/glTF-Binary/NormalTangentMirrorTest.glb",
+            "position": [
+                -10.479999542236328,
+                -13.670000076293945,
+                15.739999771118164
+            ],
+            "rotation": [
+                0.005801370367407799,
+                0.002805463969707489,
+                0.7082198858261108,
+                0.7059437036514282
+            ],
+            "scale": [
+                1.2999999523162842,
+                1.2999999523162842,
+                1.2999999523162842
+            ]
+        },
+        {
+            "animated": false,
+            "name": "NegativeScaleTest_dyn_12",
+            "path": "dependences/model/glTF-Sample-Models/2.0/NegativeScaleTest/glTF-Binary/NegativeScaleTest.glb",
+            "position": [
+                -10.430000305175781,
+                -13.670000076293945,
+                18.739999771118164
+            ],
+            "rotation": [
+                -0.007747534662485123,
+                -0.0057176873087882996,
+                0.7030436396598816,
+                0.7109511494636536
+            ],
+            "scale": [
+                0.30000001192092896,
+                0.30000001192092896,
+                0.30000001192092896
+            ]
+        },
+        {
+            "animated": false,
+            "name": "MultiUVTest_dyn_13",
+            "path": "dependences/model/glTF-Sample-Models/2.0/MultiUVTest/glTF-Binary/MultiUVTest.glb",
+            "position": [
+                -3.430000066757202,
+                -5.0,
+                12.8100004196167
+            ],
+            "rotation": [
+                0.6974281072616577,
+                0.7159574031829834,
+                0.019488560035824776,
+                0.024759717285633087
+            ],
+            "scale": [
+                0.4999997615814209,
+                0.4999997615814209,
+                0.4999997615814209
+            ]
+        },
+        {
+            "animated": true,
+            "name": "RecursiveSkeletons_dyn_14",
+            "path": "dependences/model/glTF-Sample-Models/2.0/RecursiveSkeletons/glTF-Binary/RecursiveSkeletons.glb",
+            "playAnimation": 0,
+            "position": [
+                -21.100000381469727,
+                -4.900000095367432,
+                12.15999984741211
+            ],
+            "rotation": [
+                0.7285525798797607,
+                0.6850403547286987,
+                -0.0032577584497630596,
+                -0.00821044109761715
+            ],
+            "scale": [
+                0.011111111380159855,
+                0.011111111380159855,
+                0.011111111380159855
+            ]
+        },
+        {
+            "animated": false,
+            "name": "MorphPrimitivesTest_dyn_16",
+            "path": "dependences/model/glTF-Sample-Models/2.0/MorphPrimitivesTest/glTF-Binary/MorphPrimitivesTest.glb",
+            "position": [
+                -21.489999771118164,
+                6.730000019073486,
+                12.210000038146973
+            ],
+            "rotation": [
+                0.6838396787643433,
+                0.678589940071106,
+                -0.19017571210861206,
+                -0.1888819932937622
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "animated": false,
+            "name": "TextureCoordinateTest_dyn_17",
+            "path": "dependences/model/glTF-Sample-Models/2.0/TextureCoordinateTest/glTF-Binary/TextureCoordinateTest.glb",
+            "position": [
+                0.22046613693237305,
+                -13.6899995803833,
+                17.040000915527344
+            ],
+            "rotation": [
+                -0.0029143705032765865,
+                0.0005262843333184719,
+                0.7062433958053589,
+                0.7078391313552856
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "animated": false,
+            "name": "TextureSettingsTest_dyn_19",
+            "path": "dependences/model/glTF-Sample-Models/2.0/TextureSettingsTest/glTF-Binary/TextureSettingsTest.glb",
+            "position": [
+                -3.0,
+                -13.6899995803833,
+                17.1200008392334
+            ],
+            "rotation": [
+                -0.0019065439701080322,
+                0.0038917064666748047,
+                0.7130945324897766,
+                0.7010699510574341
+            ],
+            "scale": [
+                0.20000000298023224,
+                0.20000000298023224,
+                0.20000000298023224
+            ]
+        }
+    ],
+    "skybox": {
+        "name": "stars",
+        "scale": 200.0,
+        "textures": [
+            "dependences/texture/skybox1/left.png",
+            "dependences/texture/skybox1/right.png",
+            "dependences/texture/skybox1/front.png",
+            "dependences/texture/skybox1/back.png",
+            "dependences/texture/skybox1/top.png",
+            "dependences/texture/skybox1/bottom.png"
+        ]
+    }
+}

@@ -1,6 +1,10 @@
 #include "vkdefault.h"
 #include "operations.h"
 
+#ifdef MOON_SHADER_EMBED
+#include <shaders_embedded.h>
+#endif
+
 namespace moon::utils {
 
 VkSamplerCreateInfo vkDefault::sampler(){
@@ -352,8 +356,21 @@ void vkDefault::DescriptorSetLayout::swap(DescriptorSetLayout& other) noexcept {
 VKDEFAULT_MAKE_DESCRIPTOR(DescriptorSetLayout, VkDescriptorSetLayout)
 
 vkDefault::ShaderModule::ShaderModule(VkDevice device, const std::filesystem::path& shaderPath) :
-    shaderModule(moon::utils::shaderModule::create(device, moon::utils::shaderModule::readFile(shaderPath))), device(device)
-{}
+    device(device)
+{
+#ifdef MOON_SHADER_EMBED
+    const auto key = (shaderPath.parent_path().filename() / shaderPath.filename()).generic_string();
+    const auto spirv = moon::shaders::embedded::lookup(key);
+    CHECK_M(!spirv.empty(), "[ ShaderModule ] shader not found in embedded table: " + key);
+    VkShaderModuleCreateInfo createInfo{};
+    createInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    createInfo.codeSize = spirv.size_bytes();
+    createInfo.pCode    = spirv.data();
+    CHECK(vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule));
+#else
+    shaderModule = moon::utils::shaderModule::create(device, moon::utils::shaderModule::readFile(shaderPath));
+#endif
+}
 
 vkDefault::ShaderModule::~ShaderModule() {
     if (shaderModule) {

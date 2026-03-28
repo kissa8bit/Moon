@@ -44,3 +44,8 @@ add_library(utils STATIC ${SOURCES} ${HEADERS})
 target_include_directories(utils PUBLIC ${INCLUDE_DIRS} ${ROOT_DIR})
 target_link_libraries(utils PUBLIC ${LINK_LIBS})
 target_compile_definitions(utils PUBLIC USE_STB_IMAGE)
+
+if(MOON_SHADER_EMBED)
+    # The generated shaders_embedded.h lives in the build tree
+    target_include_directories(utils PUBLIC "${CMAKE_BINARY_DIR}/generated")
+endif()
