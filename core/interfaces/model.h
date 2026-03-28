@@ -31,6 +31,7 @@ struct Material {
         float       roughnessFactor{ 0.0f };
         float       alphaMask{ 0.0f };
         float       alphaMaskCutoff{ 0.0f };
+        float       doubleSided{ 0.0f };
 		uint32_t    primitive{ std::numeric_limits<uint32_t>::max() };
 
         Buffer(const Material& material, uint32_t primitive = std::numeric_limits<uint32_t>::max());
@@ -65,6 +66,7 @@ struct Material {
     } extensions;
 
     float alphaCutoff{1.0f};
+    bool doubleSided{false};
 
     VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
 
@@ -170,7 +172,7 @@ struct PBRVertex {
     alignas(16) math::vec3 normal{ 0.0f };
     alignas(8)  math::vec2 uv0{ 0.0f };
     alignas(8)  math::vec2 uv1{ 0.0f };
-    alignas(16) math::vec3 tangent{ 0.0f };
+    alignas(16) math::vec4 tangent{ 0.0f, 0.0f, 0.0f, 1.0f };
 
     static VkVertexInputBindingDescription getBindingDescription();
     static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
@@ -185,7 +187,7 @@ struct Vertex {
     alignas(8)  math::vec2 uv1{ 0.0f };
     alignas(16) math::vec4 joint{ -1.0f };
     alignas(16) math::vec4 weight{ 1.0f, 0.0f, 0.0f, 0.0f };
-    alignas(16) math::vec3 tangent{ 0.0f };
+    alignas(16) math::vec4 tangent{ 0.0f, 0.0f, 0.0f, 1.0f };
 
     static VkVertexInputBindingDescription getBindingDescription();
     static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();

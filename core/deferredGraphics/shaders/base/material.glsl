@@ -16,6 +16,7 @@ struct Material{
     float roughnessFactor;
     float alphaMask;
     float alphaMaskCutoff;
+    float doubleSided;
     int number;
 };
 

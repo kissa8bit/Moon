@@ -142,6 +142,7 @@ struct Parameters {
     utils::Cursor*              cursor{ nullptr };
     interfaces::Camera*         cameraObject{ nullptr };
     uint32_t                    layersCount{ 1 };
+    bool                        disableFaceCulling{ false };
     workflows::WorkflowNames    workflowsToAllocate;
 
     struct {
@@ -202,6 +203,8 @@ public:
     DeferredGraphics(const Parameters& parameters);
 
     void reset() override;
+
+    void setPositionInWindow(const graphicsManager::PositionInWindow& pos) override;
 
     bool getEnable(const workflows::ParameterName& name);
     DeferredGraphics& setEnable(const workflows::ParameterName& name, bool enable);

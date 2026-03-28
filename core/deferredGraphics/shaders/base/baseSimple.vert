@@ -33,8 +33,8 @@ layout(location = 0)	out vec4 outPosition;
 layout(location = 1)	out vec3 outNormal;
 layout(location = 2)	out vec2 outUV0;
 layout(location = 3)	out vec2 outUV1;
-layout(location = 4)	out vec3 outTangent;
-layout(location = 5)	out vec3 outBitangent;
+layout(location = 4)	out vec4 outTangent;
+layout(location = 5)	flat out vec3 outEyePos;
 
 void main()
 {
@@ -44,9 +44,13 @@ void main()
     mat4x4 model = object.matrix * node.matrix;
 
     outPosition     = model * vec4(inPosition,	1.0);
-    outNormal	    = normalize(vec3(model * vec4(inNormal, 0.0)));
-    outTangent	    = vec3(0.0);
-    outBitangent    = vec3(0.0);
+
+    mat3 normalMatrix = mat3(model);
+    outNormal	    = normalize(normalMatrix * inNormal);
+    outTangent	    = vec4(0.0, 0.0, 0.0, 1.0);
+
+    mat3 viewRot = transpose(mat3(global.view));
+    outEyePos    = -viewRot * global.view[3].xyz;
 
     gl_Position = global.proj * global.view * outPosition;
 }

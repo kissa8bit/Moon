@@ -32,6 +32,7 @@ void Graphics::OutliningExtension::create(interfaces::ObjectType type, const wor
     VkPipelineViewportStateCreateInfo viewportState = utils::vkDefault::viewportState(&viewport, &scissor);
     VkPipelineInputAssemblyStateCreateInfo inputAssembly = utils::vkDefault::inputAssembly();
     VkPipelineRasterizationStateCreateInfo rasterizer = utils::vkDefault::rasterizationState(VK_FRONT_FACE_COUNTER_CLOCKWISE);
+    if (parent.parameters.disableFaceCulling) rasterizer.cullMode = VK_CULL_MODE_NONE;
     VkPipelineMultisampleStateCreateInfo multisampling = utils::vkDefault::multisampleState();
     VkPipelineDepthStencilStateCreateInfo depthStencil = utils::vkDefault::depthStencilDisable();
 

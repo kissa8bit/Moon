@@ -46,14 +46,14 @@ layout(location = 2)	in  vec2 inUV0;
 layout(location = 3)	in  vec2 inUV1;
 layout(location = 4)	in  vec4 inJoint;
 layout(location = 5)	in  vec4 inWeight;
-layout(location = 6)	in  vec3 inTangent;
+layout(location = 6)	in  vec4 inTangent;
 
 layout(location = 0)	out vec4 outPosition;
 layout(location = 1)	out vec3 outNormal;
 layout(location = 2)	out vec2 outUV0;
 layout(location = 3)	out vec2 outUV1;
-layout(location = 4)	out vec3 outTangent;
-layout(location = 5)	out vec3 outBitangent;
+layout(location = 4)	out vec4 outTangent;
+layout(location = 5)	flat out vec3 outEyePos;
 
 void main()
 {
@@ -89,9 +89,13 @@ void main()
     }
 
     outPosition  = model * vec4(morphedPosition, 1.0);
-    outNormal	 = normalize(vec3(model * vec4(morphedNormal, 0.0)));
-    outTangent	 = normalize(vec3(model * vec4(inTangent, 0.0)));
-    outBitangent = normalize(vec3(model * vec4(normalize(cross(morphedNormal, inTangent)), 0.0)));
+
+    mat3 normalMatrix = mat3(model);
+    outNormal	 = normalize(normalMatrix * morphedNormal);
+    outTangent	 = vec4(normalize(normalMatrix * inTangent.xyz), inTangent.w);
+
+    mat3 viewRot = transpose(mat3(global.view));
+    outEyePos    = -viewRot * global.view[3].xyz;
 
     gl_Position = global.proj * global.view * outPosition;
 }

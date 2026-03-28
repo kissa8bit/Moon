@@ -42,7 +42,7 @@ layout(location = 2)	in  vec2 inUV0;
 layout(location = 3)	in  vec2 inUV1;
 layout(location = 4)	in  vec4 inJoint0;
 layout(location = 5)	in  vec4 inWeight0;
-layout(location = 6)	in  vec3 inTangent;
+layout(location = 6)	in  vec4 inTangent;
 
 void main()
 {

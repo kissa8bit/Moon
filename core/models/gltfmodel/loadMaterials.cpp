@@ -145,6 +145,7 @@ void GltfModel::loadMaterials(const tinygltf::Model& gltfModel, const utils::Phy
         material.occlusion = extractor(mat.occlusionTexture, VK_FORMAT_R8G8B8A8_UNORM);
         material.alphaMode = alphaModeMap.at(mat.alphaMode);
         material.alphaCutoff = static_cast<float>(mat.alphaCutoff);
+        material.doubleSided = mat.doubleSided;
 
         if (auto extIt = mat.extensions.find("KHR_materials_pbrSpecularGlossiness"); extIt != mat.extensions.end()) {
             const auto& extensions = extIt->second;

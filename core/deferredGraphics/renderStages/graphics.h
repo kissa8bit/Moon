@@ -33,6 +33,7 @@ struct GraphicsParameters : workflows::Parameters {
     }out;
 
     float minAmbientFactor{ 0.1f };
+    bool disableFaceCulling{ false };
 };
 
 class Graphics : public workflows::Workflow

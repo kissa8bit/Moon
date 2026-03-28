@@ -32,6 +32,7 @@ public:
     DeferredLink() = default;
     DeferredLink(VkDevice device, const std::filesystem::path& shadersPath, const utils::vkDefault::ImageInfo& info, VkRenderPass renderPass, const graphicsManager::PositionInWindow& position, const utils::Attachments* attachment);
     void draw(VkCommandBuffer commandBuffer, utils::ResourceIndex resourceIndex) const;
+    void setPosition(const graphicsManager::PositionInWindow& pos) { position = pos; }
 };
 
 } // moon::deferredGraphics

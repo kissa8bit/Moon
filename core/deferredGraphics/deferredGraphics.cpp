@@ -33,6 +33,11 @@ DeferredGraphics::DeferredGraphics(const Parameters& parameters)
     params.workflowsToAllocate.insert(Names::PostProcessing::name);
 }
 
+void DeferredGraphics::setPositionInWindow(const graphicsManager::PositionInWindow& pos) {
+    GraphicsInterface::setPositionInWindow(pos);
+    linkMember.setPosition(pos);
+}
+
 void DeferredGraphics::reset()
 {
     if(!CHECK_M(device, std::string("[ DeferredGraphics ] device is nullptr")))
@@ -87,6 +92,7 @@ void DeferredGraphics::createGraphicsPasses()
     graphicsParams.out.depth = Names::MainGraphics::GBuffer::depth;
     graphicsParams.shadersPath = params.shadersPath;
     graphicsParams.imageInfo = imageInfo;
+    graphicsParams.disableFaceCulling = params.disableFaceCulling;
 
 	const auto l0 = layerPrefix(LayerIndex(0));
 
@@ -316,14 +322,17 @@ void DeferredGraphics::update(utils::ResourceIndex resourceIndex) {
         params.cameraObject->update(resourceIndex, copyCommandBuffers[index]);
     }
     for (auto& object : objects) {
+        if (!object) continue;
         object->update(resourceIndex, copyCommandBuffers[index]);
     }
     for (auto& light : lights) {
+        if (!light) continue;
         light->update(resourceIndex, copyCommandBuffers[index]);
     }
     CHECK(copyCommandBuffers[index].end());
 
     for (auto& [name, workflow] : workflows) {
+        if (!workflow) continue;
         workflow->update(resourceIndex);
     }
 }

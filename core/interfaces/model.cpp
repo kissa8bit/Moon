@@ -99,7 +99,7 @@ std::vector<VkVertexInputAttributeDescription> PBRVertex::getAttributeDescriptio
     attributeDescriptions.push_back(VkVertexInputAttributeDescription{ static_cast<uint32_t>(attributeDescriptions.size()),0,VK_FORMAT_R32G32B32_SFLOAT,offsetof(PBRVertex, normal) });
     attributeDescriptions.push_back(VkVertexInputAttributeDescription{ static_cast<uint32_t>(attributeDescriptions.size()),0,VK_FORMAT_R32G32_SFLOAT,offsetof(PBRVertex, uv0) });
     attributeDescriptions.push_back(VkVertexInputAttributeDescription{ static_cast<uint32_t>(attributeDescriptions.size()),0,VK_FORMAT_R32G32_SFLOAT,offsetof(PBRVertex, uv1) });
-    attributeDescriptions.push_back(VkVertexInputAttributeDescription{ static_cast<uint32_t>(attributeDescriptions.size()),0,VK_FORMAT_R32G32B32_SFLOAT,offsetof(PBRVertex, tangent) });
+    attributeDescriptions.push_back(VkVertexInputAttributeDescription{ static_cast<uint32_t>(attributeDescriptions.size()),0,VK_FORMAT_R32G32B32A32_SFLOAT,offsetof(PBRVertex, tangent) });
 
     return attributeDescriptions;
 }
@@ -116,7 +116,7 @@ std::vector<VkVertexInputAttributeDescription> Vertex::getAttributeDescriptions(
     attributeDescriptions.push_back(VkVertexInputAttributeDescription{static_cast<uint32_t>(attributeDescriptions.size()),0,VK_FORMAT_R32G32_SFLOAT,offsetof(Vertex, uv1)});
     attributeDescriptions.push_back(VkVertexInputAttributeDescription{static_cast<uint32_t>(attributeDescriptions.size()),0,VK_FORMAT_R32G32B32A32_SFLOAT,offsetof(Vertex, joint)});
     attributeDescriptions.push_back(VkVertexInputAttributeDescription{static_cast<uint32_t>(attributeDescriptions.size()),0,VK_FORMAT_R32G32B32A32_SFLOAT,offsetof(Vertex, weight)});
-    attributeDescriptions.push_back(VkVertexInputAttributeDescription{static_cast<uint32_t>(attributeDescriptions.size()),0,VK_FORMAT_R32G32B32_SFLOAT,offsetof(Vertex, tangent)});
+    attributeDescriptions.push_back(VkVertexInputAttributeDescription{static_cast<uint32_t>(attributeDescriptions.size()),0,VK_FORMAT_R32G32B32A32_SFLOAT,offsetof(Vertex, tangent)});
 
     return attributeDescriptions;
 }
@@ -194,6 +194,7 @@ Material::Buffer::Buffer(const Material& material, uint32_t primitive)
     emissiveTextureSet = material.emissive.coordSet;
     alphaMask = static_cast<float>(material.alphaMode);
     alphaMaskCutoff = material.alphaCutoff;
+    doubleSided = material.doubleSided ? 1.0f : 0.0f;
     workflow = static_cast<float>(material.pbrWorkflows);
 
     switch (material.pbrWorkflows)

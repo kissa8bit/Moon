@@ -50,7 +50,8 @@ void Graphics::Base::create(interfaces::ObjectType type, const workflows::Shader
     const VkRect2D scissor = utils::vkDefault::scissor({0,0}, parameters.imageInfo.Extent);
     const VkPipelineViewportStateCreateInfo viewportState = utils::vkDefault::viewportState(&viewport, &scissor);
     const VkPipelineInputAssemblyStateCreateInfo inputAssembly = utils::vkDefault::inputAssembly();
-    const VkPipelineRasterizationStateCreateInfo rasterizer = utils::vkDefault::rasterizationState(VK_FRONT_FACE_COUNTER_CLOCKWISE);
+    VkPipelineRasterizationStateCreateInfo rasterizer = utils::vkDefault::rasterizationState(VK_FRONT_FACE_COUNTER_CLOCKWISE);
+    if (parameters.disableFaceCulling) rasterizer.cullMode = VK_CULL_MODE_NONE;
     const VkPipelineMultisampleStateCreateInfo multisampling = utils::vkDefault::multisampleState();
     const VkPipelineDepthStencilStateCreateInfo depthStencil = utils::vkDefault::depthStencilEnable();
 

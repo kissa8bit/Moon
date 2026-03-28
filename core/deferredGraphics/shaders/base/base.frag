@@ -26,8 +26,8 @@ layout(location = 0)	in vec4 position;
 layout(location = 1)	in vec3 normal;
 layout(location = 2)	in vec2 UV0;
 layout(location = 3)	in vec2 UV1;
-layout(location = 4)	in vec3 tangent;
-layout(location = 5)	in vec3 bitangent;
+layout(location = 4)	in vec4 tangent;
+layout(location = 5)	flat in vec3 eyePos;
 
 layout (set = 2, binding = 0) uniform LocalUniformBuffer
 {
@@ -42,9 +42,31 @@ layout(location = 0) out vec4 outNormal;
 layout(location = 1) out vec4 outBaseColor;
 layout(location = 2) out vec4 outEmissiveColor;
 
+vec3 faceNormal() {
+    vec3 n = normalize(normal);
+    vec3 V = normalize(eyePos - position.xyz);
+    if (dot(n, V) < 0.0) n = -n;
+    return n;
+}
+
 vec3 getNormal() {
-    vec3 tangentNormal = normalize(texture(normalTexture, pc.material.normalTextureSet == 0 ? UV0 : UV1).xyz * 2.0 - 1.0);
-    mat3 TBN = mat3(tangent, bitangent, normal);
+    vec2 normalUV = pc.material.normalTextureSet == 0 ? UV0 : UV1;
+    vec3 tangentNormal = normalize(texture(normalTexture, normalUV).xyz * 2.0 - 1.0);
+
+    vec3 n = normalize(normal);
+    vec3 t = normalize(tangent.xyz);
+
+    // Double-sided: flip N and T for back faces (B stays the same via cross product)
+    vec3 V = normalize(eyePos - position.xyz);
+    if (dot(n, V) < 0.0) {
+        n = -n;
+        t = -t;
+    }
+
+    t = normalize(t - n * dot(n, t));
+    vec3 b = cross(n, t) * tangent.w;
+
+    mat3 TBN = mat3(t, b, n);
     return normalize(TBN * tangentNormal);
 }
 
@@ -108,7 +130,12 @@ void main()
     if(layerIndex > 0 && (prevColor.a >= 0.999f || depth <= prevDepth + 1e-6)){
         discard;
     }
-     
+
+    if(pc.material.doubleSided == 0.0){
+        vec3 V = normalize(eyePos - position.xyz);
+        if(dot(normalize(normal), V) < 0.0) discard;
+    }
+
     if(pc.material.alphaMask == 0.0f){
         baseColor.a = 1.0f;
     }
@@ -152,7 +179,7 @@ void main()
     float params = uintBitsToFloat((perceptualRoughness_u8 << 0) | (metallic_u8 << 8) | (ao_u8 << 16) | (outlining << 24));
     float number = uintBitsToFloat(pc.material.number);
 
-    vec3 n = pc.material.normalTextureSet > -1 ? getNormal() : normal;
+    vec3 n = pc.material.normalTextureSet > -1 ? getNormal() : faceNormal();
     vec2 spherical = encodeSphericalNormal(n);
 
     outNormal = vec4(spherical, params, number);
