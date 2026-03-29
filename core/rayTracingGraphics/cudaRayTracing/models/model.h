@@ -9,7 +9,8 @@ namespace cuda::rayTracing {
 
 class Model {
 public:
-    Buffer<Vertex> vertexBuffer;
+    Buffer<Vertex>   vertexBuffer;
+    Buffer<MeshData> meshData;       // one entry per model, shared by all triangles
     std::vector<Primitive> primitives;
     std::vector<cudaTextureObject_t> textures;
 

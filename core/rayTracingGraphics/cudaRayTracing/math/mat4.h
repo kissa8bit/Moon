@@ -131,6 +131,36 @@ __host__ __device__ mat4<T> scale(vec4<T> s){
     return m;
 }
 
+template<typename T>
+__host__ mat4<T> inverse(const mat4<T>& m){
+    T a[4][8];
+    for(int i = 0; i < 4; i++){
+        for(int j = 0; j < 4; j++) a[i][j] = m[i][j];
+        for(int j = 0; j < 4; j++) a[i][j+4] = T(i == j);
+    }
+    for(int col = 0; col < 4; col++){
+        int pivot = col;
+        for(int row = col+1; row < 4; row++){
+            T absRow = a[row][col] < T(0) ? -a[row][col] : a[row][col];
+            T absPivot = a[pivot][col] < T(0) ? -a[pivot][col] : a[pivot][col];
+            if(absRow > absPivot) pivot = row;
+        }
+        for(int k = 0; k < 8; k++){ T tmp = a[col][k]; a[col][k] = a[pivot][k]; a[pivot][k] = tmp; }
+        T s = T(1) / a[col][col];
+        for(int k = 0; k < 8; k++) a[col][k] *= s;
+        for(int row = 0; row < 4; row++){
+            if(row == col) continue;
+            T f = a[row][col];
+            for(int k = 0; k < 8; k++) a[row][k] -= f * a[col][k];
+        }
+    }
+    mat4<T> result;
+    for(int i = 0; i < 4; i++)
+        for(int j = 0; j < 4; j++)
+            result[i][j] = a[i][j+4];
+    return result;
+}
+
 using mat4f = mat4<float>;
 }
 #endif // MAT4_H

@@ -20,11 +20,9 @@ set(OBJ_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dependences/libs/tinyobj)
 set(IMGUI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dependences/libs/imgui)
 set(IMGUIZMO_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dependences/libs/imGuIZMO.quat)
 
+add_compile_definitions(MOON_BUILD_PATH="${CMAKE_BINARY_DIR}")
 if(MOON_SHADER_EMBED)
     add_compile_definitions(MOON_SHADER_EMBED)
-else()
-    # Expose build dir so runtime code can locate the generated SPV files
-    add_compile_definitions(MOON_BUILD_PATH="${CMAKE_BINARY_DIR}")
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
@@ -53,21 +51,27 @@ add_subdirectory(core/entities)
 add_subdirectory(core/math)
 add_subdirectory(tests/sceneEditor)
 
+option(CUDA_RAY_TRACING "Compile cudaRayTracing and cudaTest" OFF)
+if(CUDA_RAY_TRACING)
+    add_subdirectory(core/rayTracingGraphics/cudaRayTracing)
+    add_subdirectory(core/rayTracingGraphics)
+    add_subdirectory(tests/testCuda)
+endif()
+
 # Generate the combined shaders_embedded.h from all accumulated SPV files.
-# Must come after all add_subdirectory calls that invoke moon_compile_shaders.
+# Must come after ALL add_subdirectory calls that invoke moon_compile_shaders.
 moon_generate_embed_header()
 if(MOON_SHADER_EMBED)
     add_dependencies(utils moon_shaders_embedded)
 endif()
 
 # Convenience target: cmake --build . --target compile_shaders
-add_custom_target(compile_shaders
-    DEPENDS deferredGraphics_compile_shaders workflows_compile_shaders
-)
-
-option(CUDA_RAY_TRACING "Compile cudaRayTracing and cudaTest" OFF)
 if(CUDA_RAY_TRACING)
-    add_subdirectory(core/rayTracingGraphics/cudaRayTracing)
-    add_subdirectory(core/rayTracingGraphics)
-    add_subdirectory(tests/testCuda)
+    add_custom_target(compile_shaders
+        DEPENDS deferredGraphics_compile_shaders workflows_compile_shaders rayTracingGraphics_compile_shaders
+    )
+else()
+    add_custom_target(compile_shaders
+        DEPENDS deferredGraphics_compile_shaders workflows_compile_shaders
+    )
 endif()

@@ -5,12 +5,12 @@
 
 namespace cuda::rayTracing {
 
-__global__ void addKernel(HitableContainer* container, const Hitable* const* object, size_t size) {
-    container->add(object, size);
+__global__ void addKernel(HitableContainer* container, const Triangle* objects, size_t size) {
+    container->add(objects, size);
 }
 
-void HitableContainer::add(HitableContainer* dpointer, const std::vector<const Hitable*>& objects) {
-    Buffer<const Hitable*> devBuffer(objects.size(), objects.data());
+void HitableContainer::add(HitableContainer* dpointer, const std::vector<Triangle>& objects) {
+    Buffer<Triangle> devBuffer(objects.size(), objects.data());
     addKernel<<<1,1>>>(dpointer, devBuffer.get(), devBuffer.getSize());
     checkCudaErrors(cudaGetLastError());
     checkCudaErrors(cudaDeviceSynchronize());

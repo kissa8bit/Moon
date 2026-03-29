@@ -54,18 +54,33 @@ struct KDNode{
         {
             sortByBox(begin, end, bbox);
 
+            std::vector<box> prefixBox(size), suffixBox(size);
+            {
+                box b;
+                for (size_t i = 0; i < size; i++) {
+                    const box ib = (*(begin + i))->getBox();
+                    b.min = min(b.min, ib.min);
+                    b.max = max(b.max, ib.max);
+                    prefixBox[i] = b;
+                }
+            }
+            {
+                box b;
+                for (size_t i = size; i-- > 0;) {
+                    const box ib = (*(begin + i))->getBox();
+                    b.min = min(b.min, ib.min);
+                    b.max = max(b.max, ib.max);
+                    suffixBox[i] = b;
+                }
+            }
+
             float bestSAH = std::numeric_limits<float>::max();
-            size_t bestSize = 0, itSize = 0;
-            for(auto curr = begin; curr != end; curr++){
-                size_t leftN = ++itSize;
-                size_t rightN = size - itSize;
-
-                float leftS = calcBox(begin, curr + 1).surfaceArea();
-                float rightS = calcBox(curr + 1, end).surfaceArea();
-
-                if(float SAH = leftN * leftS + rightN * rightS; SAH < bestSAH){
+            size_t bestSize = 0;
+            for (size_t i = 0; i < size - 1; i++) {
+                float SAH = (i + 1) * prefixBox[i].surfaceArea() + (size - i - 1) * suffixBox[i + 1].surfaceArea();
+                if (SAH < bestSAH) {
                     bestSAH = SAH;
-                    bestSize = itSize;
+                    bestSize = i + 1;
                 }
             }
 
@@ -89,7 +104,7 @@ struct KDNode{
 
         for(auto curr = selected.top(); selected.pop(); curr = selected.top()){
             for(iterator it = curr->begin; it != curr->end(); it++){
-                if ((*it)->hit(r, coord)) coord.obj = *it;
+                if ((*it).hit(r, coord)) coord.obj = &(*it);
             }
         }
 
@@ -190,15 +205,23 @@ public:
         this->root = root;
     }
 
+    // Nulls out the root pointer and returns it, so the caller can cudaFree
+    // the cudaMalloc-allocated node buffer without going through ~KDNode().
+    __device__ KDNodeType* releaseRoot() {
+        KDNodeType* r = root;
+        root = nullptr;
+        return r;
+    }
+
     __host__ __device__ bool hit(const ray& r, HitCoords& coord) const override{
         return root->hit(r, coord);
     }
 
-    __host__ __device__ void add(const Hitable*const* objects, size_t size = 1) override{
+    __host__ __device__ void add(const Triangle* objects, size_t size = 1) override{
         storage->add(objects, size);
     }
 
-    __host__ __device__ const Hitable*& operator[](uint32_t i) const override{
+    __host__ __device__ const Triangle& operator[](uint32_t i) const override{
         return (*storage)[i];
     }
 

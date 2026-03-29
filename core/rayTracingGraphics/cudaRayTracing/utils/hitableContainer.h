@@ -4,6 +4,7 @@
 #include <vector>
 
 #include <cudaRayTracing/hitable/hitable.h>
+#include <cudaRayTracing/hitable/triangle.h>
 
 namespace cuda::rayTracing {
 
@@ -23,8 +24,7 @@ public:
         __host__ __device__ BaseIterator() {};
         __host__ __device__ BaseIterator(type* ptr) : ptr(ptr) {}
 
-        __host__ __device__ const Hitable*& operator*() const { return (*ptr)(); }
-        __host__ __device__ const Hitable** operator->() { return ptr(); }
+        __host__ __device__ Triangle& operator*() const { return (*ptr)(); }
         __host__ __device__ BaseIterator& operator++() { ptr = ptr->get_next(); return *this; }
         __host__ __device__ BaseIterator operator++(int) { BaseIterator tmp = *this; ++(*this); return tmp; }
         __host__ __device__ friend bool operator== (const BaseIterator& a, const BaseIterator& b) { return a.ptr == b.ptr; };
@@ -38,13 +38,13 @@ public:
     __host__ __device__ virtual ~HitableContainer(){}
     __host__ __device__ virtual bool hit(const ray& r, HitCoords& coord) const = 0;
 
-    __host__ __device__ virtual void add(const Hitable*const* objects, size_t size = 1) = 0;
+    __host__ __device__ virtual void add(const Triangle* objects, size_t size = 1) = 0;
 
-    __host__ __device__ virtual const Hitable*& operator[](uint32_t i) const = 0;
+    __host__ __device__ virtual const Triangle& operator[](uint32_t i) const = 0;
     __host__ __device__ virtual size_t size() const { return container_size; }
 
     static void destroy(HitableContainer* dpointer);
-    static void add(HitableContainer* dpointer, const std::vector<const Hitable*>& objects);
+    static void add(HitableContainer* dpointer, const std::vector<Triangle>& objects);
 };
 
 }

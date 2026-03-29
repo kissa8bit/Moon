@@ -11,12 +11,13 @@ void sortByBox(std::vector<const Primitive*>::iterator begin, std::vector<const 
     });
 }
 
-std::vector<const Hitable*> extractHitables(const std::vector<const Primitive*>& storage){
-    std::vector<const Hitable*> hitables;
+std::vector<Triangle> extractTriangles(const std::vector<const Primitive*>& storage){
+    std::vector<Triangle> shapes;
+    shapes.reserve(storage.size());
     for(const auto& primitive : storage){
-        hitables.push_back(primitive->hit);
+        shapes.push_back(primitive->shape);
     }
-    return hitables;
+    return shapes;
 }
 
 }

@@ -14,9 +14,9 @@ namespace moon::rayTracingGraphics {
 
 struct RayTracingLinkParameters{
     struct{
-        std::string color;
-        std::string bloom;
-        std::string boundingBox;
+        utils::AttachmentName color;
+        utils::AttachmentName bloom;
+        utils::AttachmentName boundingBox;
     }in;
     struct{}out;
     std::filesystem::path shadersPath;

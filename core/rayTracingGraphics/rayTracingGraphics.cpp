@@ -64,23 +64,27 @@ void RayTracingGraphics::reset()
 {
     aDatabase.destroy();
     commandPool = utils::vkDefault::CommandPool(device->device());
+    signalSemaphores.resize(resourceCount);
+    for (auto& sem : signalSemaphores) {
+        sem = utils::vkDefault::Semaphore(device->device());
+    }
 
     emptyTexture = utils::Texture::createEmpty(*device, commandPool);
-    aDatabase.addEmptyTexture("black", &emptyTexture);
+    aDatabase.addEmptyTexture(utils::ImageName("black"), &emptyTexture);
 
     moon::utils::vkDefault::ImageInfo imageInfo{ resourceCount, swapChainKHR->info().Format, extent, VK_SAMPLE_COUNT_1_BIT };
 
     color = ImageResource("color", *device, imageInfo);
-    aDatabase.addAttachmentData(color.id, true, &color.device);
+    aDatabase.addAttachmentData(utils::AttachmentName(color.id), &color.device);
 
     bloom = ImageResource("bloom", *device, imageInfo);
-    aDatabase.addAttachmentData(bloom.id, true, &bloom.device);
+    aDatabase.addAttachmentData(utils::AttachmentName(bloom.id), &bloom.device);
 
-    bloomParams.in.bloom = bloom.id;
-    bloomParams.out.bloom = "finalBloom";
+    bloomParams.in.bloom = utils::AttachmentName(bloom.id);
+    bloomParams.out.bloom = utils::AttachmentName("finalBloom");
     bloomParams.enable = bloomEnable;
-    bloomParams.blitAttachmentsCount = 8;
-    bloomParams.inputImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    bloomParams.attachmentsCount = 8;
+    bloomParams.inputImageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     bloomParams.imageInfo = imageInfo;
     bloomParams.shadersPath = workflowsShadersPath;
 
@@ -92,12 +96,12 @@ void RayTracingGraphics::reset()
     moon::utils::vkDefault::ImageInfo bbInfo{ resourceCount, swapChainKHR->info().Format, extent, VK_SAMPLE_COUNT_1_BIT};
     std::string bbId = "bb";
     bbGraphics.create(*device, device->device(), bbInfo, shadersPath);
-    aDatabase.addAttachmentData(bbId, bbGraphics.getEnable(), &bbGraphics.getAttachments());
+    aDatabase.addAttachmentData(utils::AttachmentName(bbId), &bbGraphics.getAttachments());
 
     RayTracingLinkParameters linkParams;
-    linkParams.in.color = color.id;
+    linkParams.in.color = utils::AttachmentName(color.id);
     linkParams.in.bloom = bloomParams.out.bloom;
-    linkParams.in.boundingBox = bbId;
+    linkParams.in.boundingBox = utils::AttachmentName(bbId);
     linkParams.shadersPath = shadersPath;
     linkParams.imageInfo = utils::vkDefault::ImageInfo{ resourceCount, swapChainKHR->info().Format, swapChainKHR->info().Extent, VK_SAMPLE_COUNT_1_BIT };
 
@@ -125,14 +129,22 @@ utils::vkDefault::VkSemaphores RayTracingGraphics::submit(utils::ResourceIndex r
     const utils::vkDefault::CommandBuffers& bloomCommandBuffers = *bloomGraph;
     commandBuffers.push_back(bloomCommandBuffers[resourceIndex.get()]);
 
+    std::vector<VkPipelineStageFlags> waitStages(externalSemaphore.size(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    const VkSemaphore signalSem = signalSemaphores.at(resourceIndex.get());
+
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.waitSemaphoreCount = static_cast<uint32_t>(externalSemaphore.size());
+    submitInfo.pWaitSemaphores = externalSemaphore.empty() ? nullptr : externalSemaphore.data();
+    submitInfo.pWaitDstStageMask = externalSemaphore.empty() ? nullptr : waitStages.data();
     submitInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
     submitInfo.pCommandBuffers = commandBuffers.data();
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = &signalSem;
     CHECK(vkQueueSubmit(device->device()(0, 0), 1, &submitInfo, VK_NULL_HANDLE));
     CHECK(vkQueueWaitIdle(device->device()(0, 0)));
 
-    return {};
+    return {signalSem};
 }
 
 void RayTracingGraphics::update(utils::ResourceIndex resourceIndex) {
@@ -175,31 +187,84 @@ void RayTracingGraphics::buildTree(){
 }
 
 void RayTracingGraphics::buildBoundingBoxes(bool primitive, bool tree, bool onlyLeafs){
+    using namespace cuda::rayTracing;
+    using NodePtr = KDNode<std::vector<const Primitive*>::iterator>*;
+
     bbGraphics.clear();
 
-    if(tree){
-        std::stack<cuda::rayTracing::KDNode<std::vector<const cuda::rayTracing::Primitive*>::iterator>*> stack;
-        stack.push(rayTracer.getTree().getRoot());
-        for(;!stack.empty();){
-            const auto top = stack.top();
-            stack.pop();
+    std::random_device rdev;
+    std::uniform_real_distribution<float> dist(0.0f, 1.0f);
 
-            if(!onlyLeafs || !(top->left || top->right)){
-                std::random_device device;
-                std::uniform_real_distribution<float> dist(0.0f, 1.0f);
-                cuda::rayTracing::cbox box(top->bbox, cuda::rayTracing::vec4f(dist(device), dist(device), dist(device), 1.0f));
-                bbGraphics.bind(std::move(box));
+    // Transform a local-space AABB to a world-space AABB via toWorld.
+    auto transformBox = [](const box& local, const mat4f& M, const vec4f& col) {
+        box world;
+        for (int m = 0; m < 8; m++) {
+            const vec4f c(
+                (m & 1) ? local.max[0] : local.min[0],
+                (m & 2) ? local.max[1] : local.min[1],
+                (m & 4) ? local.max[2] : local.min[2],
+                1.0f);
+            const vec4f wc = M * c;
+            world.min = min(world.min, wc);
+            world.max = max(world.max, wc);
+        }
+        return cbox(world, col);
+    };
+
+    // Traverse a host KD-tree, emitting boxes in world space.
+    using HostTree = KDTree<std::vector<const Primitive*>>;
+    auto traverseTree = [&](const HostTree* hostTree, const mat4f& toWorld, const vec4f& col) {
+        if (!hostTree->getRoot()) return;
+        std::stack<NodePtr> stack;
+        stack.push(hostTree->getRoot());
+        for (; !stack.empty();) {
+            NodePtr top = stack.top(); stack.pop();
+            if (!onlyLeafs || !(top->left || top->right))
+                bbGraphics.bind(transformBox(top->bbox, toWorld, col));
+            if (top->right) stack.push(top->right);
+            if (top->left)  stack.push(top->left);
+        }
+    };
+
+    if (tree) {
+        // TLAS: random colour per node — shows object-level bbox hierarchy.
+        if (auto* tlasRoot = rayTracer.getTree().getRoot(); tlasRoot) {
+            std::stack<NodePtr> stack;
+            stack.push(tlasRoot);
+            for (; !stack.empty();) {
+                NodePtr top = stack.top(); stack.pop();
+                if (!onlyLeafs || !(top->left || top->right)) {
+                    bbGraphics.bind(cbox(top->bbox, vec4f(dist(rdev), dist(rdev), dist(rdev), 1.0f)));
+                }
+                if (top->right) stack.push(top->right);
+                if (top->left)  stack.push(top->left);
             }
+        }
 
-            if(top->right) stack.push(top->right);
-            if(top->left) stack.push(top->left);
+        // Per-object BLAS: local-space KD-trees transformed to world space.
+        // Each object gets its own colour so trees are visually distinct.
+        for (const auto& info : rayTracer.getBLASInfos()) {
+            const vec4f col(dist(rdev), dist(rdev), dist(rdev), 1.0f);
+            traverseTree(info.tree, info.toWorld, col);
         }
     }
 
-    if(primitive){
-        for(auto& primitive: rayTracer.getTree().storage){
-            cuda::rayTracing::cbox box(primitive->bbox, cuda::rayTracing::vec4f(1.0, 0.0, 0.0, 1.0f));
-            bbGraphics.bind(box);
+    if (primitive) {
+        // Leaf-level: one box per triangle, in world space.
+        for (const auto& info : rayTracer.getBLASInfos()) {
+            const vec4f col(dist(rdev), dist(rdev), dist(rdev), 1.0f);
+            if (!info.tree->getRoot()) continue;
+            std::stack<NodePtr> stack;
+            stack.push(info.tree->getRoot());
+            for (; !stack.empty();) {
+                NodePtr top = stack.top(); stack.pop();
+                if (!top->left && !top->right) {
+                    for (auto it = top->begin; it != top->end(); ++it)
+                        bbGraphics.bind(transformBox((*it)->bbox, info.toWorld, col));
+                }
+                if (top->right) stack.push(top->right);
+                if (top->left)  stack.push(top->left);
+            }
         }
     }
 }

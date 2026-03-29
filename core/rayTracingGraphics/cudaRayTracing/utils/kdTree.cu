@@ -33,14 +33,22 @@ void HitableKDTree::create(HitableKDTree* dpointer, const HitableKDTree& host){
     checkCudaErrors(cudaDeviceSynchronize());
 }
 
-__global__ void destroyKernel(HitableKDTree* p) {
+__global__ void destroyKernel(HitableKDTree* p, HitableKDTree::KDNodeType** rootOut) {
+    // Null the root before calling the destructor so ~HitableKDTree() skips
+    // `delete[] root` — the node buffer was allocated via cudaMalloc (through
+    // Buffer<>) and must be freed with cudaFree from the host, not delete[].
+    *rootOut = p->releaseRoot();
     p->~HitableKDTree();
 }
 
 void HitableKDTree::destroy(HitableKDTree* dpointer){
-    destroyKernel<<<1,1>>>(dpointer);
+    Buffer<KDNodeType*> rootPtrBuf(1);
+    destroyKernel<<<1,1>>>(dpointer, rootPtrBuf.get());
     checkCudaErrors(cudaGetLastError());
     checkCudaErrors(cudaDeviceSynchronize());
+    KDNodeType* rootPtr = nullptr;
+    checkCudaErrors(cudaMemcpy(&rootPtr, rootPtrBuf.get(), sizeof(KDNodeType*), cudaMemcpyDeviceToHost));
+    if (rootPtr) checkCudaErrors(cudaFree(rootPtr));
 }
 
 }

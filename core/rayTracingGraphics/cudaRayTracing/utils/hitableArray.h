@@ -8,9 +8,9 @@ namespace cuda::rayTracing {
 class HitableArray : public HitableContainer {
 public:
     struct Pointer{
-        const Hitable* p{nullptr};
+        Triangle p;
         __host__ __device__ Pointer* get_next() { return this + 1; }
-        __host__ __device__ const Hitable*& operator()() { return p; }
+        __host__ __device__ Triangle& operator()() { return p; }
     };
 
     using iterator = BaseIterator<Pointer>;
@@ -20,9 +20,9 @@ public:
 
     __host__ __device__ bool hit(const ray& r, HitCoords& coord) const override;
 
-    __host__ __device__ void add(const Hitable*const* objects, size_t size = 1) override;
+    __host__ __device__ void add(const Triangle* objects, size_t size = 1) override;
 
-    __host__ __device__ const Hitable*& operator[](uint32_t i) const override;
+    __host__ __device__ const Triangle& operator[](uint32_t i) const override;
 
     __host__ __device__ iterator begin() {return iterator(&array[0]); }
     __host__ __device__ iterator end() {return iterator(&array[container_size]); }

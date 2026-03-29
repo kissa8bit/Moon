@@ -2,6 +2,7 @@
 #define HITABLEH
 
 #include <cudaRayTracing/math/box.h>
+#include <cudaRayTracing/math/mat4.h>
 #include <cudaRayTracing/materials/material.h>
 
 namespace cuda::rayTracing {
@@ -26,13 +27,15 @@ struct HitRecord{
 };
 
 class Hitable;
+struct Triangle;
 
 struct HitCoords{
     float tmin{0.01f};
     float tmax{std::numeric_limits<float>::max()};
     float u{0.0f};
     float v{0.0f};
-    const Hitable* obj{nullptr};
+    const Triangle* obj{nullptr};
+    const mat4f* toWorld{nullptr};
 
     __host__ __device__ bool check() const { return obj && tmax != std::numeric_limits<float>::max();}
 };

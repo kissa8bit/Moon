@@ -59,7 +59,8 @@ private:
     moon::utils::AttachmentsDatabase    aDatabase;
     moon::utils::BuffersDatabase        bDatabase;
 
-    utils::vkDefault::CommandPool commandPool;
+    utils::vkDefault::CommandPool     commandPool;
+    utils::vkDefault::Semaphores      signalSemaphores;
 
     bool bloomEnable = true;
 

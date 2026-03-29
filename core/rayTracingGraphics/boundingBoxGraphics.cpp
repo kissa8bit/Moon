@@ -131,8 +131,8 @@ void BoundingBoxGraphics::create(VkPhysicalDevice physicalDevice, VkDevice devic
     this->physicalDevice = physicalDevice;
     this->device = device;
     this->image = image;
-    vertShaderPath = shadersPath / "boundingBox/boundingBoxVert.spv";
-    fragShaderPath = shadersPath / "boundingBox/boundingBoxFrag.spv";
+    vertShaderPath = shadersPath / "cudaBoundingBox/boundingBoxVert.spv";
+    fragShaderPath = shadersPath / "cudaBoundingBox/boundingBoxFrag.spv";
 
     cameraBuffers.resize(image.Count);
     for(auto& buffer: cameraBuffers) {

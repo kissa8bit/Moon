@@ -196,8 +196,15 @@ void BloomGraphics::updateCommandBuffer(utils::ResourceIndex resourceIndex){
     utils::texture::transitionLayout(commandBuffers[frameNumber], frames[0].image(frameNumber),
         VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_REMAINING_MIP_LEVELS, 0, 1);
 
-    utils::texture::copy(commandBuffers[frameNumber], srcAttachment->image(frameNumber), frames[0].image(frameNumber),
-        { parameters.imageInfo.Extent.width, parameters.imageInfo.Extent.height, 1 }, 1);
+    VkImageBlit blitRegion{};
+    blitRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    blitRegion.srcOffsets[1] = {static_cast<int32_t>(parameters.imageInfo.Extent.width), static_cast<int32_t>(parameters.imageInfo.Extent.height), 1};
+    blitRegion.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    blitRegion.dstOffsets[1] = {static_cast<int32_t>(parameters.imageInfo.Extent.width), static_cast<int32_t>(parameters.imageInfo.Extent.height), 1};
+    vkCmdBlitImage(commandBuffers[frameNumber],
+        srcAttachment->image(frameNumber), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        frames[0].image(frameNumber), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        1, &blitRegion, VK_FILTER_NEAREST);
 
     utils::texture::transitionLayout(commandBuffers[frameNumber], srcAttachment->image(frameNumber),
         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, parameters.inputImageLayout, VK_REMAINING_MIP_LEVELS, 0, 1);

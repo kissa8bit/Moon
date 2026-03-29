@@ -21,3 +21,8 @@ set(ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/..)
 add_library(rayTracingGraphics STATIC ${SOURCES} ${HEADERS})
 target_include_directories(rayTracingGraphics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${ROOT_DIR})
 target_link_libraries(rayTracingGraphics PUBLIC graphicsManager cudaRayTracing workflows)
+
+moon_compile_shaders(rayTracingGraphics
+    "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
+    "rayTracingGraphics"
+)
